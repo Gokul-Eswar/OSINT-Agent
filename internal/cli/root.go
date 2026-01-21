@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/spectre/spectre/internal/config"
+	"github.com/spectre/spectre/internal/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -41,4 +42,5 @@ func init() {
 
 func initConfig() {
 	config.InitConfig(cfgFile)
+	logger.InitLogger()
 }
