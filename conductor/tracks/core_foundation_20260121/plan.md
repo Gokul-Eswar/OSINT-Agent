@@ -1,10 +1,10 @@
 # Implementation Plan - Initialize SPECTRE Core Foundation
 
 ## Phase 1: Project Scaffolding & CLI Setup
-- [ ] Task: Initialize Go Module and Directory Structure
-    - [ ] Initialize `go.mod`.
-    - [ ] Create directories: `cmd/spectre`, `internal/cli`, `internal/core`, `internal/storage`, `internal/config`.
-    - [ ] Create `.gitignore` for Go projects.
+- [x] Task: Initialize Go Module and Directory Structure [commit: e882835]
+    - [x] Initialize `go.mod`.
+    - [x] Create directories: `cmd/spectre`, `internal/cli`, `internal/core`, `internal/storage`, `internal/config`.
+    - [x] Create `.gitignore` for Go projects.
 - [ ] Task: Implement Basic CLI with Cobra
     - [ ] Create `internal/cli/root.go` with the root command.
     - [ ] Create `cmd/spectre/main.go` to execute the root command.
