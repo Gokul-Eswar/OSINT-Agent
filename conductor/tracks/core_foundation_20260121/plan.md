@@ -5,10 +5,10 @@
     - [x] Initialize `go.mod`.
     - [x] Create directories: `cmd/spectre`, `internal/cli`, `internal/core`, `internal/storage`, `internal/config`.
     - [x] Create `.gitignore` for Go projects.
-- [ ] Task: Implement Basic CLI with Cobra
-    - [ ] Create `internal/cli/root.go` with the root command.
-    - [ ] Create `cmd/spectre/main.go` to execute the root command.
-    - [ ] Verify compilation with `go build ./cmd/spectre`.
+- [x] Task: Implement Basic CLI with Cobra [commit: 87a587c]
+    - [x] Create `internal/cli/root.go` with the root command.
+    - [x] Create `cmd/spectre/main.go` to execute the root command.
+    - [x] Verify compilation with `go build ./cmd/spectre`.
 - [ ] Task: Integrate Configuration with Viper
     - [ ] Create `internal/config/config.go` to handle loading.
     - [ ] Add flags to the root command (config path).
