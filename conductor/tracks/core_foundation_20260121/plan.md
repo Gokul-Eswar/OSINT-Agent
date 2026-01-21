@@ -9,10 +9,10 @@
     - [x] Create `internal/cli/root.go` with the root command.
     - [x] Create `cmd/spectre/main.go` to execute the root command.
     - [x] Verify compilation with `go build ./cmd/spectre`.
-- [ ] Task: Integrate Configuration with Viper
-    - [ ] Create `internal/config/config.go` to handle loading.
-    - [ ] Add flags to the root command (config path).
-    - [ ] Create a default `configs/default.yaml`.
+- [x] Task: Integrate Configuration with Viper [commit: 02debaa]
+    - [x] Create `internal/config/config.go` to handle loading.
+    - [x] Add flags to the root command (config path).
+    - [x] Create a default `configs/default.yaml`.
 - [ ] Task: Setup Structured Logging
     - [ ] Implement `internal/logger` using `zerolog`.
     - [ ] Configure console output for dev and JSON for files.
