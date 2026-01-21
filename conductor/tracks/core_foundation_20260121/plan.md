@@ -20,9 +20,9 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Project Scaffolding & CLI Setup' (Protocol in workflow.md)
 
 ## Phase 2: Storage Layer & Schema
-- [ ] Task: Setup SQLite Infrastructure
-    - [ ] Create `internal/storage/sqlite.go` for database connection.
-    - [ ] Ensure `CGO_ENABLED=1` support (required for `go-sqlite3`).
+- [x] Task: Setup SQLite Infrastructure [commit: 2717c89]
+    - [x] Create `internal/storage/sqlite.go` for database connection.
+    - [x] Ensure `CGO_ENABLED=1` support (required for `go-sqlite3`).
 - [ ] Task: Define Database Schema (Migrations)
     - [ ] Create SQL migration files or const strings for `cases`, `entities`, `relationships`, `evidence`, `analyses`.
     - [ ] Implement a migration runner in `internal/storage/schema.go` that runs on startup.
