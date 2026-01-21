@@ -26,10 +26,10 @@
 - [x] Task: Define Database Schema (Migrations) [commit: c182989]
     - [x] Create SQL migration files or const strings for `cases`, `entities`, `relationships`, `evidence`, `analyses`.
     - [x] Implement a migration runner in `internal/storage/schema.go` that runs on startup.
-- [ ] Task: Implement Case Management (Proof of Concept)
-    - [ ] Define `Case` struct in `internal/core/case.go`.
-    - [ ] Implement `CreateCase` and `GetCase` in `internal/storage/case_repo.go`.
-    - [ ] Write a unit test for `CreateCase` using an in-memory DB.
+- [x] Task: Implement Case Management (Proof of Concept) [commit: f31d7dd]
+    - [x] Define `Case` struct in `internal/core/case.go`.
+    - [x] Implement `CreateCase` and `GetCase` in `internal/storage/case_repo.go`.
+    - [x] Write a unit test for `CreateCase` using an in-memory DB.
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Storage Layer & Schema' (Protocol in workflow.md)
 
 ## Phase 3: Integration & Wiring
