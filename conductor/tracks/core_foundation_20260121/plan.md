@@ -1,6 +1,6 @@
 # Implementation Plan - Initialize SPECTRE Core Foundation
 
-## Phase 1: Project Scaffolding & CLI Setup
+## Phase 1: Project Scaffolding & CLI Setup [checkpoint: 47bf28d]
 - [x] Task: Initialize Go Module and Directory Structure [commit: e882835]
     - [x] Initialize `go.mod`.
     - [x] Create directories: `cmd/spectre`, `internal/cli`, `internal/core`, `internal/storage`, `internal/config`.
@@ -17,7 +17,7 @@
     - [x] Implement `internal/logger` using `zerolog`.
     - [x] Configure console output for dev and JSON for files.
     - [x] Integrate logger into the `main` entry point.
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Project Scaffolding & CLI Setup' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Project Scaffolding & CLI Setup' (Protocol in workflow.md)
 
 ## Phase 2: Storage Layer & Schema
 - [ ] Task: Setup SQLite Infrastructure
