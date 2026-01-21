@@ -13,10 +13,10 @@
     - [x] Create `internal/config/config.go` to handle loading.
     - [x] Add flags to the root command (config path).
     - [x] Create a default `configs/default.yaml`.
-- [ ] Task: Setup Structured Logging
-    - [ ] Implement `internal/logger` using `zerolog`.
-    - [ ] Configure console output for dev and JSON for files.
-    - [ ] Integrate logger into the `main` entry point.
+- [x] Task: Setup Structured Logging [commit: d73e1da]
+    - [x] Implement `internal/logger` using `zerolog`.
+    - [x] Configure console output for dev and JSON for files.
+    - [x] Integrate logger into the `main` entry point.
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Project Scaffolding & CLI Setup' (Protocol in workflow.md)
 
 ## Phase 2: Storage Layer & Schema
