@@ -1,0 +1,8 @@
+{
+  "track_id": "core_foundation_20260121",
+  "type": "foundation",
+  "status": "new",
+  "created_at": "2026-01-21T09:35:00Z",
+  "updated_at": "2026-01-21T09:35:00Z",
+  "description": "Initialize SPECTRE Core Foundation: Scaffold the Go project structure, implement the SQLite database schema, and set up the basic CLI root command."
+}
