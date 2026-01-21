@@ -1,0 +1,19 @@
+# Default configuration for SPECTRE
+
+# Database configuration
+database:
+  path: "spectre.db"
+
+# Logging configuration
+logging:
+  level: "info"
+  format: "text" # or "json"
+
+# Collector settings
+collectors:
+  dns:
+    enabled: true
+    rate_limit: 10
+  whois:
+    enabled: true
+    rate_limit: 1

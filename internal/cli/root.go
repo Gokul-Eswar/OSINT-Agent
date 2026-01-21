@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/spectre/spectre/internal/config"
 	"github.com/spf13/cobra"
 )
+
+var cfgFile string
 
 var rootCmd = &cobra.Command{
 	Use:   "spectre",
@@ -28,7 +31,14 @@ func Execute() {
 }
 
 func init() {
+	cobra.OnInitialize(initConfig)
+
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.spectre.yaml)")
+}
+
+func initConfig() {
+	config.InitConfig(cfgFile)
 }
