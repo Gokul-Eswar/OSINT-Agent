@@ -23,9 +23,9 @@
 - [x] Task: Setup SQLite Infrastructure [commit: 2717c89]
     - [x] Create `internal/storage/sqlite.go` for database connection.
     - [x] Ensure `CGO_ENABLED=1` support (required for `go-sqlite3`).
-- [ ] Task: Define Database Schema (Migrations)
-    - [ ] Create SQL migration files or const strings for `cases`, `entities`, `relationships`, `evidence`, `analyses`.
-    - [ ] Implement a migration runner in `internal/storage/schema.go` that runs on startup.
+- [x] Task: Define Database Schema (Migrations) [commit: c182989]
+    - [x] Create SQL migration files or const strings for `cases`, `entities`, `relationships`, `evidence`, `analyses`.
+    - [x] Implement a migration runner in `internal/storage/schema.go` that runs on startup.
 - [ ] Task: Implement Case Management (Proof of Concept)
     - [ ] Define `Case` struct in `internal/core/case.go`.
     - [ ] Implement `CreateCase` and `GetCase` in `internal/storage/case_repo.go`.
