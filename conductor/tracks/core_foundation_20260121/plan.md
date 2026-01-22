@@ -30,7 +30,7 @@
     - [x] Define `Case` struct in `internal/core/case.go`.
     - [x] Implement `CreateCase` and `GetCase` in `internal/storage/case_repo.go`.
     - [x] Write a unit test for `CreateCase` using an in-memory DB.
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Storage Layer & Schema' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Storage Layer & Schema' (Protocol in workflow.md) [commit: 2b5c49a]
 
 ## Phase 3: Integration & Wiring
 - [ ] Task: Wire Storage to CLI
