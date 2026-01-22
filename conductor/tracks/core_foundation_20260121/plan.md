@@ -33,7 +33,7 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Storage Layer & Schema' (Protocol in workflow.md) [commit: 2b5c49a]
 
 ## Phase 3: Integration & Wiring
-- [ ] Task: Wire Storage to CLI
+- [x] Task: Wire Storage to CLI [commit: a986dcc]
     - [ ] Add an `init` sub-command to `internal/cli/init.go` that initializes the DB.
     - [ ] Add a `new-case` sub-command to `internal/cli/case.go` that uses the storage layer.
 - [ ] Task: End-to-End Verification
