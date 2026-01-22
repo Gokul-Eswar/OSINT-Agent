@@ -19,7 +19,7 @@
     - [x] Integrate logger into the `main` entry point.
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Project Scaffolding & CLI Setup' (Protocol in workflow.md)
 
-## Phase 2: Storage Layer & Schema
+## Phase 2: Storage Layer & Schema [checkpoint: 3871967]
 - [x] Task: Setup SQLite Infrastructure [commit: 2717c89]
     - [x] Create `internal/storage/sqlite.go` for database connection.
     - [x] Ensure `CGO_ENABLED=1` support (required for `go-sqlite3`).
