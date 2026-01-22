@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/spectre/spectre/internal/core"
 )
 
@@ -14,6 +15,9 @@ func CreateCase(c *core.Case) error {
 		return fmt.Errorf("database not initialized")
 	}
 
+	if c.ID == "" {
+		c.ID = uuid.New().String()
+	}
 	if c.CreatedAt.IsZero() {
 		c.CreatedAt = time.Now()
 	}
