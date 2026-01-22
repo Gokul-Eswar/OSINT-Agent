@@ -36,7 +36,7 @@
 - [x] Task: Wire Storage to CLI [commit: a986dcc]
     - [ ] Add an `init` sub-command to `internal/cli/init.go` that initializes the DB.
     - [ ] Add a `new-case` sub-command to `internal/cli/case.go` that uses the storage layer.
-- [ ] Task: End-to-End Verification
+- [x] Task: End-to-End Verification [commit: 19998cd]
     - [ ] Run `spectre init` to create the DB.
     - [ ] Run `spectre new-case "test-case"` and verify it exists in the SQLite file.
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Integration & Wiring' (Protocol in workflow.md)
