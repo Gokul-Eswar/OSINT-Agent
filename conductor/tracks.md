@@ -4,5 +4,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [~] **Track: Initialize SPECTRE Core Foundation**
+- [x] **Track: Initialize SPECTRE Core Foundation**
   *Link: [./tracks/core_foundation_20260121/](./tracks/core_foundation_20260121/)*
