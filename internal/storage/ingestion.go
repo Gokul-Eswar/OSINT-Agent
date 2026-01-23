@@ -13,9 +13,123 @@ func IngestEvidence(ev *core.Evidence) error {
 	switch ev.Collector {
 	case "dns":
 		return ingestDNS(ev)
+	case "whois":
+		return ingestWHOIS(ev)
+	case "github":
+		return ingestGitHub(ev)
 	default:
 		return nil // No ingestion logic for this collector yet
 	}
+}
+
+func ingestGitHub(ev *core.Evidence) error {
+	data, err := os.ReadFile(ev.FilePath)
+	if err != nil {
+		return err
+	}
+
+	var results struct {
+		Items []struct {
+			FullName string `json:"full_name"`
+			HTMLURL  string `json:"html_url"`
+			Owner    struct {
+				Login string `json:"login"`
+			} `json:"owner"`
+		} `json:"items"`
+	}
+
+	if err := json.Unmarshal(data, &results); err != nil {
+		return err
+	}
+
+	for _, item := range results.Items {
+		// Create Repo entity
+		repoEnt := &core.Entity{
+			CaseID: ev.CaseID,
+			Type:   "repo",
+			Value:  item.HTMLURL,
+			Source: "github",
+		}
+		CreateEntity(repoEnt)
+
+		// Create User entity
+		userEnt := &core.Entity{
+			CaseID: ev.CaseID,
+			Type:   "username",
+			Value:  item.Owner.Login,
+			Source: "github",
+		}
+		
+		existingUser, _ := GetEntityByValue(ev.CaseID, item.Owner.Login)
+		if existingUser == nil {
+			CreateEntity(userEnt)
+		} else {
+			userEnt = existingUser
+		}
+
+		// Link User -> owns -> Repo
+		rel := &core.Relationship{
+			CaseID:       ev.CaseID,
+			FromEntityID: userEnt.ID,
+			ToEntityID:   repoEnt.ID,
+			Type:         "owns",
+			EvidenceID:   ev.ID,
+			Confidence:   1.0,
+		}
+		CreateRelationship(rel)
+	}
+
+	return nil
+}
+
+func ingestWHOIS(ev *core.Evidence) error {
+	targetDomain := ev.Metadata["target"].(string)
+	
+	// Ensure domain entity exists
+	domainEnt, _ := GetEntityByValue(ev.CaseID, targetDomain)
+	if domainEnt == nil {
+		domainEnt = &core.Entity{
+			CaseID: ev.CaseID,
+			Type:   "domain",
+			Value:  targetDomain,
+			Source: "whois",
+		}
+		if err := CreateEntity(domainEnt); err != nil {
+			return err
+		}
+	}
+
+	// If we have a registrant email, create it and link it
+	if email, ok := ev.Metadata["registrant_email"].(string); ok && email != "" {
+		emailEnt := &core.Entity{
+			CaseID: ev.CaseID,
+			Type:   "email",
+			Value:  email,
+			Source: "whois",
+		}
+		
+		existingEmail, _ := GetEntityByValue(ev.CaseID, email)
+		if existingEmail == nil {
+			if err := CreateEntity(emailEnt); err != nil {
+				return err
+			}
+		} else {
+			emailEnt = existingEmail
+		}
+
+		// Link Domain -> owns -> Email (or registered_by)
+		rel := &core.Relationship{
+			CaseID:       ev.CaseID,
+			FromEntityID: domainEnt.ID,
+			ToEntityID:   emailEnt.ID,
+			Type:         "registered_by",
+			EvidenceID:   ev.ID,
+			Confidence:   1.0,
+		}
+		CreateRelationship(rel)
+	}
+
+	return nil
 }
 
 func ingestDNS(ev *core.Evidence) error {

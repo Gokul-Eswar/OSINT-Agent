@@ -34,3 +34,9 @@ func InitConfig(cfgFile string) {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
 }
+
+// GetAPIKey retrieves an API key from configuration or environment.
+func GetAPIKey(name string) string {
+	// Checks keys.<name> in config or SPECTRE_KEYS_<NAME> in env
+	return viper.GetString("keys." + name)
+}

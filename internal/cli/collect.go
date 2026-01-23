@@ -4,7 +4,9 @@ import (
 	"fmt"
 
 	"github.com/spectre/spectre/internal/collector"
-	_ "github.com/spectre/spectre/internal/collector/dns" // Register DNS
+	_ "github.com/spectre/spectre/internal/collector/dns"    // Register DNS
+	_ "github.com/spectre/spectre/internal/collector/whois"  // Register WHOIS
+	_ "github.com/spectre/spectre/internal/collector/github" // Register GitHub
 	"github.com/spectre/spectre/internal/storage"
 	"github.com/spf13/cobra"
 )
