@@ -63,3 +63,31 @@ func BuildCaseContext(caseID string) (string, error) {
 
 	return sb.String(), nil
 }
+
+// ExportCaseForViz gathers all case data into a map for JSON export to the visualizer.
+func ExportCaseForViz(caseID string) (map[string]interface{}, error) {
+	c, err := storage.GetCase(caseID)
+	if err != nil {
+		return nil, err
+	}
+	if c == nil {
+		return nil, fmt.Errorf("case not found")
+	}
+
+	entities, err := storage.ListEntitiesByCase(caseID)
+	if err != nil {
+		return nil, err
+	}
+
+	rels, err := storage.ListRelationshipsByCase(caseID)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"case_id":       caseID,
+		"case_name":     c.Name,
+		"entities":      entities,
+		"relationships": rels,
+	}, nil
+}

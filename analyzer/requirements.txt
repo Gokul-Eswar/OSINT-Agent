@@ -1,0 +1,7 @@
+anthropic
+pydantic
+rich
+pyvis
+networkx
+requests
+jinja2

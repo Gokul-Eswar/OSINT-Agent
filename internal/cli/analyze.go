@@ -3,7 +3,6 @@ package cli
 import (
 	"fmt"
 
-	"github.com/spectre/spectre/internal/ai"
 	"github.com/spectre/spectre/internal/analysis"
 	"github.com/spectre/spectre/internal/core"
 	"github.com/spectre/spectre/internal/storage"
@@ -24,13 +23,9 @@ var analyzeCmd = &cobra.Command{
 			return err
 		}
 
-		// Initialize AI Provider (Default to Ollama for now)
-		// In the future, we can load this from config
-		provider := ai.NewOllamaProvider("", modelName)
-
-		fmt.Printf("Analyzing case %s with model %s...\n", caseID, provider.Model)
+		fmt.Printf("Analyzing case %s with model %s (via Python)...\n", caseID, modelName)
 		
-		result, err := analysis.AnalyzeCase(caseID, provider)
+		result, err := analysis.AnalyzeCase(caseID, modelName)
 		if err != nil {
 			return fmt.Errorf("analysis failed: %w", err)
 		}

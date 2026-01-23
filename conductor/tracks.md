@@ -15,3 +15,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: Intelligence Synthesis (AI Analysis)**
   *Link: [./tracks/intelligence_synthesis_20260123/](./tracks/intelligence_synthesis_20260123/)*
+
+- [ ] **Track: Visual Intelligence Dashboard (HTML Reports)**
+  *Link: [./tracks/visual_dashboard_20260123/](./tracks/visual_dashboard_20260123/)*
