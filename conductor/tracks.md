@@ -19,5 +19,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [x] **Track: Expanded Collection (WHOIS, GitHub & Config)**
   *Link: [./tracks/expanded_collection_20260123/](./tracks/expanded_collection_20260123/)*
 
+- [x] **Track: Timeline & Reporting (Investigation Narrative)**
+  *Link: [./tracks/timeline_reporting_20260123/](./tracks/timeline_reporting_20260123/)*
+
 - [ ] **Track: Visual Intelligence Dashboard (HTML Reports)**
   *Link: [./tracks/visual_dashboard_20260123/](./tracks/visual_dashboard_20260123/)*
