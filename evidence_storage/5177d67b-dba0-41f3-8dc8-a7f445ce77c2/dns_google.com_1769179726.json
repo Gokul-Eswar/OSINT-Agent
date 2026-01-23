@@ -1,0 +1,15 @@
+{
+  "A": [
+    "2404:6800:4007:834::200e",
+    "142.251.43.46"
+  ],
+  "MX": [
+    "smtp.google.com."
+  ],
+  "NS": [
+    "ns2.google.com.",
+    "ns1.google.com.",
+    "ns4.google.com.",
+    "ns3.google.com."
+  ]
+}

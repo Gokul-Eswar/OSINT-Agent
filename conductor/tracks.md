@@ -9,3 +9,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: Core Data Engine (Graph Models & CLI)**
   *Link: [./tracks/core_data_engine_20260123/](./tracks/core_data_engine_20260123/)*
+
+- [x] **Track: Passive Collection Framework (Plugins & Ingestion)**
+  *Link: [./tracks/passive_collection_20260123/](./tracks/passive_collection_20260123/)*
