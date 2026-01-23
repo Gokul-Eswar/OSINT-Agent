@@ -12,3 +12,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: Passive Collection Framework (Plugins & Ingestion)**
   *Link: [./tracks/passive_collection_20260123/](./tracks/passive_collection_20260123/)*
+
+- [ ] **Track: Intelligence Synthesis (AI Analysis)**
+  *Link: [./tracks/intelligence_synthesis_20260123/](./tracks/intelligence_synthesis_20260123/)*
