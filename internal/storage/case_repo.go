@@ -57,3 +57,28 @@ func GetCase(id string) (*core.Case, error) {
 
 	return &c, nil
 }
+
+// ListCases retrieves all cases from the database.
+func ListCases() ([]*core.Case, error) {
+	if DB == nil {
+		return nil, fmt.Errorf("database not initialized")
+	}
+
+	query := `SELECT id, name, description, created_at, updated_at, status FROM cases ORDER BY created_at DESC`
+	rows, err := DB.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list cases: %w", err)
+	}
+	defer rows.Close()
+
+	var cases []*core.Case
+	for rows.Next() {
+		var c core.Case
+		if err := rows.Scan(&c.ID, &c.Name, &c.Description, &c.CreatedAt, &c.UpdatedAt, &c.Status); err != nil {
+			return nil, fmt.Errorf("failed to scan case: %w", err)
+		}
+		cases = append(cases, &c)
+	}
+
+	return cases, nil
+}

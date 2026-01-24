@@ -30,3 +30,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: Geo-Intelligence Enrichment (GeoIP)**
   *Link: [./tracks/geo_intelligence_20260124/](./tracks/geo_intelligence_20260124/)*
+
+- [ ] **Track: Interactive TUI Console (The Terminal)**
+  *Link: [./tracks/interactive_tui_20260124/](./tracks/interactive_tui_20260124/)*
