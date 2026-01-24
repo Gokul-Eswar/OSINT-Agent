@@ -3,11 +3,13 @@ package tui
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/spectre/spectre/internal/server"
 )
 
 type sessionState int
@@ -18,6 +20,7 @@ const (
 	detailView
 	relView
 	collectView
+	webView
 	statsView
 )
 
@@ -52,6 +55,11 @@ type model struct {
 	relTable    table.Model
 	runner      runnerModel
 	selectedCaseID string
+
+	// Server State
+	serverRunning bool
+	serverPort    int
+	serverMsg     string
 }
 
 func InitialModel() model {
@@ -60,11 +68,12 @@ func InitialModel() model {
 
 	return model{
 		state:       homeView,
-		choices:     []string{"Investigation Cases", "Run Collector", "System Stats", "Quit"},
+		choices:     []string{"Investigation Cases", "Run Collector", "Web Dashboard", "System Stats", "Quit"},
 		caseList:    l,
 		entityTable: NewEntityTable(),
 		relTable:    NewRelationshipTable(),
 		runner:      NewRunnerModel(),
+		serverPort:  8080,
 	}
 }
 
@@ -157,6 +166,27 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.runner, cmd = m.runner.Update(msg)
 			return m, cmd
 
+		case webView:
+			switch msg.String() {
+			case "enter", "o":
+				// Open browser
+				openBrowser(fmt.Sprintf("http://localhost:%d", m.serverPort))
+				m.serverMsg = "Opened in browser"
+			case "s":
+				if !m.serverRunning {
+					go func() {
+						if err := server.Start(m.serverPort); err != nil {
+							// Log error? For now just ignore as it might be blocking
+						}
+					}()
+					// Give it a moment to start
+					time.Sleep(500 * time.Millisecond)
+					m.serverRunning = true
+					m.serverMsg = "Server started"
+				}
+			}
+			return m, nil
+
 		case homeView:
 			switch msg.String() {
 			case "ctrl+c", "q":
@@ -176,9 +206,22 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.state = caseView
 				case 1: // Run Collector
 					m.state = collectView
-				case 2: // Stats
+				case 2: // Web Dashboard
+					m.state = webView
+					if !m.serverRunning {
+						// Auto-start server if not running
+						go server.Start(m.serverPort)
+						m.serverRunning = true
+						m.serverMsg = "Server auto-started..."
+						// Auto-open browser
+						go func() {
+							time.Sleep(1 * time.Second)
+							openBrowser(fmt.Sprintf("http://localhost:%d", m.serverPort))
+						}()
+					}
+				case 3: // Stats
 					m.state = statsView
-				case 3: // Quit
+				case 4: // Quit
 					m.quitting = true
 					return m, tea.Quit
 				}
@@ -215,6 +258,25 @@ func (m model) View() string {
 		)
 	case collectView:
 		return docStyle.Render(m.runner.View())
+	case webView:
+		status := "STOPPED"
+		color := "#ef4444" // red
+		if m.serverRunning {
+			status = "RUNNING"
+			color = "#10b981" // green
+		}
+		
+		s := fmt.Sprintf("\n  WEB COMMAND CENTER\n\n  Status: %s\n  URL:    http://localhost:%d\n\n", 
+			lipgloss.NewStyle().Foreground(lipgloss.Color(color)).Bold(true).Render(status),
+			m.serverPort,
+		)
+
+		if m.serverMsg != "" {
+			s += fmt.Sprintf("  > %s\n\n", m.serverMsg)
+		}
+
+		s += "  (o: open browser • esc: back)"
+		return docStyle.Render(s)
 	case statsView:
 		return docStyle.Render(GetSystemStats())
 	}
