@@ -76,8 +76,27 @@ This phase shifts SPECTRE from a passive CLI tool into an active, interactive in
 
 ---
 
+## Track 13: Interactive TUI Console (The "Terminal")
+**Goal:** A rich, interactive terminal interface using Bubble Tea.
+
+### 13.1 The Dashboard
+*   **Why:** Running individual commands is slow. A persistent TUI allows rapid exploration.
+*   **Tasks:**
+    *   Integrate `github.com/charmbracelet/bubbletea`.
+    *   Implement `spectre console` command.
+    *   Views: Case List, Entity Table, Log Stream.
+
+### 13.2 Interactive Runner
+*   **Why:** Trigger collectors without remembering flags.
+*   **Tasks:**
+    *   Form-based input for running collectors.
+    *   Real-time progress bars for collection tasks.
+
+---
+
 ## Execution Order
 1.  **Track 10 (GeoIP)** is low hanging fruit and high value.
-2.  **Track 9 (Active)** adds a new dimension of data.
-3.  **Track 11 (Web UI)** is a major architectural addition.
-4.  **Track 12 (Plugins)** ensures long-term scalability.
+2.  **Track 13 (TUI)** provides the "cool factor" and usability.
+3.  **Track 9 (Active)** adds a new dimension of data.
+4.  **Track 11 (Web UI)** is a major architectural addition.
+5.  **Track 12 (Plugins)** ensures long-term scalability.
