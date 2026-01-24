@@ -19,9 +19,9 @@ if (Get-Command python -ErrorAction SilentlyContinue) {
 
 # 3. Build Go Binary
 Write-Host "[*] Building SPECTRE binary..." -ForegroundColor Yellow
-go build -o spectre-core.exe cmd/spectre/main.go
+go build -o spectre.exe cmd/spectre/main.go
 if ($LastExitCode -eq 0) {
-    Write-Host "[+] Build successful: spectre-core.exe" -ForegroundColor Green
+    Write-Host "[+] Build successful: spectre.exe" -ForegroundColor Green
 } else {
     Write-Host "[-] Build failed." -ForegroundColor Red
     exit 1
