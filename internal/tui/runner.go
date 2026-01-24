@@ -20,14 +20,15 @@ const (
 )
 
 type runnerModel struct {
-	state      runnerState
-	caseList   list.Model
-	collList   list.Model
-	textInput  textinput.Model
+	state          runnerState
+	caseList       list.Model
+	collList       list.Model
+	textInput      textinput.Model
 	selectedCaseID string
 	selectedColl   string
-	err        error
-	message    string
+	activeAllowed  bool
+	err            error
+	message        string
 }
 
 func NewRunnerModel() runnerModel {
@@ -35,15 +36,17 @@ func NewRunnerModel() runnerModel {
 	ti.Placeholder = "example.com"
 	ti.Focus()
 
-	// Collector list
-	collectors := []list.Item{
-		item{title: "dns", desc: "Passive DNS resolution"},
-		item{title: "whois", desc: "Domain registration info"},
-		item{title: "github", desc: "GitHub repository search"},
-		item{title: "geo", desc: "IP Geolocation"},
+	// Dynamic Collector list
+	var collectors []list.Item
+	for _, c := range collector.List() {
+		collectors = append(collectors, item{
+			title: c.Name(),
+			desc:  c.Description(),
+		})
 	}
+
 	cl := list.New(collectors, list.NewDefaultDelegate(), 0, 0)
-	cl.Title = "Select Collector"
+	cl.Title = "Select Collector (Space to toggle Active Mode)"
 	cl.SetShowHelp(false)
 
 	// Case list (initialized empty, will be populated by Update)
@@ -65,18 +68,33 @@ func (m runnerModel) Update(msg tea.Msg) (runnerModel, tea.Cmd) {
 	switch m.state {
 	case selectCase:
 		if km, ok := msg.(tea.KeyMsg); ok && km.String() == "enter" {
-			m.selectedCaseID = m.caseList.SelectedItem().(item).id
-			m.state = selectCollector
-			return m, nil
+			if i := m.caseList.SelectedItem(); i != nil {
+				m.selectedCaseID = i.(item).id
+				m.state = selectCollector
+				return m, nil
+			}
 		}
 		m.caseList, cmd = m.caseList.Update(msg)
 		return m, cmd
 
 	case selectCollector:
-		if km, ok := msg.(tea.KeyMsg); ok && km.String() == "enter" {
-			m.selectedColl = m.collList.SelectedItem().(item).title
-			m.state = inputTarget
-			return m, nil
+		if km, ok := msg.(tea.KeyMsg); ok {
+			switch km.String() {
+			case "enter":
+				if i := m.collList.SelectedItem(); i != nil {
+					m.selectedColl = i.(item).title
+					m.state = inputTarget
+					return m, nil
+				}
+			case " ":
+				m.activeAllowed = !m.activeAllowed
+				status := "[SAFE]"
+				if m.activeAllowed {
+					status = "[ACTIVE/DANGEROUS]"
+				}
+				m.collList.Title = fmt.Sprintf("Select Collector (Space to toggle) %s", status)
+				return m, nil
+			}
 		}
 		m.collList, cmd = m.collList.Update(msg)
 		return m, cmd
@@ -89,9 +107,7 @@ func (m runnerModel) Update(msg tea.Msg) (runnerModel, tea.Cmd) {
 			}
 			m.state = executing
 			return m, func() tea.Msg {
-				// We pass false for activeAllowed in TUI for now.
-				// Future: add a toggle in the TUI form.
-				_, err := collector.Run(m.selectedColl, m.selectedCaseID, target, false)
+				_, err := collector.Run(m.selectedColl, m.selectedCaseID, target, m.activeAllowed)
 				if err != nil {
 					return err
 				}
@@ -129,9 +145,13 @@ func (m runnerModel) View() string {
 	case selectCollector:
 		return m.collList.View()
 	case inputTarget:
+		status := "SAFE"
+		if m.activeAllowed {
+			status = "ACTIVE/DANGEROUS"
+		}
 		return fmt.Sprintf(
-			"Running %s for case %s\n\nEnter target:\n\n%s\n\n(enter: run • esc: cancel)",
-			m.selectedColl, m.selectedCaseID, m.textInput.View(),
+			"Running %s for case %s\nMode: %s\n\nEnter target:\n\n%s\n\n(enter: run • esc: cancel)",
+			m.selectedColl, m.selectedCaseID, status, m.textInput.View(),
 		)
 	case executing:
 		return fmt.Sprintf("Running %s against %s... Please wait.", m.selectedColl, m.textInput.Value())
