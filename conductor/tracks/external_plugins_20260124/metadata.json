@@ -1,0 +1,7 @@
+{
+  "id": "external_plugins_20260124",
+  "name": "External Plugin System",
+  "description": "Implementation of a discovery and execution engine for external collectors (Python, Bash, etc.) using a JSON-over-stdout protocol.",
+  "status": "in_progress",
+  "created_at": "2026-01-24"
+}

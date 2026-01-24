@@ -36,3 +36,9 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: Active Reconnaissance (Probes)**
   *Link: [./tracks/active_recon_20260124/](./tracks/active_recon_20260124/)*
+
+- [x] **Track: Web Command Center (API & UI)**
+  *Link: [./tracks/web_command_center_20260124/](./tracks/web_command_center_20260124/)*
+
+- [ ] **Track: External Plugin System (The Ecosystem)**
+  *Link: [./tracks/external_plugins_20260124/](./tracks/external_plugins_20260124/)*
