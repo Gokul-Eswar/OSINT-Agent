@@ -32,6 +32,11 @@ var newCaseCmd = &cobra.Command{
 			return err
 		}
 		
+		// Save context
+		if err := SaveContext(c.ID); err != nil {
+			fmt.Printf("Warning: failed to save context: %v\n", err)
+		}
+
 		fmt.Printf("Successfully created case: %s (ID: %s)\n", c.Name, c.ID)
 		return nil
 	},

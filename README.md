@@ -74,22 +74,21 @@ make install
 
 ## ⚡ Quick Start
 
-Start a new investigation in seconds:
+Start a new investigation in seconds. Spectre now remembers your active case context!
 
 ```bash
-# 1. Initialize a new case
+# 1. Initialize a new case (Context is set automatically)
 spectre case new "acme-breach-2026"
 
-# 2. Run collectors to gather intelligence
-spectre collect dns acme.com --case <case-id>
-spectre collect whois acme.com --case <case-id>
+# 2. Run ALL collectors in parallel
+spectre collect all acme.com
 
 # 3. Visualize the entity graph
-spectre visualize --case <case-id>
+spectre visualize
 # (Opens an interactive HTML graph in your browser)
 
 # 4. Generate an AI synthesis report
-spectre analyze --case <case-id>
+spectre analyze
 ```
 
 ---
@@ -132,6 +131,30 @@ Prevent accidental collection against sensitive targets.
 
 ---
 
+## 🔌 External Plugins
+
+Spectre supports custom collectors written in any language (Python, Bash, Go, etc.).
+
+1.  **Create a Plugin:**
+    Create a folder in `plugins/` (e.g., `plugins/my_tool/`).
+2.  **Add Metadata:**
+    Create a `plugin.yaml` file:
+    ```yaml
+    name: my_tool
+    description: Fetches data from MyAPI
+    command: python
+    args: ["main.py"]
+    is_active: false
+    ```
+3.  **Implement Logic:**
+    Your script should output a JSON object to stdout.
+4.  **Run:**
+    ```bash
+    spectre collect my_tool example.com --case <id>
+    ```
+
+---
+
 ## 🎨 Command Reference
 
 ### Case Management
@@ -142,15 +165,15 @@ spectre case list                 # List all cases
 
 ### Collection
 ```bash
-spectre collect dns example.com --case <id>    # Collect DNS records
-spectre collect whois example.com --case <id>  # Collect WHOIS data
-spectre collect github user --case <id>        # Search GitHub user
+spectre collect all example.com        # Run ALL passive collectors in parallel
+spectre collect dns example.com        # Run specific collector
+spectre collect whois example.com      # Run specific collector
 ```
 
 ### Visualization & Analysis
 ```bash
-spectre visualize --case <id>     # Generate interactive graph
-spectre analyze --case <id>       # Run AI synthesis
+spectre visualize                 # Generate interactive graph (current case)
+spectre analyze                   # Run AI synthesis (current case)
 ```
 
 ---

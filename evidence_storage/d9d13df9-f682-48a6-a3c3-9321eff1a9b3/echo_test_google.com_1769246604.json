@@ -1,0 +1,7 @@
+{
+  "plugin": "echo_test",
+  "target": "google.com",
+  "timestamp": 1769246604,
+  "message": "Successfully echoed target: google.com",
+  "status": "ok"
+}

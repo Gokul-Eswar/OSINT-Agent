@@ -12,6 +12,14 @@ var timelineCmd = &cobra.Command{
 	Short: "Show the chronological timeline of an investigation",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if caseID == "" {
+			ctxID, err := LoadContext()
+			if err == nil && ctxID != "" {
+				caseID = ctxID
+				fmt.Printf("Using current case: %s\n", caseID)
+			}
+		}
+
+		if caseID == "" {
 			return fmt.Errorf("case ID is required (use --case)")
 		}
 

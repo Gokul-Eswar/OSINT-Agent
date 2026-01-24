@@ -22,4 +22,6 @@ Turn raw internet noise into **structured, verifiable intelligence** — fast, r
 
 ## User Experience (UX)
 - **CLI-First Orchestration:** High-performance terminal interface for all collection, case management, and automation.
+- **Context Awareness:** The system remembers the active investigation, removing the need for repetitive ID flags.
+- **Fluid Operations:** Parallel execution of all collectors ("collect all") to minimize wait times.
 - **On-Demand Visualization:** Static HTML dashboards generated per case and opened in the browser for review (no always-on server).

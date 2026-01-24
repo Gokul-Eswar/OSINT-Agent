@@ -1,0 +1,5 @@
+name: echo_test
+description: A simple test plugin that echoes back the target in JSON format.
+command: python
+args: ["main.py"]
+is_active: false

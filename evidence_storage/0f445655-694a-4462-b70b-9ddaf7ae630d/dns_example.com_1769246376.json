@@ -1,0 +1,14 @@
+{
+  "A": [
+    "2606:4700:9c62:8c7c:33c6:43d:ccc4:a209",
+    "104.18.27.120",
+    "104.18.26.120"
+  ],
+  "MX": [
+    "."
+  ],
+  "NS": [
+    "hera.ns.cloudflare.com.",
+    "elliott.ns.cloudflare.com."
+  ]
+}

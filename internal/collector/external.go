@@ -1,101 +1,127 @@
 package collector
 
 import (
-	"encoding/json"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
+	"time"
 
+	"github.com/rs/zerolog/log"
 	"github.com/spectre/spectre/internal/core"
-	"go.yaml.in/yaml/v3"
+	"gopkg.in/yaml.v3"
 )
 
-// ExternalPluginMetadata defines the structure of plugin.yaml
-type ExternalPluginMetadata struct {
-	Name        string `yaml:"name"`
-	Description string `yaml:"description"`
-	Command     string `yaml:"command"`     // e.g. "python scanner.py"
-	IsActive    bool   `yaml:"is_active"`   // Whether this is an active probe
+// PluginMetadata defines the structure of the plugin.yaml file.
+type PluginMetadata struct {
+	Name        string   `yaml:"name"`
+	Description string   `yaml:"description"`
+	Command     string   `yaml:"command"`
+	Args        []string `yaml:"args"`
+	IsActive    bool     `yaml:"is_active"`
 }
 
-// ExternalCollector wraps an external script/binary
+// ExternalCollector implements the core.Collector interface for external scripts.
 type ExternalCollector struct {
-	Meta ExternalPluginMetadata
-	Path string // Directory containing the plugin
+	metadata PluginMetadata
+	path     string
 }
 
 func (e *ExternalCollector) Name() string {
-	return e.Meta.Name
+	return e.metadata.Name
 }
 
 func (e *ExternalCollector) Description() string {
-	return e.Meta.Description
+	return e.metadata.Description
 }
 
 func (e *ExternalCollector) IsActive() bool {
-	return e.Meta.IsActive
+	return e.metadata.IsActive
 }
 
+// Collect executes the external plugin and captures its output.
 func (e *ExternalCollector) Collect(caseID string, target string) ([]core.Evidence, error) {
-	// Execute command: [command] [target]
-	args := append(strings.Split(e.Meta.Command, " "), target)
-	cmd := exec.Command(args[0], args[1:]...)
-	cmd.Dir = e.Path
+	// Prepare command
+	args := append(e.metadata.Args, target)
+	cmd := exec.Command(e.metadata.Command, args...)
+	cmd.Dir = e.path
 
-	output, err := cmd.CombinedOutput()
+	// Run and capture output
+	output, err := cmd.Output()
 	if err != nil {
-		return nil, fmt.Errorf("plugin execution failed: %w\nOutput: %s", err, string(output))
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			return nil, fmt.Errorf("plugin execution failed: %s", string(exitErr.Stderr))
+		}
+		return nil, fmt.Errorf("failed to execute plugin: %w", err)
 	}
 
-	// The plugin must print JSON evidence to stdout
-	var evidence []core.Evidence
-	if err := json.Unmarshal(output, &evidence); err != nil {
-		return nil, fmt.Errorf("failed to parse plugin output as evidence JSON: %w\nRaw: %s", err, string(output))
+	// Store file
+	storageDir := filepath.Join("evidence_storage", caseID)
+	if err := os.MkdirAll(storageDir, 0755); err != nil {
+		return nil, err
 	}
 
-	// Ensure case ID is set correctly for all evidence
-	for i := range evidence {
-		evidence[i].CaseID = caseID
-		evidence[i].Collector = e.Name()
+	fileName := fmt.Sprintf("%s_%s_%d.json", e.metadata.Name, target, time.Now().Unix())
+	filePath := filepath.Join(storageDir, fileName)
+	if err := os.WriteFile(filePath, output, 0644); err != nil {
+		return nil, err
 	}
 
-	return evidence, nil
+	// Hash
+	hash := sha256.Sum256(output)
+	hashStr := hex.EncodeToString(hash[:])
+
+	evidence := core.Evidence{
+		CaseID:      caseID,
+		Collector:   e.metadata.Name,
+		FilePath:    filePath,
+		FileHash:    hashStr,
+		CollectedAt: time.Now(),
+		Metadata: map[string]interface{}{
+			"target": target,
+			"source": "external_plugin",
+		},
+	}
+
+	return []core.Evidence{evidence}, nil
 }
 
-// DiscoverPlugins scans the plugins/ directory
+// DiscoverPlugins scans the plugins directory for valid plugins.
 func DiscoverPlugins() ([]core.Collector, error) {
 	pluginsDir := "plugins"
-	if _, err := os.Stat(pluginsDir); os.IsNotExist(err) {
-		return nil, nil // No plugins directory
-	}
-
-	dirs, err := os.ReadDir(pluginsDir)
+	entries, err := os.ReadDir(pluginsDir)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
 		return nil, err
 	}
 
 	var collectors []core.Collector
-	for _, d := range dirs {
-		if d.IsDir() {
-			pluginPath := filepath.Join(pluginsDir, d.Name())
-			metaPath := filepath.Join(pluginPath, "plugin.yaml")
-			
-			if _, err := os.Stat(metaPath); err == nil {
-				data, err := os.ReadFile(metaPath)
+	for _, entry := range entries {
+		if entry.IsDir() {
+			pluginDir := filepath.Join(pluginsDir, entry.Name())
+			metadataPath := filepath.Join(pluginDir, "plugin.yaml")
+
+			if _, err := os.Stat(metadataPath); err == nil {
+				data, err := os.ReadFile(metadataPath)
 				if err != nil {
+					log.Error().Err(err).Str("path", metadataPath).Msg("Failed to read plugin metadata")
 					continue
 				}
 
-				var meta ExternalPluginMetadata
+				var meta PluginMetadata
 				if err := yaml.Unmarshal(data, &meta); err != nil {
+					log.Error().Err(err).Str("path", metadataPath).Msg("Failed to parse plugin metadata")
 					continue
 				}
 
+				log.Info().Str("name", meta.Name).Msg("Loaded external plugin")
 				collectors = append(collectors, &ExternalCollector{
-					Meta: meta,
-					Path: pluginPath,
+					metadata: meta,
+					path:     pluginDir,
 				})
 			}
 		}
