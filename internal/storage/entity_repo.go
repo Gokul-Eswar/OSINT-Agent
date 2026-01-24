@@ -67,6 +67,25 @@ func GetEntity(id string) (*core.Entity, error) {
 	return &e, nil
 }
 
+// UpdateEntity updates an existing entity's fields (metadata, confidence).
+func UpdateEntity(e *core.Entity) error {
+	if DB == nil {
+		return fmt.Errorf("database not initialized")
+	}
+
+	metadataJSON, err := json.Marshal(e.Metadata)
+	if err != nil {
+		return fmt.Errorf("failed to marshal metadata: %w", err)
+	}
+
+	query := `UPDATE entities SET metadata = ?, confidence = ? WHERE id = ?`
+	_, err = DB.Exec(query, string(metadataJSON), e.Confidence, e.ID)
+	if err != nil {
+		return fmt.Errorf("failed to update entity: %w", err)
+	}
+	return nil
+}
+
 // ListEntitiesByCase retrieves all entities associated with a specific case.
 func ListEntitiesByCase(caseID string) ([]*core.Entity, error) {
 	if DB == nil {

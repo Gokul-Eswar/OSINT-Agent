@@ -27,3 +27,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: Ethics Guardian & Safety (Rate Limiting & Scope)**
   *Link: [./tracks/ethics_safety_20260124/](./tracks/ethics_safety_20260124/)*
+
+- [x] **Track: Geo-Intelligence Enrichment (GeoIP)**
+  *Link: [./tracks/geo_intelligence_20260124/](./tracks/geo_intelligence_20260124/)*

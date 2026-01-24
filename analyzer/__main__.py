@@ -18,7 +18,9 @@ def main():
             result = analyze_case(input_data)
             print(json.dumps(result))
         elif args.task == "visualize":
-            result = generate_visual_report(input_data)
+            # Extract the actual graph data payload
+            graph_data = input_data.get("data", {})
+            result = generate_visual_report(graph_data)
             print(json.dumps(result))
             
     except Exception as e:

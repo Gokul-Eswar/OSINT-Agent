@@ -1,0 +1,7 @@
+{
+  "id": "geo_intelligence_20260124",
+  "name": "Geo-Intelligence Enrichment",
+  "description": "Enrich IP addresses with geolocation data (City, Country, Lat/Long) and map them.",
+  "status": "completed",
+  "created_at": "2026-01-24"
+}

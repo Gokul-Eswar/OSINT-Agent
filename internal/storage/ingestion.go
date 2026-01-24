@@ -17,9 +17,49 @@ func IngestEvidence(ev *core.Evidence) error {
 		return ingestWHOIS(ev)
 	case "github":
 		return ingestGitHub(ev)
+	case "geo":
+		return ingestGeo(ev)
 	default:
 		return nil // No ingestion logic for this collector yet
 	}
+}
+
+func ingestGeo(ev *core.Evidence) error {
+	targetIP := ev.Metadata["target"].(string)
+	
+	// Ensure IP entity exists
+	ipEnt, err := GetEntityByValue(ev.CaseID, targetIP)
+	if err != nil {
+		return err
+	}
+	if ipEnt == nil {
+		// Create it if it doesn't exist (though rare if we collected on it)
+		ipEnt = &core.Entity{
+			CaseID: ev.CaseID,
+			Type:   "ip",
+			Value:  targetIP,
+			Source: "geo",
+			Metadata: make(map[string]interface{}),
+		}
+		if err := CreateEntity(ipEnt); err != nil {
+			return err
+		}
+	}
+
+	// Update metadata
+	if ipEnt.Metadata == nil {
+		ipEnt.Metadata = make(map[string]interface{})
+	}
+	
+	// Copy relevant fields from evidence metadata
+	fields := []string{"country", "city", "isp", "lat", "lon"}
+	for _, f := range fields {
+		if v, ok := ev.Metadata[f]; ok {
+			ipEnt.Metadata[f] = v
+		}
+	}
+	
+	return UpdateEntity(ipEnt)
 }
 
 func ingestGitHub(ev *core.Evidence) error {

@@ -8,8 +8,8 @@ def generate_visual_report(data):
     """
     case_name = data.get("case_name", "Investigation")
     case_id = data.get("case_id", "unknown")
-    entities = data.get("entities", [])
-    relationships = data.get("relationships", [])
+    entities = data.get("entities") or []
+    relationships = data.get("relationships") or []
     
     net = Network(height="750px", width="100%", bgcolor="#222222", font_color="white", heading=f"SPECTRE Intelligence Graph: {case_name}")
     
@@ -29,7 +29,19 @@ def generate_visual_report(data):
         color = colors.get(ent_type, "#94a3b8")
         label = ent.get("value", "Unknown")
         
-        net.add_node(ent["id"], label=label, title=f"Type: {ent_type}\nSource: {ent.get('source')}", color=color)
+        # Metadata enrichment
+        meta = ent.get("metadata", {})
+        tooltip = f"Type: {ent_type}\nSource: {ent.get('source')}"
+        
+        if meta:
+            if "country" in meta:
+                label += f" [{meta['country']}]"
+            if "city" in meta:
+                tooltip += f"\nLocation: {meta['city']}, {meta.get('country','')}"
+            if "isp" in meta:
+                tooltip += f"\nISP: {meta['isp']}"
+        
+        net.add_node(ent["id"], label=label, title=tooltip, color=color)
         
     # Add edges
     for rel in relationships:

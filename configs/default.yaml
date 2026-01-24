@@ -20,6 +20,9 @@ collectors:
   github:
     enabled: true
     rate_limit: 2
+  geo:
+    enabled: true
+    rate_limit: 0.75
 
 # Ethics & Safety
 ethics:

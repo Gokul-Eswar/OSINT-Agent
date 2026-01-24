@@ -55,7 +55,7 @@ func ApplyEthicsConfig() {
 
 	// Apply Rate Limits
 	// We check for collectors.<name>.rate_limit
-	collectors := []string{"dns", "whois", "github"}
+	collectors := []string{"dns", "whois", "github", "geo"}
 	for _, name := range collectors {
 		key := fmt.Sprintf("collectors.%s.rate_limit", name)
 		if viper.IsSet(key) {

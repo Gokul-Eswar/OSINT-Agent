@@ -7,6 +7,7 @@ import (
 	_ "github.com/spectre/spectre/internal/collector/dns"    // Register DNS
 	_ "github.com/spectre/spectre/internal/collector/whois"  // Register WHOIS
 	_ "github.com/spectre/spectre/internal/collector/github" // Register GitHub
+	_ "github.com/spectre/spectre/internal/collector/geo"    // Register GeoIP
 	"github.com/spectre/spectre/internal/storage"
 	"github.com/spf13/cobra"
 )
