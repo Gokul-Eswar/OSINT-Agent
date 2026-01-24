@@ -46,14 +46,26 @@ Spectre utilizes a hybrid architecture to leverage the best of both worlds:
 
 ---
 
-## 🚀 Installation
+## Getting Started
 
-### Prerequisites
-*   Go 1.25+
-*   Python 3.11+
-*   Git
+### Quick Start (Windows System)
 
-### Build from Source
+We provide a robust system installer and launcher for a "one-click" experience.
+
+1.  **Install**: Run the installer to check dependencies, build the binary, and setup the Python environment.
+    ```powershell
+    .\install.ps1
+    ```
+
+2.  **Run**: Use the launcher to start the system. This handles all environment variables for you.
+    ```powershell
+    .\spectre.bat
+    ```
+
+### Manual Installation
+
+To build from source:
+
 
 ```bash
 # Clone the repository

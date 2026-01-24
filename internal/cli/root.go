@@ -19,8 +19,11 @@ var rootCmd = &cobra.Command{
 	Long: `SPECTRE turns raw internet noise into structured, verifiable intelligence — fast, repeatable, and local.
 Not scraping. Not search. Intelligence synthesis with auditability.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// Do Stuff Here
-		fmt.Println("SPECTRE CLI initialized")
+		// Default to running the console if no other command is specified
+		if err := consoleCmd.RunE(cmd, args); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 	},
 }
 
