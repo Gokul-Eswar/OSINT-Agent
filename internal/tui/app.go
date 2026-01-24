@@ -84,9 +84,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
-		m.caseList.SetSize(msg.Width-4, msg.Height-4)
-		m.runner.caseList.SetSize(msg.Width-4, msg.Height-4)
-		m.runner.collList.SetSize(msg.Width-4, msg.Height-4)
+		h := msg.Height - 4
+		if h < 0 {
+			h = 0
+		}
+		w := msg.Width - 4
+		if w < 0 {
+			w = 0
+		}
+		m.caseList.SetSize(w, h)
+		m.runner.caseList.SetSize(w, h)
+		m.runner.collList.SetSize(w, h)
 
 	case []list.Item:
 		m.caseList.SetItems(msg)

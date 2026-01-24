@@ -46,8 +46,14 @@ func NewRunnerModel() runnerModel {
 	cl.Title = "Select Collector"
 	cl.SetShowHelp(false)
 
+	// Case list (initialized empty, will be populated by Update)
+	l := list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0)
+	l.Title = "Select Case for Collection"
+	l.SetShowHelp(false)
+
 	return runnerModel{
 		state:     selectCase,
+		caseList:  l,
 		collList:  cl,
 		textInput: ti,
 	}
