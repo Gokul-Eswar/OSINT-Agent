@@ -23,17 +23,12 @@ var collectCmd = &cobra.Command{
 		collectorName := args[0]
 		target := args[1]
 
-		c, err := collector.Get(collectorName)
-		if err != nil {
-			return err
-		}
-
 		if err := storage.InitDB(); err != nil {
 			return err
 		}
 
 		fmt.Printf("Running collector '%s' against target '%s'...\n", collectorName, target)
-		evidenceList, err := c.Collect(caseID, target)
+		evidenceList, err := collector.Run(collectorName, caseID, target)
 		if err != nil {
 			return fmt.Errorf("collection failed: %w", err)
 		}

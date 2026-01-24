@@ -17,3 +17,15 @@ collectors:
   whois:
     enabled: true
     rate_limit: 1
+  github:
+    enabled: true
+    rate_limit: 2
+
+# Ethics & Safety
+ethics:
+  blacklist:
+    - ".gov"
+    - ".mil"
+    - "localhost"
+    - "127.0.0.1"
+  whitelist: []

@@ -1,0 +1,7 @@
+{
+  "id": "ethics_safety_20260124",
+  "name": "Ethics Guardian & Safety",
+  "description": "Implementation of rate limiting and scope control (blacklists/whitelists) to ensure safe and responsible intelligence collection.",
+  "status": "completed",
+  "created_at": "2026-01-24"
+}

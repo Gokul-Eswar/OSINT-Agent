@@ -22,5 +22,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [x] **Track: Timeline & Reporting (Investigation Narrative)**
   *Link: [./tracks/timeline_reporting_20260123/](./tracks/timeline_reporting_20260123/)*
 
-- [ ] **Track: Visual Intelligence Dashboard (HTML Reports)**
+- [x] **Track: Visual Intelligence Dashboard (HTML Reports)**
   *Link: [./tracks/visual_dashboard_20260123/](./tracks/visual_dashboard_20260123/)*
+
+- [x] **Track: Ethics Guardian & Safety (Rate Limiting & Scope)**
+  *Link: [./tracks/ethics_safety_20260124/](./tracks/ethics_safety_20260124/)*

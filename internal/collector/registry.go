@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/spectre/spectre/internal/core"
+	"github.com/spectre/spectre/internal/ethics"
 )
 
 var (
@@ -17,6 +18,27 @@ func Register(c core.Collector) {
 	mu.Lock()
 	defer mu.Unlock()
 	registry[c.Name()] = c
+}
+
+// Run executes a collector by name with ethics enforcement.
+func Run(name string, caseID string, target string) ([]core.Evidence, error) {
+	c, err := Get(name)
+	if err != nil {
+		return nil, err
+	}
+
+	// 1. Scope Control
+	allowed, err := ethics.IsAllowed(target)
+	if !allowed {
+		return nil, fmt.Errorf("safety block: %w", err)
+	}
+
+	// 2. Rate Limiting
+	if err := ethics.Wait(name); err != nil {
+		return nil, fmt.Errorf("rate limit error: %w", err)
+	}
+
+	return c.Collect(caseID, target)
 }
 
 // Get retrieves a collector by name.
