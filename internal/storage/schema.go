@@ -68,6 +68,14 @@ CREATE TABLE IF NOT EXISTS analyses (
     analyzed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (case_id) REFERENCES cases(id)
 );
+
+-- Indices for Performance Optimization
+CREATE INDEX IF NOT EXISTS idx_entities_case_id ON entities(case_id);
+CREATE INDEX IF NOT EXISTS idx_entities_type ON entities(type);
+CREATE INDEX IF NOT EXISTS idx_relationships_case_id ON relationships(case_id);
+CREATE INDEX IF NOT EXISTS idx_relationships_from ON relationships(from_entity);
+CREATE INDEX IF NOT EXISTS idx_relationships_to ON relationships(to_entity);
+CREATE INDEX IF NOT EXISTS idx_evidence_case_id ON evidence(case_id);
 `
 
 // InitSchema applies the initial database schema.

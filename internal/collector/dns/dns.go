@@ -82,6 +82,7 @@ func (d *DNSCollector) Collect(caseID string, target string) ([]core.Evidence, e
 			"target": target,
 			"types":  []string{"A", "MX", "NS"},
 		},
+		RawData: results,
 	}
 
 	return []core.Evidence{evidence}, nil

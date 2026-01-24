@@ -69,7 +69,7 @@ func printAnalysis(a *core.Analysis) {
 	for _, n := range a.NextSteps {
 		fmt.Printf("- %s\n", n)
 	}
-	fmt.Println("---------------------------\n")
+	fmt.Println("---------------------------")
 }
 
 func init() {

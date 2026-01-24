@@ -12,4 +12,5 @@ type Evidence struct {
 	FileHash    string                 `json:"file_hash"`
 	CollectedAt time.Time              `json:"collected_at"`
 	Metadata    map[string]interface{} `json:"metadata"`
+	RawData     interface{}            `json:"-"`
 }

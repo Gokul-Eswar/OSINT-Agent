@@ -124,24 +124,63 @@
             const [loading, setLoading] = useState(true);
             const [searchTerm, setSearchTerm] = useState("");
             const [sidebarOpen, setSidebarOpen] = useState(true);
+            const [isLive, setIsLive] = useState(false);
             
             // Refs
             const networkRef = useRef(null);
             const visNetwork = useRef(null);
 
-            // Initial Data Fetch
+            // Initial Data Fetch & Polling
             useEffect(() => {
-                fetch('/api/cases')
-                    .then(res => res.json())
-                    .then(data => {
-                        setCases(data);
-                        setFilteredCases(data);
-                        setLoading(false);
-                        // Initialize icons after render
-                        setTimeout(() => lucide.createIcons(), 100);
-                    })
-                    .catch(err => console.error("Failed to load cases:", err));
+                const fetchData = () => {
+                    fetch('/api/cases')
+                        .then(res => res.json())
+                        .then(data => {
+                            // Check for changes (simplified)
+                            setCases(prev => {
+                                if (JSON.stringify(prev) !== JSON.stringify(data)) {
+                                    setIsLive(true);
+                                    setTimeout(() => setIsLive(false), 2000);
+                                    setFilteredCases(data); // Note: this resets filter if user is searching. Ideal: merge.
+                                    return data;
+                                }
+                                return prev;
+                            });
+                            setLoading(false);
+                            setTimeout(() => lucide.createIcons(), 100);
+                        })
+                        .catch(err => console.error("Failed to load cases:", err));
+                };
+
+                fetchData();
+                const interval = setInterval(fetchData, 5000); // Poll every 5 seconds
+                return () => clearInterval(interval);
             }, []);
+
+            // Poll graph data if a case is selected
+            useEffect(() => {
+                if (!selectedCase) return;
+                
+                const fetchGraph = () => {
+                     fetch(`/api/cases/${selectedCase.id}/graph`)
+                        .then(res => res.json())
+                        .then(data => {
+                            setSelectedCase(prev => {
+                                // Only update if entity count changed to avoid re-rendering graph constantly
+                                if (prev.entities.length !== data.entities.length || 
+                                    prev.relationships.length !== data.relationships.length) {
+                                    renderGraph(data);
+                                    return data;
+                                }
+                                return prev;
+                            });
+                        })
+                        .catch(console.error);
+                };
+
+                const interval = setInterval(fetchGraph, 5000);
+                return () => clearInterval(interval);
+            }, [selectedCase?.id]);
 
             // Filter Logic
             useEffect(() => {
@@ -342,12 +381,14 @@
                                 <h1 className="text-xl font-semibold text-white tracking-tight">Dashboard</h1>
                             </div>
                             <div className="flex items-center gap-4">
-                                <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+                                <div className={`flex items-center gap-2 px-3 py-1.5 border rounded-full transition-all duration-500 ${isLive ? 'bg-emerald-500/20 border-emerald-500/40' : 'bg-emerald-500/10 border-emerald-500/20'}`}>
                                     <span className="relative flex h-2 w-2">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                        <span className={`absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 ${isLive ? 'animate-ping' : ''}`}></span>
                                         <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                                     </span>
-                                    <span className="text-xs font-medium text-emerald-500 uppercase tracking-wide">System Online</span>
+                                    <span className="text-xs font-medium text-emerald-500 uppercase tracking-wide">
+                                        {isLive ? 'Receiving Data...' : 'System Online'}
+                                    </span>
                                 </div>
                                 <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400">
                                     <i data-lucide="user" className="w-4 h-4"></i>

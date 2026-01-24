@@ -10,6 +10,9 @@ import (
 	"github.com/spectre/spectre/internal/core"
 )
 
+// OnEntityCreated is a hook for real-time updates
+var OnEntityCreated func(*core.Entity)
+
 // CreateEntity inserts a new entity into the database.
 func CreateEntity(e *core.Entity) error {
 	if DB == nil {
@@ -36,6 +39,10 @@ func CreateEntity(e *core.Entity) error {
 	_, err = DB.Exec(query, e.ID, e.CaseID, e.Type, e.Value, e.Source, e.Confidence, e.DiscoveredAt, string(metadataJSON))
 	if err != nil {
 		return fmt.Errorf("failed to create entity: %w", err)
+	}
+
+	if OnEntityCreated != nil {
+		OnEntityCreated(e)
 	}
 
 	return nil

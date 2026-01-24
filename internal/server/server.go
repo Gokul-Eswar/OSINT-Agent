@@ -6,12 +6,18 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/spectre/spectre/internal/analysis"
+	"github.com/spectre/spectre/internal/core"
 	"github.com/spectre/spectre/internal/storage"
 )
 
-var webAssets embed.FS
+var (
+	webAssets embed.FS
+	clients   = make(map[chan interface{}]bool)
+	clientsMu sync.Mutex
+)
 
 // SetAssets sets the embedded assets for the server
 func SetAssets(assets embed.FS) {
@@ -25,6 +31,7 @@ func Start(port int) error {
 	// API Routes
 	mux.HandleFunc("/api/cases", handleCases)
 	mux.HandleFunc("/api/cases/", handleCaseDetail) // /api/cases/{id} and /api/cases/{id}/graph
+	mux.HandleFunc("/api/events", handleEvents)
 
 	// Static Assets
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -41,8 +48,66 @@ func Start(port int) error {
 		http.NotFound(w, r)
 	})
 
+	// Hook into storage events
+	storage.OnEntityCreated = func(e *core.Entity) {
+		Broadcast(map[string]interface{}{
+			"type": "entity_created",
+			"data": e,
+		})
+	}
+
 	fmt.Printf("SPECTRE API Server starting on :%d...\n", port)
 	return http.ListenAndServe(fmt.Sprintf(":%d", port), mux)
+}
+
+func handleEvents(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	messageChan := make(chan interface{})
+	clientsMu.Lock()
+	clients[messageChan] = true
+	clientsMu.Unlock()
+
+	defer func() {
+		clientsMu.Lock()
+		delete(clients, messageChan)
+		clientsMu.Unlock()
+		close(messageChan)
+	}()
+
+	notify := r.Context().Done()
+
+	for {
+		select {
+		case msg := <-messageChan:
+			data, err := json.Marshal(msg)
+			if err != nil {
+				continue
+			}
+			fmt.Fprintf(w, "data: %s\n\n", data)
+			if f, ok := w.(http.Flusher); ok {
+				f.Flush()
+			}
+		case <-notify:
+			return
+		}
+	}
+}
+
+// Broadcast sends a message to all connected SSE clients
+func Broadcast(msg interface{}) {
+	clientsMu.Lock()
+	defer clientsMu.Unlock()
+	for client := range clients {
+		select {
+		case client <- msg:
+		default:
+			// Client channel full, skip to avoid blocking
+		}
+	}
 }
 
 func handleCases(w http.ResponseWriter, r *http.Request) {

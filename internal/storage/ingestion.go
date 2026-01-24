@@ -160,9 +160,20 @@ func ingestGeo(ev *core.Evidence) error {
 }
 
 func ingestGitHub(ev *core.Evidence) error {
-	data, err := os.ReadFile(ev.FilePath)
-	if err != nil {
-		return err
+	var data []byte
+	var err error
+
+	if ev.RawData != nil {
+		if b, ok := ev.RawData.([]byte); ok {
+			data = b
+		}
+	}
+
+	if data == nil {
+		data, err = os.ReadFile(ev.FilePath)
+		if err != nil {
+			return err
+		}
 	}
 
 	var results struct {
@@ -270,14 +281,25 @@ func ingestWHOIS(ev *core.Evidence) error {
 }
 
 func ingestDNS(ev *core.Evidence) error {
-	data, err := os.ReadFile(ev.FilePath)
-	if err != nil {
-		return fmt.Errorf("failed to read evidence file: %w", err)
+	var results map[string][]string
+
+	// Try in-memory first
+	if ev.RawData != nil {
+		if r, ok := ev.RawData.(map[string][]string); ok {
+			results = r
+		}
 	}
 
-	var results map[string][]string
-	if err := json.Unmarshal(data, &results); err != nil {
-		return fmt.Errorf("failed to unmarshal DNS results: %w", err)
+	// Fallback to disk
+	if results == nil {
+		data, err := os.ReadFile(ev.FilePath)
+		if err != nil {
+			return fmt.Errorf("failed to read evidence file: %w", err)
+		}
+
+		if err := json.Unmarshal(data, &results); err != nil {
+			return fmt.Errorf("failed to unmarshal DNS results: %w", err)
+		}
 	}
 
 	targetDomain := ev.Metadata["target"].(string)

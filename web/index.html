@@ -124,23 +124,73 @@
             const [loading, setLoading] = useState(true);
             const [searchTerm, setSearchTerm] = useState("");
             const [sidebarOpen, setSidebarOpen] = useState(true);
+            const [isLive, setIsLive] = useState(false);
             
             // Refs
             const networkRef = useRef(null);
             const visNetwork = useRef(null);
 
-            // Initial Data Fetch
+            // Initial Data Fetch & SSE Setup
             useEffect(() => {
-                fetch('/api/cases')
-                    .then(res => res.json())
-                    .then(data => {
-                        setCases(data);
-                        setFilteredCases(data);
-                        setLoading(false);
-                        // Initialize icons after render
-                        setTimeout(() => lucide.createIcons(), 100);
-                    })
-                    .catch(err => console.error("Failed to load cases:", err));
+                const fetchData = () => {
+                    fetch('/api/cases')
+                        .then(res => res.json())
+                        .then(data => {
+                            setCases(data);
+                            setFilteredCases(data);
+                            setLoading(false);
+                            setTimeout(() => lucide.createIcons(), 100);
+                        })
+                        .catch(err => console.error("Failed to load cases:", err));
+                };
+
+                fetchData();
+
+                // Real-time updates via SSE
+                const evtSource = new EventSource("/api/events");
+                evtSource.onmessage = (event) => {
+                    try {
+                        const msg = JSON.parse(event.data);
+                        if (msg.type === 'entity_created') {
+                            const entity = msg.data;
+                            setIsLive(true);
+                            setTimeout(() => setIsLive(false), 2000);
+
+                            // Update selected case if applicable
+                            setSelectedCase(prev => {
+                                if (prev && prev.id === entity.case_id) {
+                                    // Avoid duplicates
+                                    if (prev.entities.some(e => e.id === entity.id)) return prev;
+                                    
+                                    // Add new entity
+                                    const newCaseData = {
+                                        ...prev,
+                                        entities: [...prev.entities, entity]
+                                    };
+                                    
+                                    // Trigger graph re-render
+                                    // Note: In a real React app, we'd use a separate effect for graph, 
+                                    // but here we manually call renderGraph to force Vis.js update
+                                    // We need to wait for state update to settle or pass new data directly
+                                    // Since we can't easily wait for state in this callback, we pass new data
+                                    setTimeout(() => renderGraph(newCaseData), 50);
+                                    
+                                    return newCaseData;
+                                }
+                                return prev;
+                            });
+
+                            // Refresh sidebar lists (lightweight)
+                            fetchData();
+                        }
+                    } catch (e) {
+                        console.error("SSE Error:", e);
+                    }
+                };
+
+                return () => {
+                    evtSource.close();
+                };
             }, []);
 
             // Filter Logic
@@ -342,12 +392,14 @@
                                 <h1 className="text-xl font-semibold text-white tracking-tight">Dashboard</h1>
                             </div>
                             <div className="flex items-center gap-4">
-                                <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+                                <div className={`flex items-center gap-2 px-3 py-1.5 border rounded-full transition-all duration-500 ${isLive ? 'bg-emerald-500/20 border-emerald-500/40' : 'bg-emerald-500/10 border-emerald-500/20'}`}>
                                     <span className="relative flex h-2 w-2">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                        <span className={`absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 ${isLive ? 'animate-ping' : ''}`}></span>
                                         <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                                     </span>
-                                    <span className="text-xs font-medium text-emerald-500 uppercase tracking-wide">System Online</span>
+                                    <span className="text-xs font-medium text-emerald-500 uppercase tracking-wide">
+                                        {isLive ? 'Receiving Data...' : 'System Online'}
+                                    </span>
                                 </div>
                                 <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400">
                                     <i data-lucide="user" className="w-4 h-4"></i>

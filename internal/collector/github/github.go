@@ -82,6 +82,7 @@ func (g *GitHubCollector) Collect(caseID string, target string) ([]core.Evidence
 		Metadata: map[string]interface{}{
 			"target": target,
 		},
+		RawData: body,
 	}
 
 	return []core.Evidence{evidence}, nil
