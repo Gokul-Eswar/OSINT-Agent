@@ -39,8 +39,8 @@ Spectre utilizes a hybrid architecture to leverage the best of both worlds:
 │              │ │              │ │              │ │   (Python)   │
 │ • SQLite     │ │ • DNS        │ │ • SQLite     │ │ • LLM API    │
 │ • Files      │ │ • WHOIS      │ │   Edges      │ │ • Timeline   │
-│ • Evidence   │ │ • Certs      │ │ • GraphML    │ │ • Synthesis  │
-│ • Logs       │ │ • GitHub     │ │ • pyvis Viz  │ │ • Reports    │
+│ • Evidence   │ │ • GitHub     │ │ • GraphML    │ │ • Synthesis  │
+│ • Logs       │ │ • Certs      │ │ • pyvis Viz  │ │ • Reports    │
 └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘
 ```
 
@@ -49,14 +49,15 @@ Spectre utilizes a hybrid architecture to leverage the best of both worlds:
 ## 🚀 Installation
 
 ### Prerequisites
-*   Go 1.21+
+*   Go 1.25+
 *   Python 3.11+
+*   Git
 
 ### Build from Source
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/spectre.git
+git clone https://github.com/spectre/spectre.git
 cd spectre
 
 # Build the Go binary
@@ -77,22 +78,57 @@ Start a new investigation in seconds:
 
 ```bash
 # 1. Initialize a new case
-spectre new-case "acme-breach-2024"
+spectre case new "acme-breach-2026"
 
-# 2. Add initial entities (passive collection targets)
-spectre add domain acme.com
-spectre add email security@acme.com
+# 2. Run collectors to gather intelligence
+spectre collect dns acme.com --case <case-id>
+spectre collect whois acme.com --case <case-id>
 
-# 3. Run collectors to gather intelligence
-spectre run --case acme-breach-2024
-
-# 4. Visualize the entity graph
-spectre graph --case acme-breach-2024
+# 3. Visualize the entity graph
+spectre visualize --case <case-id>
 # (Opens an interactive HTML graph in your browser)
 
-# 5. Generate an AI synthesis report
-spectre analyze --case acme-breach-2024
+# 4. Generate an AI synthesis report
+spectre analyze --case <case-id>
 ```
+
+---
+
+## 📊 Visual Intelligence Dashboard
+
+Spectre transforms your collected data into an interactive visual graph.
+
+```bash
+spectre visualize --case <case-id>
+```
+
+*   **Interactive HTML:** Zoom, pan, and drag nodes to explore relationships.
+*   **Color-Coded Entities:**
+    *   🔵 Domain
+    *   🟢 Email
+    *   🟠 IP
+    *   🟣 Username
+    *   🔴 Repository
+    *   🩷 Person
+*   **Offline:** The dashboard is a standalone HTML file generated in your `evidence_storage` folder.
+
+---
+
+## 🛡️ Ethics & Safety
+
+Spectre is built for **ethical investigation**.
+
+### The Governor (Rate Limiting)
+Prevent API bans and reduce footprint.
+*   **DNS:** 10 requests/sec
+*   **WHOIS:** 1 request/sec (strict enforcement)
+*   **GitHub:** 2 requests/sec
+
+### The Fence (Scope Control)
+Prevent accidental collection against sensitive targets.
+*   **Blacklist:** Automatically blocks collection on `.gov`, `.mil`, `localhost`, and `127.0.0.1`.
+*   **Whitelist:** Optional strict mode to only allow specific domains.
+*   **Configurable:** Manage rules in `configs/default.yaml`.
 
 ---
 
@@ -100,25 +136,21 @@ spectre analyze --case acme-breach-2024
 
 ### Case Management
 ```bash
-spectre init                      # Initialize system
-spectre new-case "name"           # Create a new investigation
-spectre list                      # List all cases
-spectre show --case "name"        # Show case details
+spectre case new "name"           # Create a new investigation
+spectre case list                 # List all cases
 ```
 
-### Entity Management
+### Collection
 ```bash
-spectre add domain example.com    # Add a domain
-spectre add email user@site.com   # Add an email
-spectre entities --case "name"    # List entities in a case
+spectre collect dns example.com --case <id>    # Collect DNS records
+spectre collect whois example.com --case <id>  # Collect WHOIS data
+spectre collect github user --case <id>        # Search GitHub user
 ```
 
-### Collection & Analysis
+### Visualization & Analysis
 ```bash
-spectre run --case "name"         # Run all enabled collectors
-spectre run --passive-only        # Enforce passive collection
-spectre analyze --case "name"     # Run AI synthesis
-spectre timeline --case "name"    # Generate investigation timeline
+spectre visualize --case <id>     # Generate interactive graph
+spectre analyze --case <id>       # Run AI synthesis
 ```
 
 ---
@@ -130,23 +162,16 @@ spectre/
 ├── cmd/spectre/       # Main entry point
 ├── internal/
 │   ├── cli/           # Cobra CLI commands
-│   ├── core/          # Core domain logic (Case, Entity, Evidence)
-│   ├── collectors/    # OSINT collectors (DNS, Whois, etc.)
+│   ├── core/          # Core domain logic
+│   ├── collector/     # OSINT collectors (DNS, Whois, GitHub)
 │   ├── storage/       # SQLite and file storage
+│   ├── ethics/        # Rate limiting and scope control
 │   └── analyzer/      # Go bridge to Python analyzer
 ├── analyzer/          # Python intelligence module (LLM, Graph Viz)
 ├── configs/           # Configuration files
-└── cases/             # Local data storage (created at runtime)
+├── evidence_storage/  # Local data storage (created at runtime)
+└── spectre.db         # SQLite database
 ```
-
----
-
-## 🛡️ Ethics & Safety
-
-Spectre is built for **ethical investigation**.
-*   **Passive by Design:** Default collectors do not probe target infrastructure aggressively.
-*   **Rate Limiting:** Built-in safeguards preventing API abuse and scanning detection.
-*   **Audit Trail:** All actions are logged to a local, immutable chain of evidence.
 
 ---
 
