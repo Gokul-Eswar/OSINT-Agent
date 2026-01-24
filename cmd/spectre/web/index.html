@@ -4,38 +4,164 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SPECTRE | Command Center</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Custom Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        slate: {
+                            850: '#151e2e',
+                            900: '#0f172a',
+                            950: '#020617',
+                        },
+                        accent: {
+                            500: '#6366f1', // Indigo
+                            600: '#4f46e5',
+                            glow: 'rgba(99, 102, 241, 0.15)'
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-out',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
-        body { background-color: #0f172a; color: #f8fafc; }
-        #network { height: 600px; background-color: #1e293b; border-radius: 0.5rem; }
+        body { 
+            background-color: #020617; 
+            color: #f8fafc; 
+            overflow: hidden; /* Prevent body scroll, use container scroll */
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569; 
+        }
+
+        /* Graph Container */
+        #network { 
+            height: 600px; 
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            border-radius: 0.75rem; 
+            border: 1px solid #1e293b;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Grid Pattern Overlay */
+        .bg-grid {
+            background-size: 40px 40px;
+            background-image: linear-gradient(to right, #1e293b 1px, transparent 1px),
+                              linear-gradient(to bottom, #1e293b 1px, transparent 1px);
+            mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+        const { useState, useEffect, useRef, useMemo } = React;
 
+        // --- Icons Component ---
+        const Icon = ({ name, size = 16, className = "" }) => {
+            useEffect(() => {
+                lucide.createIcons();
+            }, [name]); 
+            return <i data-lucide={name} className={className} style={{ width: size, height: size }}></i>;
+        };
+
+        // --- Main App Component ---
         function App() {
             const [cases, setCases] = useState([]);
+            const [filteredCases, setFilteredCases] = useState([]);
             const [selectedCase, setSelectedCase] = useState(null);
             const [loading, setLoading] = useState(true);
+            const [searchTerm, setSearchTerm] = useState("");
+            const [sidebarOpen, setSidebarOpen] = useState(true);
+            
+            // Refs
             const networkRef = useRef(null);
             const visNetwork = useRef(null);
 
+            // Initial Data Fetch
             useEffect(() => {
                 fetch('/api/cases')
                     .then(res => res.json())
                     .then(data => {
                         setCases(data);
+                        setFilteredCases(data);
                         setLoading(false);
-                    });
+                        // Initialize icons after render
+                        setTimeout(() => lucide.createIcons(), 100);
+                    })
+                    .catch(err => console.error("Failed to load cases:", err));
             }, []);
 
+            // Filter Logic
+            useEffect(() => {
+                if (!searchTerm) {
+                    setFilteredCases(cases);
+                } else {
+                    const lower = searchTerm.toLowerCase();
+                    setFilteredCases(cases.filter(c => 
+                        c.name.toLowerCase().includes(lower) || 
+                        c.id.toLowerCase().includes(lower)
+                    ));
+                }
+            }, [searchTerm, cases]);
+
+            // Re-render icons on state change
+            useEffect(() => {
+                lucide.createIcons();
+            });
+
+            // Load Specific Case Graph
             const loadGraph = (caseId) => {
                 setLoading(true);
                 fetch(`/api/cases/${caseId}/graph`)
@@ -43,108 +169,318 @@
                     .then(data => {
                         setSelectedCase(data);
                         setLoading(false);
-                        renderGraph(data);
+                        // Allow DOM to update before rendering graph
+                        setTimeout(() => renderGraph(data), 50);
+                    })
+                    .catch(err => {
+                        console.error("Failed to load graph:", err);
+                        setLoading(false);
                     });
             };
 
+            // Vis.js Graph Rendering
             const renderGraph = (data) => {
+                if (!networkRef.current) return;
+
                 const nodes = new vis.DataSet(data.entities.map(e => ({
                     id: e.id,
-                    label: e.value,
-                    color: getEntityColor(e.type),
-                    title: `Type: ${e.type}\nSource: ${e.source}`
+                    label: e.value.length > 20 ? e.value.substring(0, 18) + '...' : e.value,
+                    group: e.type,
+                    title: `
+                        <div class="p-2 text-xs font-sans">
+                            <strong>Type:</strong> ${e.type}<br>
+                            <strong>Value:</strong> ${e.value}<br>
+                            <strong>Source:</strong> ${e.source}
+                        </div>
+                    `,
+                    val: 1 // Base size, physics will adjust
                 })));
 
                 const edges = new vis.DataSet(data.relationships.map(r => ({
                     from: r.from_entity_id,
                     to: r.to_entity_id,
                     label: r.type,
-                    arrows: 'to'
+                    arrows: 'to',
+                    color: { color: '#475569', opacity: 0.6 }
                 })));
 
                 const options = {
-                    nodes: { shape: 'dot', size: 20, font: { color: '#ffffff' } },
-                    edges: { color: '#94a3b8', font: { color: '#f8fafc', strokeWidth: 0 } },
-                    physics: { forceAtlas2Based: { gravitationalConstant: -50 }, solver: 'forceAtlas2Based' }
+                    nodes: {
+                        shape: 'dot',
+                        font: { 
+                            face: 'Inter', 
+                            color: '#e2e8f0', 
+                            size: 14,
+                            strokeWidth: 4, // Outline text for readability
+                            strokeColor: '#0f172a'
+                        },
+                        borderWidth: 2,
+                        shadow: true
+                    },
+                    edges: {
+                        width: 1,
+                        smooth: { type: 'continuous' },
+                        font: { align: 'top', color: '#94a3b8', size: 10, face: 'Inter', background: '#0f172a' }
+                    },
+                    groups: {
+                        domain:  { color: { background: '#3b82f6', border: '#60a5fa' } }, // Blue
+                        email:   { color: { background: '#10b981', border: '#34d399' } }, // Emerald
+                        ip:      { color: { background: '#f59e0b', border: '#fbbf24' } }, // Amber
+                        username:{ color: { background: '#8b5cf6', border: '#a78bfa' } }, // Violet
+                        repo:    { color: { background: '#ef4444', border: '#f87171' } }, // Red
+                        service: { color: { background: '#64748b', border: '#94a3b8' } }  // Slate
+                    },
+                    physics: {
+                        forceAtlas2Based: {
+                            gravitationalConstant: -80,
+                            centralGravity: 0.005,
+                            springLength: 200,
+                            springConstant: 0.05
+                        },
+                        maxVelocity: 50,
+                        solver: 'forceAtlas2Based',
+                        timestep: 0.35,
+                        stabilization: { iterations: 150 }
+                    },
+                    interaction: {
+                        hover: true,
+                        tooltipDelay: 200,
+                        zoomView: true
+                    }
                 };
 
                 if (visNetwork.current) visNetwork.current.destroy();
                 visNetwork.current = new vis.Network(networkRef.current, { nodes, edges }, options);
             };
 
-            const getEntityColor = (type) => {
-                const colors = {
-                    domain: "#3b82f6",
-                    email: "#10b981",
-                    ip: "#f59e0b",
-                    username: "#8b5cf6",
-                    repo: "#ef4444",
-                    service: "#64748b"
-                };
-                return colors[type] || "#94a3b8";
-            };
+            // Helpers
+            const formatDate = (ts) => new Date().toLocaleDateString(); // Placeholder, backend needs to send timestamp
 
             return (
-                <div className="flex h-screen">
+                <div className="flex h-screen bg-slate-950 text-slate-200 font-sans overflow-hidden">
+                    
                     {/* Sidebar */}
-                    <div className="w-64 bg-slate-900 border-r border-slate-800 p-4">
-                        <h1 className="text-xl font-bold text-indigo-500 mb-8">🕵️ SPECTRE</h1>
-                        <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Investigations</h2>
-                        <ul className="space-y-2">
-                            {cases.map(c => (
-                                <li key={c.id} 
-                                    onClick={() => loadGraph(c.id)}
-                                    className="cursor-pointer p-2 rounded hover:bg-slate-800 transition-colors">
-                                    <div className="font-medium">{c.name}</div>
-                                    <div className="text-xs text-slate-500 truncate">{c.id}</div>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
+                    <aside className={`flex-shrink-0 bg-slate-900 border-r border-slate-800 transition-all duration-300 flex flex-col ${sidebarOpen ? 'w-80' : 'w-16'}`}>
+                        {/* Sidebar Header */}
+                        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-800">
+                            {sidebarOpen ? (
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                                        <i data-lucide="ghost" className="text-white w-5 h-5"></i>
+                                    </div>
+                                    <span className="font-bold text-lg tracking-tight text-white">SPECTRE</span>
+                                </div>
+                            ) : (
+                                <div className="mx-auto">
+                                    <i data-lucide="ghost" className="text-indigo-500 w-6 h-6"></i>
+                                </div>
+                            )}
+                            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-slate-500 hover:text-white transition-colors">
+                                <i data-lucide={sidebarOpen ? "chevron-left" : "chevron-right"} className="w-5 h-5"></i>
+                            </button>
+                        </div>
+
+                        {/* Search & List */}
+                        {sidebarOpen && (
+                            <div className="p-4 flex-1 overflow-hidden flex flex-col">
+                                <div className="relative mb-6">
+                                    <i data-lucide="search" className="absolute left-3 top-2.5 text-slate-500 w-4 h-4"></i>
+                                    <input 
+                                        type="text"
+                                        placeholder="Search investigations..."
+                                        className="w-full bg-slate-800/50 border border-slate-700 text-sm text-slate-200 rounded-md pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all placeholder:text-slate-600"
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                    />
+                                </div>
+
+                                <div className="flex items-center justify-between mb-2 px-1">
+                                    <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Active Cases</h3>
+                                    <span className="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full">{filteredCases.length}</span>
+                                </div>
+
+                                <div className="flex-1 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+                                    {filteredCases.map(c => (
+                                        <button 
+                                            key={c.id} 
+                                            onClick={() => loadGraph(c.id)}
+                                            className={`w-full text-left p-3 rounded-lg border transition-all group relative overflow-hidden ${
+                                                selectedCase && selectedCase.id === c.id 
+                                                ? 'bg-indigo-500/10 border-indigo-500/50 shadow-sm' 
+                                                : 'bg-transparent border-transparent hover:bg-slate-800/50 hover:border-slate-700'
+                                            }`}
+                                        >
+                                            <div className="flex items-center justify-between mb-1">
+                                                <span className={`font-medium text-sm truncate ${selectedCase && selectedCase.id === c.id ? 'text-indigo-300' : 'text-slate-300 group-hover:text-white'}`}>
+                                                    {c.name}
+                                                </span>
+                                                {selectedCase && selectedCase.id === c.id && (
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
+                                                )}
+                                            </div>
+                                            <div className="flex items-center gap-2 text-xs text-slate-500 font-mono truncate">
+                                                <i data-lucide="hash" className="w-3 h-3"></i>
+                                                {c.id.substring(0, 8)}...
+                                            </div>
+                                        </button>
+                                    ))}
+                                    {filteredCases.length === 0 && (
+                                        <div className="text-center py-8 text-slate-600 text-sm">
+                                            No cases found
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </aside>
 
                     {/* Main Content */}
-                    <div className="flex-1 p-8 overflow-auto">
-                        <header className="mb-8 flex justify-between items-center">
+                    <main className="flex-1 flex flex-col h-full relative z-0">
+                        {/* Top Bar */}
+                        <header className="h-16 border-b border-slate-800 flex items-center justify-between px-8 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-10">
                             <div>
-                                <h2 className="text-2xl font-bold">Dashboard</h2>
-                                <p className="text-slate-400">Manage your OSINT evidence in real-time.</p>
+                                <h1 className="text-xl font-semibold text-white tracking-tight">Dashboard</h1>
                             </div>
-                            <div className="flex space-x-4">
-                                <span className="bg-green-500/10 text-green-500 px-3 py-1 rounded-full text-sm font-medium">System Online</span>
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+                                    <span className="relative flex h-2 w-2">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                    </span>
+                                    <span className="text-xs font-medium text-emerald-500 uppercase tracking-wide">System Online</span>
+                                </div>
+                                <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400">
+                                    <i data-lucide="user" className="w-4 h-4"></i>
+                                </div>
                             </div>
                         </header>
 
-                        {selectedCase ? (
-                            <div className="space-y-6">
-                                <div className="bg-slate-800 p-6 rounded-lg border border-slate-700">
-                                    <h3 className="text-lg font-semibold mb-4">Intelligence Graph: {selectedCase.case_name}</h3>
-                                    <div id="network" ref={networkRef}></div>
-                                </div>
-                                
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div className="bg-slate-800 p-6 rounded-lg border border-slate-700">
-                                        <h3 className="text-lg font-semibold mb-4">Key Findings</h3>
-                                        <div className="text-slate-400 italic text-sm">Automated synthesis pending...</div>
+                        {/* Content Area */}
+                        <div className="flex-1 overflow-y-auto p-8 relative">
+                            {/* Background decoration */}
+                            <div className="absolute inset-0 bg-grid opacity-20 pointer-events-none z-[-1]"></div>
+
+                            {selectedCase ? (
+                                <div className="max-w-7xl mx-auto space-y-6 animate-fade-in">
+                                    {/* Case Header */}
+                                    <div className="flex items-start justify-between">
+                                        <div>
+                                            <h2 className="text-3xl font-bold text-white mb-2">{selectedCase.case_name}</h2>
+                                            <div className="flex items-center gap-4 text-sm text-slate-400">
+                                                <span className="flex items-center gap-1.5 font-mono bg-slate-900 px-2 py-1 rounded border border-slate-800">
+                                                    <i data-lucide="hash" className="w-3 h-3"></i> {selectedCase.id}
+                                                </span>
+                                                <span className="flex items-center gap-1.5">
+                                                    <i data-lucide="database" className="w-3 h-3"></i> {selectedCase.entities.length} Entities
+                                                </span>
+                                                <span className="flex items-center gap-1.5">
+                                                    <i data-lucide="share-2" className="w-3 h-3"></i> {selectedCase.relationships.length} Links
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-md text-sm font-medium transition-colors border border-slate-700 flex items-center gap-2">
+                                                <i data-lucide="download" className="w-4 h-4"></i> Export
+                                            </button>
+                                            <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-md text-sm font-medium transition-colors shadow-lg shadow-indigo-600/20 flex items-center gap-2">
+                                                <i data-lucide="plus" className="w-4 h-4"></i> Add Evidence
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div className="bg-slate-800 p-6 rounded-lg border border-slate-700">
-                                        <h3 className="text-lg font-semibold mb-4">Evidence Feed</h3>
-                                        <ul className="text-sm space-y-2 text-slate-300">
-                                            {selectedCase.entities.slice(0, 5).map(e => (
-                                                <li key={e.id} className="border-b border-slate-700 pb-2">
-                                                    Discovered {e.type} <span className="text-indigo-400 font-mono">{e.value}</span> via {e.source}
-                                                </li>
-                                            ))}
-                                        </ul>
+
+                                    {/* Intelligence Graph */}
+                                    <div className="glass-panel p-1 rounded-xl shadow-2xl relative group">
+                                        <div className="absolute top-4 left-4 z-10 flex gap-2">
+                                            <div className="px-3 py-1 bg-slate-900/80 backdrop-blur rounded text-xs font-mono text-slate-400 border border-slate-800">
+                                                Force Atlas 2
+                                            </div>
+                                        </div>
+                                        <div id="network" ref={networkRef}></div>
+                                    </div>
+                                    
+                                    {/* Bottom Grid */}
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                        {/* Key Findings */}
+                                        <div className="glass-panel p-6 rounded-xl border border-slate-800/60">
+                                            <div className="flex items-center gap-3 mb-6">
+                                                <div className="p-2 bg-amber-500/10 rounded-lg">
+                                                    <i data-lucide="zap" className="w-5 h-5 text-amber-500"></i>
+                                                </div>
+                                                <h3 className="text-lg font-semibold text-white">Automated Insights</h3>
+                                            </div>
+                                            <div className="space-y-4">
+                                                <div className="p-4 rounded-lg bg-slate-900/50 border border-slate-800/50 flex items-start gap-3">
+                                                    <i data-lucide="info" className="w-5 h-5 text-blue-400 mt-0.5"></i>
+                                                    <div>
+                                                        <h4 className="text-sm font-medium text-slate-200">Analysis Pending</h4>
+                                                        <p className="text-xs text-slate-500 mt-1">
+                                                            Run the active collector to generate automated insights for this case.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="h-24 flex items-center justify-center border-2 border-dashed border-slate-800 rounded-lg">
+                                                    <span className="text-sm text-slate-600">No critical anomalies detected yet.</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Evidence Feed */}
+                                        <div className="glass-panel p-6 rounded-xl border border-slate-800/60">
+                                            <div className="flex items-center gap-3 mb-6">
+                                                <div className="p-2 bg-purple-500/10 rounded-lg">
+                                                    <i data-lucide="activity" className="w-5 h-5 text-purple-500"></i>
+                                                </div>
+                                                <h3 className="text-lg font-semibold text-white">Live Feed</h3>
+                                            </div>
+                                            <div className="space-y-3 max-h-80 overflow-y-auto custom-scrollbar pr-2">
+                                                {selectedCase.entities.slice(0, 10).map((e, idx) => (
+                                                    <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-slate-900/50 border border-slate-800/50 hover:border-slate-700 transition-colors group">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className={`w-2 h-2 rounded-full ${
+                                                                e.type === 'domain' ? 'bg-blue-500' :
+                                                                e.type === 'ip' ? 'bg-amber-500' :
+                                                                e.type === 'email' ? 'bg-emerald-500' : 'bg-slate-500'
+                                                            }`}></div>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-sm font-mono text-slate-300 group-hover:text-indigo-400 transition-colors">{e.value}</span>
+                                                                <span className="text-[10px] uppercase tracking-wider text-slate-600">{e.type}</span>
+                                                            </div>
+                                                        </div>
+                                                        <span className="text-xs text-slate-500 bg-slate-900 px-2 py-1 rounded border border-slate-800">{e.source}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ) : (
-                            <div className="h-96 flex flex-col items-center justify-center text-slate-500 bg-slate-800/50 rounded-lg border-2 border-dashed border-slate-800">
-                                <p className="text-lg">Select an investigation to begin</p>
-                                <p className="text-sm">Explore connected intelligence nodes and evidence chains.</p>
-                            </div>
-                        )}
-                    </div>
+                            ) : (
+                                <div className="h-full flex flex-col items-center justify-center animate-fade-in">
+                                    <div className="w-24 h-24 bg-slate-800/50 rounded-2xl flex items-center justify-center mb-6 border border-slate-700 shadow-xl shadow-black/20">
+                                        <i data-lucide="radar" className="w-12 h-12 text-slate-600"></i>
+                                    </div>
+                                    <h2 className="text-2xl font-bold text-white mb-2">Command Center Ready</h2>
+                                    <p className="text-slate-400 max-w-md text-center mb-8">
+                                        Select an active investigation from the sidebar to visualize evidence chains and intelligence graphs.
+                                    </p>
+                                    
+                                    <div className="grid grid-cols-3 gap-4 w-full max-w-2xl">
+                                        <div className="p-4 bg-slate-900/50 border border-slate-800 rounded-lg text-center">
+                                            <div className="text-2xl font-bold text-white mb-1">{cases.length}</div>
+                                            <div className="text-xs text-slate-500 uppercase tracking-wider">Active Cases</div>
+                                        </div>
+                                        <div className="p-4 bg-slate-900/50 border border-slate-800 rounded-lg text-center">
+                                            <div className="text-2xl font-bold text-white mb-1">{cases.reduce((acc, c) => acc + (c.entities?.length || 0), 0)}</div>
+                                            <div className="text-xs text-slate-500 uppercase tracking-wider">Total Entities</div>
+                                        </div>
+                                        <div className="p-4 bg-slate-900/50 border border-slate-800 rounded-lg text-center">
+                                            <div className="text-2xl font-bold text-white mb-1">Live</div>
+                                            <div className="text-xs text-slate-500 uppercase tracking-wider">System Status</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </main>
                 </div>
             );
         }
