@@ -5,4 +5,5 @@ type Collector interface {
 	Name() string
 	Description() string
 	Collect(caseID string, target string) ([]Evidence, error)
+	IsActive() bool
 }

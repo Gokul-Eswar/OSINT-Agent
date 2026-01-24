@@ -29,6 +29,10 @@ func (c *GeoIPCollector) Description() string {
 	return "Enrich IP addresses with geolocation data via ip-api.com"
 }
 
+func (c *GeoIPCollector) IsActive() bool {
+	return false
+}
+
 func (c *GeoIPCollector) Collect(caseID string, target string) ([]core.Evidence, error) {
 	// API Request
 	url := fmt.Sprintf("http://ip-api.com/json/%s", target)

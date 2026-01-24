@@ -83,7 +83,9 @@ func (m runnerModel) Update(msg tea.Msg) (runnerModel, tea.Cmd) {
 			}
 			m.state = executing
 			return m, func() tea.Msg {
-				_, err := collector.Run(m.selectedColl, m.selectedCaseID, target)
+				// We pass false for activeAllowed in TUI for now.
+				// Future: add a toggle in the TUI form.
+				_, err := collector.Run(m.selectedColl, m.selectedCaseID, target, false)
 				if err != nil {
 					return err
 				}

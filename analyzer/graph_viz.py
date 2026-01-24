@@ -20,7 +20,8 @@ def generate_visual_report(data):
         "ip": "#f59e0b",
         "username": "#8b5cf6",
         "repo": "#ef4444",
-        "person": "#ec4899"
+        "person": "#ec4899",
+        "service": "#64748b"
     }
     
     # Add nodes

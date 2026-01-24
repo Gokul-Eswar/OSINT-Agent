@@ -21,10 +21,15 @@ func Register(c core.Collector) {
 }
 
 // Run executes a collector by name with ethics enforcement.
-func Run(name string, caseID string, target string) ([]core.Evidence, error) {
+func Run(name string, caseID string, target string, activeAllowed bool) ([]core.Evidence, error) {
 	c, err := Get(name)
 	if err != nil {
 		return nil, err
+	}
+
+	// 0. Active Consent Check
+	if c.IsActive() && !activeAllowed {
+		return nil, fmt.Errorf("collector '%s' is an ACTIVE probe. You must provide the --active flag to run it", name)
 	}
 
 	// 1. Scope Control

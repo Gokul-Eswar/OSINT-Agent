@@ -33,3 +33,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: Interactive TUI Console (The Terminal)**
   *Link: [./tracks/interactive_tui_20260124/](./tracks/interactive_tui_20260124/)*
+
+- [x] **Track: Active Reconnaissance (Probes)**
+  *Link: [./tracks/active_recon_20260124/](./tracks/active_recon_20260124/)*

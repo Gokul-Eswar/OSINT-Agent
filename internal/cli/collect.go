@@ -8,6 +8,7 @@ import (
 	_ "github.com/spectre/spectre/internal/collector/whois"  // Register WHOIS
 	_ "github.com/spectre/spectre/internal/collector/github" // Register GitHub
 	_ "github.com/spectre/spectre/internal/collector/geo"    // Register GeoIP
+	_ "github.com/spectre/spectre/internal/collector/active" // Register Active Probes
 	"github.com/spectre/spectre/internal/storage"
 	"github.com/spf13/cobra"
 )
@@ -29,7 +30,7 @@ var collectCmd = &cobra.Command{
 		}
 
 		fmt.Printf("Running collector '%s' against target '%s'...\n", collectorName, target)
-		evidenceList, err := collector.Run(collectorName, caseID, target)
+		evidenceList, err := collector.Run(collectorName, caseID, target, activeAllowed)
 		if err != nil {
 			return fmt.Errorf("collection failed: %w", err)
 		}

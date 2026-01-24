@@ -28,6 +28,10 @@ func (w *WHOISCollector) Description() string {
 	return "Retrieve domain registration information"
 }
 
+func (w *WHOISCollector) IsActive() bool {
+	return false
+}
+
 func (w *WHOISCollector) Collect(caseID string, target string) ([]core.Evidence, error) {
 	raw, err := whois.Whois(target)
 	if err != nil {

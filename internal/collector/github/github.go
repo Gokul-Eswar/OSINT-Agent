@@ -33,6 +33,10 @@ func (g *GitHubCollector) Description() string {
 	return "Search GitHub for repositories and users"
 }
 
+func (g *GitHubCollector) IsActive() bool {
+	return false
+}
+
 func (g *GitHubCollector) Collect(caseID string, target string) ([]core.Evidence, error) {
 	apiKey := config.GetAPIKey("github")
 	

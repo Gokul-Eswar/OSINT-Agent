@@ -19,9 +19,106 @@ func IngestEvidence(ev *core.Evidence) error {
 		return ingestGitHub(ev)
 	case "geo":
 		return ingestGeo(ev)
+	case "ports":
+		return ingestPorts(ev)
+	case "http":
+		return ingestHTTP(ev)
 	default:
 		return nil // No ingestion logic for this collector yet
 	}
+}
+
+func ingestPorts(ev *core.Evidence) error {
+	targetIP := ev.Metadata["target"].(string)
+	
+	data, err := os.ReadFile(ev.FilePath)
+	if err != nil {
+		return err
+	}
+
+	var results map[string]string
+	if err := json.Unmarshal(data, &results); err != nil {
+		return err
+	}
+
+	// Ensure IP entity exists
+	ipEnt, _ := GetEntityByValue(ev.CaseID, targetIP)
+	if ipEnt == nil {
+		ipEnt = &core.Entity{CaseID: ev.CaseID, Type: "ip", Value: targetIP, Source: "ports"}
+		CreateEntity(ipEnt)
+	}
+
+	for port, status := range results {
+		if status == "open" {
+			svcName := fmt.Sprintf("TCP/%s", port)
+			svcEnt := &core.Entity{
+				CaseID: ev.CaseID,
+				Type:   "service",
+				Value:  svcName,
+				Source: "ports",
+			}
+			
+			existing, _ := GetEntityByValue(ev.CaseID, svcName)
+			if existing == nil {
+				CreateEntity(svcEnt)
+			} else {
+				svcEnt = existing
+			}
+
+			// Link IP -> has -> Service
+			rel := &core.Relationship{
+				CaseID:       ev.CaseID,
+				FromEntityID: ipEnt.ID,
+				ToEntityID:   svcEnt.ID,
+				Type:         "has_port",
+				EvidenceID:   ev.ID,
+			}
+			CreateRelationship(rel)
+		}
+	}
+	return nil
+}
+
+func ingestHTTP(ev *core.Evidence) error {
+	target := ev.Metadata["target"].(string)
+	server := ""
+	if s, ok := ev.Metadata["server"].(string); ok {
+		server = s
+	}
+
+	// Ensure target entity exists
+	targetEnt, _ := GetEntityByValue(ev.CaseID, target)
+	if targetEnt == nil {
+		targetEnt = &core.Entity{CaseID: ev.CaseID, Type: "domain", Value: target, Source: "http"}
+		CreateEntity(targetEnt)
+	}
+
+	if server != "" {
+		svcEnt := &core.Entity{
+			CaseID: ev.CaseID,
+			Type:   "service",
+			Value:  server,
+			Source: "http",
+		}
+		
+		existing, _ := GetEntityByValue(ev.CaseID, server)
+		if existing == nil {
+			CreateEntity(svcEnt)
+		} else {
+			svcEnt = existing
+		}
+
+		// Link Target -> runs -> Service
+		rel := &core.Relationship{
+			CaseID:       ev.CaseID,
+			FromEntityID: targetEnt.ID,
+			ToEntityID:   svcEnt.ID,
+			Type:         "runs_service",
+			EvidenceID:   ev.ID,
+		}
+		CreateRelationship(rel)
+	}
+	return nil
 }
 
 func ingestGeo(ev *core.Evidence) error {

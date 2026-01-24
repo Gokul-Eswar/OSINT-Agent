@@ -1,0 +1,7 @@
+{
+  "id": "active_recon_20260124",
+  "name": "Active Reconnaissance (Probes)",
+  "description": "Implementation of active port scanning and HTTP service discovery with strict user consent.",
+  "status": "completed",
+  "created_at": "2026-01-24"
+}

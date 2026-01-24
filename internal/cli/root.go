@@ -10,6 +10,7 @@ import (
 )
 
 var cfgFile string
+var activeAllowed bool
 
 var rootCmd = &cobra.Command{
 	Use:   "spectre",
@@ -38,6 +39,7 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.spectre.yaml)")
+	rootCmd.PersistentFlags().BoolVar(&activeAllowed, "active", false, "Allow active reconnaissance (port scans, etc.)")
 }
 
 func initConfig() {

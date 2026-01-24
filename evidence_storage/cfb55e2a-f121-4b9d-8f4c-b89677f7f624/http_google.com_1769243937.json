@@ -1,0 +1,19 @@
+{
+  "headers": {
+    "Accept-Ch": "Sec-CH-Prefers-Color-Scheme",
+    "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+    "Cache-Control": "private, max-age=0",
+    "Content-Security-Policy-Report-Only": "object-src 'none';base-uri 'self';script-src 'nonce-HBSWKUx421pF05y1qHlCqQ' 'strict-dynamic' 'report-sample' 'unsafe-eval' 'unsafe-inline' https: http:;report-uri https://csp.withgoogle.com/csp/gws/other-hp",
+    "Content-Type": "text/html; charset=ISO-8859-1",
+    "Date": "Sat, 24 Jan 2026 08:38:55 GMT",
+    "Expires": "-1",
+    "P3p": "CP=\"This is not a P3P policy! See g.co/p3phelp for more info.\"",
+    "Server": "gws",
+    "Set-Cookie": "__Secure-STRP=AD6Dogvj3ZQ3HMxzrV8Qzv3f7FcP3XOPQmxHthanBrZz2YHs_w6wIBam1dCrHwHL7_mdIrQs7Eq5bNAiMWi4GIypQbFftjWhKJBR; expires=Sat, 24-Jan-2026 08:43:55 GMT; path=/; domain=.google.com; Secure; SameSite=strict, AEC=AaJma5sOyblH5SjrnmEFRrtpb7YRPNfCZf_jLAbmJv8TYle_U07jZX2olg; expires=Thu, 23-Jul-2026 08:38:55 GMT; path=/; domain=.google.com; Secure; HttpOnly; SameSite=lax, NID=528=ZUmz-GnxTvJ6Cu5Ir8u6xkIYpLi7SvnYEezhFNSnjjmtEkFgHU7N5_laM_FlfqbppSPN5tYd6LJfrQuX2oZj8UkL3cMrcS4RSgRs2c-fdVDo1KLmhidDv6U2a-yMz1rBsLmkGNtnY99-VUNteArfY6F-oVCCkRdQgIPBb43GSb6gZ4lGTfHQw3Z4W8bA6oh85k09ITS4ZvS6no7dMHEiwXEEZjwmIZX5gw; expires=Sun, 26-Jul-2026 08:38:55 GMT; path=/; domain=.google.com; HttpOnly, __Secure-BUCKET=CN0E; expires=Thu, 23-Jul-2026 08:38:55 GMT; path=/; domain=.google.com; Secure; HttpOnly",
+    "X-Frame-Options": "SAMEORIGIN",
+    "X-Xss-Protection": "0"
+  },
+  "status_code": 200,
+  "title": "Google",
+  "url": "https://google.com"
+}

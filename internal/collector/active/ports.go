@@ -1,4 +1,4 @@
-package dns
+package active
 
 import (
 	"crypto/sha256"
@@ -14,41 +14,36 @@ import (
 	"github.com/spectre/spectre/internal/core"
 )
 
-type DNSCollector struct{}
+type PortCollector struct{}
 
 func init() {
-	collector.Register(&DNSCollector{})
+	collector.Register(&PortCollector{})
 }
 
-func (d *DNSCollector) Name() string {
-	return "dns"
+func (c *PortCollector) Name() string {
+	return "ports"
 }
 
-func (d *DNSCollector) Description() string {
-	return "Passive DNS lookup for A, MX, and NS records"
+func (c *PortCollector) Description() string {
+	return "Active TCP port scanner for common services"
 }
 
-func (d *DNSCollector) IsActive() bool {
-	return false
+func (c *PortCollector) IsActive() bool {
+	return true
 }
 
-func (d *DNSCollector) Collect(caseID string, target string) ([]core.Evidence, error) {
-	results := make(map[string][]string)
+func (c *PortCollector) Collect(caseID string, target string) ([]core.Evidence, error) {
+	commonPorts := []int{21, 22, 23, 25, 53, 80, 110, 143, 443, 445, 993, 995, 3306, 3389, 5432, 8080, 8443}
+	
+	results := make(map[int]string)
 
-	// A Records
-	ips, _ := net.LookupHost(target)
-	results["A"] = ips
-
-	// MX Records
-	mxs, _ := net.LookupMX(target)
-	for _, mx := range mxs {
-		results["MX"] = append(results["MX"], mx.Host)
-	}
-
-	// NS Records
-	nss, _ := net.LookupNS(target)
-	for _, ns := range nss {
-		results["NS"] = append(results["NS"], ns.Host)
+	for _, port := range commonPorts {
+		address := fmt.Sprintf("%s:%d", target, port)
+		conn, err := net.DialTimeout("tcp", address, 1*time.Second)
+		if err == nil {
+			results[port] = "open"
+			conn.Close()
+		}
 	}
 
 	data, err := json.MarshalIndent(results, "", "  ")
@@ -62,7 +57,7 @@ func (d *DNSCollector) Collect(caseID string, target string) ([]core.Evidence, e
 		return nil, err
 	}
 
-	fileName := fmt.Sprintf("dns_%s_%d.json", target, time.Now().Unix())
+	fileName := fmt.Sprintf("ports_%s_%d.json", target, time.Now().Unix())
 	filePath := filepath.Join(storageDir, fileName)
 	if err := os.WriteFile(filePath, data, 0644); err != nil {
 		return nil, err
@@ -74,13 +69,13 @@ func (d *DNSCollector) Collect(caseID string, target string) ([]core.Evidence, e
 
 	evidence := core.Evidence{
 		CaseID:      caseID,
-		Collector:   "dns",
+		Collector:   "ports",
 		FilePath:    filePath,
 		FileHash:    hashStr,
 		CollectedAt: time.Now(),
 		Metadata: map[string]interface{}{
 			"target": target,
-			"types":  []string{"A", "MX", "NS"},
+			"count":  len(results),
 		},
 	}
 
