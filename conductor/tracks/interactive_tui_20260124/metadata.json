@@ -2,6 +2,6 @@
   "id": "interactive_tui_20260124",
   "name": "Interactive TUI Console",
   "description": "A rich, interactive terminal interface for SPECTRE using the Bubble Tea framework.",
-  "status": "in_progress",
+  "status": "completed",
   "created_at": "2026-01-24"
 }

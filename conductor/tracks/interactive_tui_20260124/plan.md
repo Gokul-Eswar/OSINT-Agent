@@ -21,15 +21,15 @@
 ## Phase 3: Case Management
 - [x] **Task: Case List**
     - Use `bubbles/list` to show all investigation cases.
-- [ ] **Task: Case Details**
+- [x] **Task: Case Details**
     - Use `bubbles/table` to display entities when a case is selected.
 
 ## Phase 4: Interactive Collection
-- [ ] **Task: Execution Engine**
+- [x] **Task: Execution Engine**
     - Implement a way to trigger `collector.Run` and show a progress spinner in the TUI.
 
 ## Phase 5: Polishing
-- [ ] **Task: Styling**
+- [x] **Task: Styling**
     - Use `lipgloss` to add the SPECTRE color theme (Blue/Purple/Dark).
-- [ ] **Task: Refinement**
+- [x] **Task: Refinement**
     - Ensure smooth transitions and error handling.

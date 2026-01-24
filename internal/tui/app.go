@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -14,6 +15,7 @@ type sessionState int
 const (
 	homeView sessionState = iota
 	caseView
+	detailView
 	collectView
 )
 
@@ -27,9 +29,9 @@ var (
 		PaddingLeft(4)
 
 	selectedItemStyle = lipgloss.NewStyle().
-		PaddingLeft(2).
-		Foreground(lipgloss.Color("#10b981")).
-		Bold(true)
+			PaddingLeft(2).
+			Foreground(lipgloss.Color("#10b981")).
+			Bold(true)
 
 	docStyle = lipgloss.NewStyle().Margin(1, 2)
 )
@@ -43,18 +45,22 @@ type model struct {
 	height   int
 
 	// Sub-models
-	caseList list.Model
+	caseList    list.Model
+	entityTable table.Model
+	runner      runnerModel
+	selectedCaseID string
 }
 
 func InitialModel() model {
-	// Initialize list with dummy data, will be updated in Init or Update
 	l := list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0)
 	l.Title = "Investigation Cases"
 
 	return model{
-		state:   homeView,
-		choices: []string{"Investigation Cases", "Run Collector", "System Stats", "Quit"},
-		caseList: l,
+		state:       homeView,
+		choices:     []string{"Investigation Cases", "Run Collector", "System Stats", "Quit"},
+		caseList:    l,
+		entityTable: NewEntityTable(),
+		runner:      NewRunnerModel(),
 	}
 }
 
@@ -75,17 +81,53 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
 		m.caseList.SetSize(msg.Width-4, msg.Height-4)
+		m.runner.caseList.SetSize(msg.Width-4, msg.Height-4)
+		m.runner.collList.SetSize(msg.Width-4, msg.Height-4)
 
 	case []list.Item:
 		m.caseList.SetItems(msg)
+		m.runner.caseList.SetItems(msg)
+
+	case []table.Row:
+		m.entityTable.SetRows(msg)
 
 	case tea.KeyMsg:
+		if m.state == detailView {
+			if msg.String() == "esc" {
+				m.state = caseView
+				return m, nil
+			}
+			m.entityTable, cmd = m.entityTable.Update(msg)
+			return m, cmd
+		}
+
 		if m.state == caseView {
 			if msg.String() == "esc" {
 				m.state = homeView
 				return m, nil
 			}
+			if msg.String() == "enter" {
+				selected := m.caseList.SelectedItem().(item)
+				m.selectedCaseID = selected.id
+				m.state = detailView
+				return m, func() tea.Msg {
+					rows, err := FetchEntities(selected.id)
+					if err != nil {
+						return err
+					}
+					return rows
+				}
+			}
 			m.caseList, cmd = m.caseList.Update(msg)
+			return m, cmd
+		}
+
+		if m.state == collectView {
+			if msg.String() == "esc" {
+				m.state = homeView
+				return m, nil
+			}
+			m.runner, cmd = m.runner.Update(msg)
 			return m, cmd
 		}
 
@@ -105,12 +147,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch m.cursor {
 			case 0: // Cases
 				m.state = caseView
+			case 1: // Run Collector
+				m.state = collectView
 			case 3: // Quit
 				m.quitting = true
 				return m, tea.Quit
 			}
 		}
 	}
+	
+	// Delegate other messages to sub-models if they handle them (like runner execution result)
+	if m.state == collectView {
+		m.runner, cmd = m.runner.Update(msg)
+	}
+
 	return m, cmd
 }
 
@@ -119,8 +169,17 @@ func (m model) View() string {
 		return "Goodbye, Agent.\n"
 	}
 
-	if m.state == caseView {
+	switch m.state {
+	case caseView:
 		return docStyle.Render(m.caseList.View())
+	case detailView:
+		return docStyle.Render(
+			fmt.Sprintf("Case Details: %s\n\n", m.selectedCaseID) +
+			m.entityTable.View() +
+			"\n\n(esc: back)",
+		)
+	case collectView:
+		return docStyle.Render(m.runner.View())
 	}
 
 	var s strings.Builder
@@ -130,7 +189,7 @@ func (m model) View() string {
 	s.WriteString(titleStyle.Render("SPECTRE COMMAND CENTER"))
 	s.WriteString("\n\n")
 
-	// ASCII Art (Fixed escapes)
+	// ASCII Art
 	ascii := `    .---.      .---.    
    /  _  \    /  _  \   
    | (_) |    | (_) |   
