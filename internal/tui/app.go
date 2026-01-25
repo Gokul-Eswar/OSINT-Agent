@@ -2,12 +2,14 @@ package tui
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/spectre/spectre/internal/report"
 )
 
 type sessionState int
@@ -112,8 +114,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case AnalysisFinishedMsg:
-		m.analysisStatus = AnalysisComplete
-		m.analysisResult = FormatAnalysis(msg.Result)
+		if msg.Result != nil {
+			m.analysisStatus = AnalysisComplete
+			m.analysisResult = FormatAnalysis(msg.Result)
+		} else {
+			// This was a report generation success
+			m.analysisStatus = AnalysisComplete
+			m.analysisResult = "Report generated successfully! Check report_<case_id>.md"
+		}
 
 	case AnalysisErrorMsg:
 		m.analysisStatus = AnalysisError
@@ -183,6 +191,29 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "5": m.state = ViewTimeline
 		case "6": m.state = ViewReports
 		case "7": m.state = ViewSettings
+		}
+
+		// Specific View Keybindings
+		if m.state == ViewSettings && msg.String() == "s" {
+			if m.modelName == "llama3:8b" {
+				m.modelName = "mistral"
+			} else {
+				m.modelName = "llama3:8b"
+			}
+			return m, nil
+		}
+
+		if m.state == ViewReports && msg.String() == "1" && m.selectedCaseID != "" {
+			return m, func() tea.Msg {
+				content, err := report.GenerateMarkdownReport(m.selectedCaseID)
+				if err != nil {
+					return AnalysisErrorMsg(err.Error())
+				}
+				// Save to file
+				filename := fmt.Sprintf("report_%s.md", m.selectedCaseID)
+				os.WriteFile(filename, []byte(content), 0644)
+				return AnalysisFinishedMsg{nil} // Signal success (nil result means just update status)
+			}
 		}
 	}
 
@@ -304,6 +335,16 @@ func (m model) renderContent() string {
 		}
 	case ViewGraph:
 		content = RenderASCIIGraph(m.selectedCaseID)
+	case ViewTimeline:
+		content = RenderTimeline(m.selectedCaseID)
+	case ViewReports:
+		status := ""
+		if m.analysisStatus == AnalysisComplete && strings.Contains(m.analysisResult, "Report generated") {
+			status = "\n\n" + StyleMuted.Foreground(ColorSuccess).Render(m.analysisResult)
+		}
+		content = "REPORTS\n───────\n\n[1] Generate Markdown Report\n[2] View Latest Analysis\n\n(Export to PDF coming soon...)" + status
+	case ViewSettings:
+		content = fmt.Sprintf("SETTINGS\n────────\n\nModel: %s\nTheme: Professional Dark\nStreaming: Enabled\n\n(Press [s] to change model)", m.modelName)
 	default:
 		content = "View not implemented yet."
 	}
