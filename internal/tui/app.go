@@ -135,6 +135,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "tab":
 			m.focusNav = !m.focusNav
 			return m, nil
+		case "right":
+			m.focusNav = false
+			return m, nil
+		case "left":
+			m.focusNav = true
+			return m, nil
 		case "?":
 			// Show help overlay?
 		}
