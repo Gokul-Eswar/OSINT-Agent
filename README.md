@@ -4,215 +4,152 @@
 
 > Turn raw internet noise into structured intelligence — fast, repeatable, and local.
 
-Spectre is a CLI-based OSINT agent that collects passive intelligence, builds entity graphs, generates timelines, and synthesizes findings using AI. It is designed for security researchers, journalists, and threat analysts who need professional-grade intelligence synthesis without cloud dependencies or active scanning.
+Spectre is a commercial-grade OSINT platform that collects intelligence, builds entity graphs, generates timelines, and synthesizes findings using AI. It is designed for security researchers, journalists, and threat analysts who need professional-grade intelligence synthesis without cloud dependencies.
 
 ---
 
-## 🎯 Core Principles
+## 🚀 Key Features
 
-*   **Local-First:** No cloud dependency; all data stays on your disk.
-*   **Passive-Only:** No active scanning by default (ethical OSINT).
-*   **Case-Based:** Every investigation is isolated, auditable, and stored in a local SQLite database.
-*   **Evidence Chain:** Forensic-grade provenance and integrity with SHA-256 hashing.
-*   **AI-Augmented:** Intelligence synthesis (findings, risks, connections) using local or API-based LLMs.
-*   **Extensible:** Plugin architecture for custom collectors.
+### 🔍 Deep Collection
+*   **Passive Recon:** DNS, Whois, GeoIP, GitHub.
+*   **Active Recon:** Port Scanning (Top-100/Custom), Screenshot Capture (Headless Browser), Social Media Username Checks.
+*   **Plugin System:** Extensible architecture for custom collectors (Python/Bash/Go).
 
----
+### 🛡️ Operational Security (Ghost Mode)
+*   **Proxy Support:** Route all HTTP, Social, and Screenshot traffic through Tor/SOCKS5/HTTP proxies.
+*   **Rate Limiting:** Intelligent throttling to prevent IP bans.
+*   **Scope Control:** Built-in safeguards to prevent scanning `.gov` or `.mil` targets.
 
-## 🏗️ Architecture
+### 🧠 AI-Augmented Analysis
+*   **Local Intelligence:** Uses LLMs (Llama3, Mistral) to analyze case data.
+*   **Automatic Synthesis:** Generates Findings, Risks, and Next Steps automatically.
+*   **Caching:** Instant re-analysis for unchanged data contexts.
 
-Spectre utilizes a hybrid architecture to leverage the best of both worlds:
-*   **Go (System Core):** Handles orchestration, CLI framework (`cobra`), concurrent collection, and SQLite storage.
-*   **Python (Intelligence Layer):** Manages AI analysis, graph visualization (`pyvis`), and report generation.
+### 📊 Advanced Visualization
+*   **TUI Dashboard:** Keyboard-driven terminal interface with Tables, ASCII Graphs, and Timelines.
+*   **Web Dashboard:** Interactive React/D3.js node-link diagrams (`spectre web`).
+*   **Forensic Timeline:** Chronological view of all discovered entities and collected evidence.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      SPECTRE CLI (Go)                       │
-│  ┌──────────┬──────────┬──────────┬──────────┬──────────┐   │
-│  │   Cases  │Collectors│   Graph  │ Timeline │ Analysis │   │
-│  └──────────┴──────────┴──────────┴──────────┴──────────┘   │
-└─────────────────────────────────────────────────────────────┘
-          │              │              │              │
-          ▼              ▼              ▼              ▼
-┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
-│    Storage   │ │  Collectors  │ │     Graph    │ │   Analyzer   │
-│              │ │              │ │              │ │   (Python)   │
-│ • SQLite     │ │ • DNS        │ │ • SQLite     │ │ • LLM API    │
-│ • Files      │ │ • WHOIS      │ │   Edges      │ │ • Timeline   │
-│ • Evidence   │ │ • GitHub     │ │ • GraphML    │ │ • Synthesis  │
-│ • Logs       │ │ • Certs      │ │ • pyvis Viz  │ │ • Reports    │
-└──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘
-```
-
----
-
-## Getting Started
-
-### Quick Start (Windows System)
-
-We provide a robust system installer and launcher for a "one-click" experience.
-
-1.  **Install**: Run the installer to check dependencies, build the binary, and setup the Python environment.
-    ```powershell
-    .\install.ps1
-    ```
-
-2.  **Run**: Use the launcher to start the system. This handles all environment variables for you.
-    ```powershell
-    .\spectre.bat
-    ```
-
-### Manual Installation
-
-To build from source:
-
-
-```bash
-# Clone the repository
-git clone https://github.com/spectre/spectre.git
-cd spectre
-
-# Build the Go binary
-make build
-
-# Install Python dependencies for the analyzer
-make install-python
-
-# Full setup (builds binary and installs dependencies)
-make install
-```
+### 📄 Professional Reporting
+*   **Markdown:** Instant export for developer documentation.
+*   **PDF:** Branded, executive-ready reports with cover pages and summaries.
 
 ---
 
 ## ⚡ Quick Start
 
-Start a new investigation in seconds. Spectre now remembers your active case context!
+### Installation
 
-```bash
-# 1. Initialize a new case (Context is set automatically)
-spectre case new "acme-breach-2026"
-
-# 2. Run ALL collectors in parallel
-spectre collect all acme.com
-
-# 3. Visualize the entity graph
-spectre visualize
-# (Opens an interactive HTML graph in your browser)
-
-# 4. Generate an AI synthesis report
-spectre analyze
+**Windows (One-Click):**
+```powershell
+.\install.ps1
 ```
 
----
-
-## 📊 Visual Intelligence Dashboard
-
-Spectre transforms your collected data into an interactive visual graph.
-
-```bash
-spectre visualize --case <case-id>
+**Global Access:**
+To run `spectre` from any terminal:
+```powershell
+.\setup_global.ps1
 ```
 
-*   **Interactive HTML:** Zoom, pan, and drag nodes to explore relationships.
-*   **Color-Coded Entities:**
-    *   🔵 Domain
-    *   🟢 Email
-    *   🟠 IP
-    *   🟣 Username
-    *   🔴 Repository
-    *   🩷 Person
-*   **Offline:** The dashboard is a standalone HTML file generated in your `evidence_storage` folder.
+### The "One-Shot" Investigation
+The fastest way to start. Auto-creates a case, scans, analyzes, and reports in one command.
 
----
+```powershell
+spectre investigate malicious-site.com
+```
 
-## 🛡️ Ethics & Safety
+### Manual Workflow
+For granular control over the intelligence cycle.
 
-Spectre is built for **ethical investigation**.
-
-### The Governor (Rate Limiting)
-Prevent API bans and reduce footprint.
-*   **DNS:** 10 requests/sec
-*   **WHOIS:** 1 request/sec (strict enforcement)
-*   **GitHub:** 2 requests/sec
-
-### The Fence (Scope Control)
-Prevent accidental collection against sensitive targets.
-*   **Blacklist:** Automatically blocks collection on `.gov`, `.mil`, `localhost`, and `127.0.0.1`.
-*   **Whitelist:** Optional strict mode to only allow specific domains.
-*   **Configurable:** Manage rules in `configs/default.yaml`.
-
----
-
-## 🔌 External Plugins
-
-Spectre supports custom collectors written in any language (Python, Bash, Go, etc.).
-
-1.  **Create a Plugin:**
-    Create a folder in `plugins/` (e.g., `plugins/my_tool/`).
-2.  **Add Metadata:**
-    Create a `plugin.yaml` file:
-    ```yaml
-    name: my_tool
-    description: Fetches data from MyAPI
-    command: python
-    args: ["main.py"]
-    is_active: false
+1.  **Launch Dashboard:**
+    ```powershell
+    spectre
     ```
-3.  **Implement Logic:**
-    Your script should output a JSON object to stdout.
-4.  **Run:**
-    ```bash
-    spectre collect my_tool example.com --case <id>
+2.  **Create Case:** Follow the TUI prompts (`n` to new case).
+3.  **Run Collectors:**
+    ```powershell
+    spectre collect --case <ID> --target example.com --scanners dns,whois,ports,screenshot
     ```
+4.  **Analyze:**
+    In the TUI, navigate to **Analysis** and press `2`.
+5.  **Visualize:**
+    In the TUI, navigate to **Web Dashboard**, press `s` (start) then `o` (open).
 
 ---
 
-## 🎨 Command Reference
+## 🎮 TUI Controls
 
-### Case Management
-```bash
-spectre case new "name"           # Create a new investigation
-spectre case list                 # List all cases
+Spectre features a professional terminal user interface.
+
+| Key | Action |
+| :--- | :--- |
+| **TAB** | Toggle focus between Sidebar and Main Content |
+| **Arrows** | Navigate selection |
+| **Enter** | Confirm selection / Open Case |
+| **1-7** | Jump to specific views (Cases, Analysis, Evidence, Graph, Timeline, Reports, Settings) |
+| **q** | Quit |
+
+**View-Specific:**
+*   **Reports:** Press `1` to generate a Markdown report.
+*   **Settings:** Press `s` to switch AI models.
+*   **Web Dashboard:** Press `s` to start server, `o` to open browser.
+
+---
+
+## ⚙️ Configuration
+
+Edit `configs/default.yaml` to customize your experience.
+
+### Ghost Mode (Proxy)
+```yaml
+http:
+  proxy: "socks5://127.0.0.1:9050" # Enable for Tor
+  insecure_skip_verify: false
 ```
 
-### Collection
-```bash
-spectre collect all example.com        # Run ALL passive collectors in parallel
-spectre collect dns example.com        # Run specific collector
-spectre collect whois example.com      # Run specific collector
+### Collector Settings
+```yaml
+collectors:
+  ports:
+    mode: "top-100" # or "custom"
+  screenshot:
+    enabled: true
 ```
 
-### Visualization & Analysis
-```bash
-spectre visualize                 # Generate interactive graph (current case)
-spectre analyze                   # Run AI synthesis (current case)
+### AI Configuration
+```yaml
+llm:
+  provider: "ollama"
+  model: "llama3"
 ```
 
 ---
 
-## 📁 Project Structure
+## 🏗️ Architecture
 
 ```
-spectre/
-├── cmd/spectre/       # Main entry point
-├── internal/
-│   ├── cli/           # Cobra CLI commands
-│   ├── core/          # Core domain logic
-│   ├── collector/     # OSINT collectors (DNS, Whois, GitHub)
-│   ├── storage/       # SQLite and file storage
-│   ├── ethics/        # Rate limiting and scope control
-│   └── analyzer/      # Go bridge to Python analyzer
-├── analyzer/          # Python intelligence module (LLM, Graph Viz)
-├── configs/           # Configuration files
-├── evidence_storage/  # Local data storage (created at runtime)
-└── spectre.db         # SQLite database
+┌─────────────────────────────────────────────────────────────┐
+│                      SPECTRE PLATFORM                       │
+│  ┌──────────┬──────────┬──────────┬──────────┬──────────┐   │
+│  │   TUI    │   CLI    │ Web GUI  │ Analysis │ Reports  │   │
+│  └──────────┴──────────┴──────────┴──────────┴──────────┘   │
+└─────────────────────────────────────────────────────────────┘
+          │              │              │              │
+          ▼              ▼              ▼              ▼
+┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+│    Storage   │ │  Collectors  │ │     Graph    │ │   Engine     │
+│              │ │              │ │              │ │              │
+│ • SQLite     │ │ • Active     │ │ • SQLite     │ │ • Caching    │
+│ • Files      │ │ • Passive    │ │   Edges      │ │ • LLM Bridge │
+│ • Evidence   │ │ • Plugins    │ │ • JSON/D3    │ │ • PDF Gen    │
+└──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘
 ```
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please check the `conductor` folder for detailed product guidelines and architectural specs.
+Contributions are welcome! Please check the `conductor` folder for detailed product guidelines.
 
 ## 📄 License
 
