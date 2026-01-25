@@ -6,6 +6,7 @@ import "time"
 type Analysis struct {
 	ID          string    `json:"id"`
 	CaseID      string    `json:"case_id"`
+	ContextHash string    `json:"context_hash"`
 	Findings    []string  `json:"findings"`
 	Risks       []string  `json:"risks"`
 	Connections []string  `json:"connections"` // Suggested potential connections

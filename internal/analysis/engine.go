@@ -1,6 +1,8 @@
 package analysis
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 
@@ -25,6 +27,16 @@ func AnalyzeCase(caseID string, model string) (*core.Analysis, error) {
 	contextData, err := BuildCaseContext(caseID)
 	if err != nil {
 		return nil, err
+	}
+
+	// Optimization: Check Cache
+	hash := sha256.Sum256([]byte(contextData))
+	hashStr := hex.EncodeToString(hash[:])
+	
+	cached, err := storage.GetAnalysisByHash(caseID, hashStr)
+	if err == nil && cached != nil {
+		// Cache hit
+		return cached, nil
 	}
 
 	// 3. Prepare Bridge Request
@@ -53,11 +65,17 @@ func AnalyzeCase(caseID string, model string) (*core.Analysis, error) {
 		return nil, fmt.Errorf("failed to parse AI response: %w\nResponse was: %s", err, responseJSON)
 	}
 
-	result.CaseID = caseID
+		result.CaseID = caseID
+
+		result.ContextHash = hashStr
+
+		
+
+		// 6. Save
+
+		if err := storage.SaveAnalysis(&result); err != nil {
+
 	
-			// 6. Save
-	
-			if err := storage.SaveAnalysis(&result); err != nil {
 	
 				return nil, err
 	

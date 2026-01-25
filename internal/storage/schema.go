@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS evidence (
 CREATE TABLE IF NOT EXISTS analyses (
     id TEXT PRIMARY KEY,
     case_id TEXT NOT NULL,
+    context_hash TEXT,
     findings JSON,
     risks JSON,
     connections JSON,
