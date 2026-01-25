@@ -39,6 +39,7 @@ type model struct {
 	height         int
 	selectedCaseID string
 	modelName      string // For status bar
+	focusNav       bool   // Focus state: true=Sidebar, false=MainContent
 
 	// Analysis State
 	analysisStatus analysisStatus
@@ -124,9 +125,24 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.quitting = true
 			return m, tea.Quit
 		case "tab":
-			// Toggle between nav and content? For now just simple
+			m.focusNav = !m.focusNav
+			return m, nil
 		case "?":
 			// Show help overlay?
+		}
+
+		if m.focusNav {
+			switch msg.String() {
+			case "j", "down":
+				if m.state < ViewSettings {
+					m.state++
+				}
+			case "k", "up":
+				if m.state > ViewCases {
+					m.state--
+				}
+			}
+			return m, nil
 		}
 
 		// Navigation logic (j/k or arrows)
@@ -237,7 +253,11 @@ func (m model) renderNav() string {
 		s.WriteString("\n")
 	}
 
-	return StyleNav.Height(m.height - 4).Width(20).Render(s.String())
+	style := StyleNav.Height(m.height - 4).Width(20)
+	if m.focusNav {
+		style = style.BorderForeground(ColorAccent)
+	}
+	return style.Render(s.String())
 }
 
 func (m model) renderContent() string {
