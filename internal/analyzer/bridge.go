@@ -9,12 +9,21 @@ import (
 
 // Request defines the structure sent to the Python analyzer.
 type Request struct {
-	Task     string      `json:"task"`
-	CaseID   string      `json:"case_id"`
-	CaseName string      `json:"case_name"`
-	Context  string      `json:"context"`
-	Model    string      `json:"model"`
-	Data     interface{} `json:"data"` // For track 5 graph data
+	Task      string      `json:"task"`
+	CaseID    string      `json:"case_id"`
+	CaseName  string      `json:"case_name"`
+	Context   string      `json:"context"`
+	Model     string      `json:"model"`
+	Data      interface{} `json:"data"` // For track 5 graph data
+	LLMConfig LLMConfig   `json:"llm_config"`
+}
+
+// LLMConfig holds configuration for the LLM provider.
+type LLMConfig struct {
+	Provider string `json:"provider"`
+	URL      string `json:"url"`
+	APIKey   string `json:"api_key"`
+	Timeout  int    `json:"timeout"`
 }
 
 // RunPythonTask executes the Python analyzer module.

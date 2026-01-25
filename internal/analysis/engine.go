@@ -7,6 +7,7 @@ import (
 	"github.com/spectre/spectre/internal/analyzer"
 	"github.com/spectre/spectre/internal/core"
 	"github.com/spectre/spectre/internal/storage"
+	"github.com/spf13/viper"
 )
 
 // AnalyzeCase runs the AI analysis via the Python analyzer.
@@ -32,6 +33,12 @@ func AnalyzeCase(caseID string, model string) (*core.Analysis, error) {
 		CaseName: c.Name,
 		Context:  contextData,
 		Model:    model,
+		LLMConfig: analyzer.LLMConfig{
+			Provider: viper.GetString("llm.provider"),
+			URL:      viper.GetString("llm.url"),
+			APIKey:   viper.GetString("llm.api_key"),
+			Timeout:  viper.GetInt("llm.timeout"),
+		},
 	}
 
 	// 4. Run Python Analyzer

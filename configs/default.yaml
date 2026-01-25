@@ -23,6 +23,11 @@ collectors:
   geo:
     enabled: true
     rate_limit: 0.75
+  ports:
+    enabled: true
+    mode: "default" # "default" (20 ports), "top-100", "custom"
+    rate_limit: 0.2
+    custom_ports: []
 
 # Ethics & Safety
 ethics:
@@ -32,3 +37,11 @@ ethics:
     - "localhost"
     - "127.0.0.1"
   whitelist: []
+
+# LLM Configuration
+llm:
+  provider: "ollama"
+  url: "http://localhost:11434/api/generate"
+  model: "llama3"
+  api_key: ""
+  timeout: 120

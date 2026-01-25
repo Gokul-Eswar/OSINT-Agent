@@ -3,6 +3,7 @@ package collector
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -73,16 +74,27 @@ func (e *ExternalCollector) Collect(caseID string, target string) ([]core.Eviden
 	hash := sha256.Sum256(output)
 	hashStr := hex.EncodeToString(hash[:])
 
+    // Parse output for metadata enrichment
+    metadata := map[string]interface{}{
+        "target": target,
+        "source": "external_plugin",
+    }
+    
+    var jsonOutput map[string]interface{}
+    if err := json.Unmarshal(output, &jsonOutput); err == nil {
+        for k, v := range jsonOutput {
+            // Don't overwrite core fields if they exist (optional)
+            metadata[k] = v
+        }
+    }
+
 	evidence := core.Evidence{
 		CaseID:      caseID,
 		Collector:   e.metadata.Name,
 		FilePath:    filePath,
 		FileHash:    hashStr,
 		CollectedAt: time.Now(),
-		Metadata: map[string]interface{}{
-			"target": target,
-			"source": "external_plugin",
-		},
+		Metadata:    metadata,
 	}
 
 	return []core.Evidence{evidence}, nil

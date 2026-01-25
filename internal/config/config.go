@@ -53,19 +53,18 @@ func ApplyEthicsConfig() {
 		ethics.SetWhitelist(wl)
 	}
 
-	// Apply Rate Limits
-	// We check for collectors.<name>.rate_limit
-	collectors := []string{"dns", "whois", "github", "geo"}
-	for _, name := range collectors {
-		key := fmt.Sprintf("collectors.%s.rate_limit", name)
-		if viper.IsSet(key) {
-			limit := viper.GetFloat64(key)
-			ethics.SetLimit(name, limit)
-		}
+	        // Apply Rate Limits
+	        // We check for collectors.<name>.rate_limit
+	        collectors := []string{"dns", "whois", "github", "geo", "ports"}
+	        for _, name := range collectors {
+	                key := fmt.Sprintf("collectors.%s.rate_limit", name)
+	                if viper.IsSet(key) {
+	                        limit := viper.GetFloat64(key)
+	                        ethics.SetLimit(name, limit)
+	                }
+	        }
 	}
-}
-
-// GetAPIKey retrieves an API key from configuration or environment.
+	// GetAPIKey retrieves an API key from configuration or environment.
 func GetAPIKey(name string) string {
 	// Checks keys.<name> in config or SPECTRE_KEYS_<NAME> in env
 	return viper.GetString("keys." + name)

@@ -12,6 +12,8 @@ import (
 
 	"github.com/spectre/spectre/internal/collector"
 	"github.com/spectre/spectre/internal/core"
+	"github.com/spectre/spectre/internal/ethics"
+	"github.com/spf13/viper"
 )
 
 type PortCollector struct{}
@@ -33,11 +35,28 @@ func (c *PortCollector) IsActive() bool {
 }
 
 func (c *PortCollector) Collect(caseID string, target string) ([]core.Evidence, error) {
-	commonPorts := []int{21, 22, 23, 25, 53, 80, 110, 143, 443, 445, 993, 995, 3306, 3389, 5432, 8080, 8443}
-	
+	mode := viper.GetString("collectors.ports.mode")
+	var ports []int
+
+	switch mode {
+	case "top-100":
+		ports = getTop100Ports()
+	case "custom":
+		ports = viper.GetIntSlice("collectors.ports.custom_ports")
+	default:
+		// Default list (common ports)
+		ports = []int{20, 21, 22, 23, 25, 53, 80, 110, 111, 135, 139, 143, 443, 445, 993, 995, 1723, 3306, 3389, 5432, 5900, 8080, 8443}
+	}
+
 	results := make(map[int]string)
 
-	for _, port := range commonPorts {
+	for _, port := range ports {
+		// Apply rate limit
+		if err := ethics.Wait("ports"); err != nil {
+			// If context is cancelled, we should probably stop
+			return nil, err
+		}
+
 		address := fmt.Sprintf("%s:%d", target, port)
 		conn, err := net.DialTimeout("tcp", address, 1*time.Second)
 		if err == nil {
@@ -76,8 +95,19 @@ func (c *PortCollector) Collect(caseID string, target string) ([]core.Evidence, 
 		Metadata: map[string]interface{}{
 			"target": target,
 			"count":  len(results),
+			"mode":   mode,
 		},
 	}
 
 	return []core.Evidence{evidence}, nil
+}
+
+func getTop100Ports() []int {
+	return []int{
+		20, 21, 22, 23, 25, 53, 80, 81, 88, 110, 111, 113, 119, 135, 137, 138, 139, 143, 161, 179,
+		389, 443, 445, 465, 513, 514, 515, 548, 554, 587, 631, 636, 873, 990, 993, 995, 1025, 1026, 1027, 1028,
+		1029, 1110, 1433, 1521, 1720, 1723, 1755, 1900, 2000, 2001, 2049, 2121, 2717, 3000, 3128, 3306, 3389, 3690, 3999, 4444,
+		4899, 5000, 5009, 5051, 5060, 5101, 5190, 5357, 5432, 5631, 5666, 5800, 5900, 6000, 6001, 6646, 6667, 7000, 7070, 8000,
+		8008, 8009, 8080, 8081, 8443, 8888, 9000, 9090, 9100, 9102, 9999, 10000, 27017, 32768, 49152, 49153, 49154, 49155, 50000,
+	}
 }
