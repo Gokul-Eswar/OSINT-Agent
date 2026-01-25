@@ -202,7 +202,12 @@ func (m model) renderHeader() string {
 	title := StyleTitle.Render("SPECTRE v1.0")
 	info := StyleMuted.Render(fmt.Sprintf("%s  |  Model: %s", caseInfo, m.modelName))
 	
-	header := lipgloss.JoinHorizontal(lipgloss.Center, title, strings.Repeat(" ", m.width-lipgloss.Width(title)-lipgloss.Width(info)-4), info)
+	gapSize := m.width - lipgloss.Width(title) - lipgloss.Width(info) - 4
+	if gapSize < 0 {
+		gapSize = 0
+	}
+	
+	header := lipgloss.JoinHorizontal(lipgloss.Center, title, strings.Repeat(" ", gapSize), info)
 	return StyleHeader.Width(m.width).Render(header)
 }
 
@@ -287,14 +292,35 @@ func (m model) renderContent() string {
 }
 
 func (m model) renderFooter() string {
+
 	status := "● Connected"
+
 	info := "ollama:localhost:11434  |  Press ? for help"
+
 	
+
+	gapSize := m.width - lipgloss.Width(status) - lipgloss.Width(info) - 4
+
+	if gapSize < 0 {
+
+		gapSize = 0
+
+	}
+
+
+
 	footer := lipgloss.JoinHorizontal(lipgloss.Center, 
+
 		lipgloss.NewStyle().Foreground(ColorSuccess).Render(status),
-		strings.Repeat(" ", m.width-lipgloss.Width(status)-lipgloss.Width(info)-4),
+
+		strings.Repeat(" ", gapSize),
+
 		info,
+
 	)
+
 	
+
 	return StyleStatus.Width(m.width).Render(footer)
+
 }
