@@ -45,3 +45,8 @@ llm:
   model: "llama3"
   api_key: ""
   timeout: 120
+
+# HTTP Configuration (Ghost Mode)
+http:
+  proxy: "" # e.g., "http://127.0.0.1:9050" or "socks5://127.0.0.1:9050"
+  insecure_skip_verify: false

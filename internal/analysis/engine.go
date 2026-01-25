@@ -55,10 +55,20 @@ func AnalyzeCase(caseID string, model string) (*core.Analysis, error) {
 
 	result.CaseID = caseID
 	
-	// 6. Save
-	if err := storage.SaveAnalysis(&result); err != nil {
-		return nil, err
-	}
-
-	return &result, nil
-}
+			// 6. Save
+	
+			if err := storage.SaveAnalysis(&result); err != nil {
+	
+				return nil, err
+	
+			}
+	
+		
+	
+			return &result, nil
+	
+		}
+	
+		
+	
+	
