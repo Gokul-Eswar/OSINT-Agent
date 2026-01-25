@@ -35,7 +35,7 @@ func Start(port int) error {
 
 	// Static Assets
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if !strings.HasPrefix(r.URL.Path, "/api") {
+		if !strings.HasPrefix(r.URL.Path, "/api") && !strings.HasPrefix(r.URL.Path, "/evidence") {
 			data, err := webAssets.ReadFile("web/index.html")
 			if err != nil {
 				http.Error(w, "Web assets not found", http.StatusNotFound)
@@ -45,8 +45,14 @@ func Start(port int) error {
 			w.Write(data)
 			return
 		}
-		http.NotFound(w, r)
+		if !strings.HasPrefix(r.URL.Path, "/evidence") {
+			http.NotFound(w, r)
+		}
 	})
+
+	// Serve Evidence Files
+	fs := http.FileServer(http.Dir("evidence_storage"))
+	mux.Handle("/evidence/", http.StripPrefix("/evidence/", fs))
 
 	// Hook into storage events
 	storage.OnEntityCreated = func(e *core.Entity) {

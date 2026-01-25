@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/chromedp/chromedp"
@@ -61,7 +62,10 @@ func (c *ScreenshotCollector) Collect(caseID string, target string) ([]core.Evid
 	ctx, cancel = context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	url := fmt.Sprintf("http://%s", target)
+	url := target
+	if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
+		url = fmt.Sprintf("http://%s", target)
+	}
 	var buf []byte
 
 	// Run tasks
@@ -79,7 +83,12 @@ func (c *ScreenshotCollector) Collect(caseID string, target string) ([]core.Evid
 		return nil, err
 	}
 
-	fileName := fmt.Sprintf("screenshot_%s_%d.png", target, time.Now().Unix())
+	safeTarget := strings.ReplaceAll(target, "://", "_")
+	safeTarget = strings.ReplaceAll(safeTarget, ":", "_")
+	safeTarget = strings.ReplaceAll(safeTarget, "/", "_")
+	safeTarget = strings.ReplaceAll(safeTarget, "\\", "_")
+
+	fileName := fmt.Sprintf("screenshot_%s_%d.png", safeTarget, time.Now().Unix())
 	filePath := filepath.Join(storageDir, fileName)
 	if err := os.WriteFile(filePath, buf, 0644); err != nil {
 		return nil, err

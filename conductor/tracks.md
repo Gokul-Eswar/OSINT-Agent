@@ -42,3 +42,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: External Plugin System (The Ecosystem)**
   *Link: [./tracks/external_plugins_20260124/](./tracks/external_plugins_20260124/)*
+
+- [ ] **Track: Advanced Active Reconnaissance (Social & Visual)**
+  *Link: [./tracks/advanced_active_recon_20260125/](./tracks/advanced_active_recon_20260125/)*

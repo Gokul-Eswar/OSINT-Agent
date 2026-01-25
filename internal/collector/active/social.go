@@ -17,10 +17,29 @@ import (
 	"github.com/spectre/spectre/internal/http" // Import path is directory, not package name
 )
 
-type SocialCollector struct{}
+type SocialCollector struct {
+	Sites map[string]string
+}
 
 func init() {
-	collector.Register(&SocialCollector{})
+	collector.Register(NewSocialCollector())
+}
+
+func NewSocialCollector() *SocialCollector {
+	return &SocialCollector{
+		Sites: map[string]string{
+			"GitHub":    "https://github.com/%s",
+			"Twitter":   "https://twitter.com/%s",
+			"Instagram": "https://www.instagram.com/%s",
+			"Reddit":    "https://www.reddit.com/user/%s",
+			"Facebook":  "https://www.facebook.com/%s",
+			"GitLab":    "https://gitlab.com/%s",
+			"Medium":    "https://medium.com/@%s",
+			"YouTube":   "https://www.youtube.com/@%s",
+			"Twitch":    "https://www.twitch.tv/%s",
+			"TikTok":    "https://www.tiktok.com/@%s",
+		},
+	}
 }
 
 func (c *SocialCollector) Name() string {
@@ -45,19 +64,6 @@ func (c *SocialCollector) Collect(caseID string, target string) ([]core.Evidence
 	// Target is assumed to be the username
 	username := target
 	
-	sites := map[string]string{
-		"GitHub":    "https://github.com/%s",
-		"Twitter":   "https://twitter.com/%s",
-		"Instagram": "https://www.instagram.com/%s",
-		"Reddit":    "https://www.reddit.com/user/%s",
-		"Facebook":  "https://www.facebook.com/%s",
-		"GitLab":    "https://gitlab.com/%s",
-		"Medium":    "https://medium.com/@%s",
-		"YouTube":   "https://www.youtube.com/@%s",
-		"Twitch":    "https://www.twitch.tv/%s",
-		"TikTok":    "https://www.tiktok.com/@%s",
-	}
-
 	var results []SiteResult
 	var mu sync.Mutex
 	var wg sync.WaitGroup
@@ -65,7 +71,7 @@ func (c *SocialCollector) Collect(caseID string, target string) ([]core.Evidence
 
 	client := netclient.NewClient()
 
-	for site, urlTmpl := range sites {
+	for site, urlTmpl := range c.Sites {
 		wg.Add(1)
 		go func(site, urlTmpl string) {
 			defer wg.Done()

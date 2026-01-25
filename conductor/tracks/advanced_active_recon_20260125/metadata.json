@@ -1,0 +1,8 @@
+{
+  "id": "advanced_active_recon_20260125",
+  "name": "Advanced Active Reconnaissance",
+  "status": "in_progress",
+  "created_at": "2026-01-25T10:00:00Z",
+  "owner": "Gokul",
+  "dependencies": ["active_recon_20260124"]
+}
