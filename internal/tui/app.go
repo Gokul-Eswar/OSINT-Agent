@@ -42,6 +42,7 @@ type model struct {
 	selectedCaseID string
 	modelName      string // For status bar
 	focusNav       bool   // Focus state: true=Sidebar, false=MainContent
+	navCursor      int    // Cursor for sidebar selection
 
 	// Analysis State
 	analysisStatus analysisStatus
@@ -62,6 +63,7 @@ func InitialModel() model {
 
 	return model{
 		state:       ViewCases,
+		navCursor:   0,
 		caseList:    l,
 		entityTable: NewEntityTable(),
 		relTable:    NewRelationshipTable(),
@@ -148,12 +150,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.focusNav {
 			switch msg.String() {
 			case "j", "down":
-				if m.state < ViewSettings {
-					m.state++
+				if m.navCursor < int(ViewSettings) {
+					m.navCursor++
 				}
 			case "k", "up":
-				if m.state > ViewCases {
-					m.state--
+				if m.navCursor > 0 {
+					m.navCursor--
+				}
+			case "enter":
+				m.state = sessionState(m.navCursor)
+				// Trigger specific view logic if needed
+				if m.state == ViewAnalysis && m.selectedCaseID != "" && m.analysisStatus == AnalysisIdle {
+					m.analysisStatus = AnalysisRunning
+					m.analysisStep = 0
+					return m, StartAnalysis(m.selectedCaseID, m.modelName)
 				}
 			}
 			return m, nil
@@ -286,14 +296,24 @@ func (m model) renderNav() string {
 
 	var s strings.Builder
 	s.WriteString("\n")
-	for _, v := range views {
-		label := v.label
+	for i, v := range views {
+		line := v.label
+		
+		// Prefix: Active indicator
+		prefix := "  "
 		if m.state == v.state {
-			s.WriteString(StyleSelectedNav.Render("▶ " + label))
-		} else {
-			s.WriteString("  " + label)
+			prefix = "▶ "
 		}
-		s.WriteString("\n")
+
+		// Selection style
+		content := line
+		if m.navCursor == i {
+			content = StyleSelectedNav.Render(line)
+		} else if m.state == v.state {
+			content = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFFFFF")).Bold(true).Render(line)
+		}
+
+		s.WriteString(prefix + content + "\n")
 	}
 
 	style := StyleNav.Height(m.height - 4).Width(20)
