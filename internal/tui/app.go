@@ -22,6 +22,15 @@ const (
 	ViewSettings
 )
 
+type analysisStatus int
+
+const (
+	AnalysisIdle analysisStatus = iota
+	AnalysisRunning
+	AnalysisComplete
+	AnalysisError
+)
+
 type model struct {
 	state          sessionState
 	cursor         int
@@ -30,6 +39,12 @@ type model struct {
 	height         int
 	selectedCaseID string
 	modelName      string // For status bar
+
+	// Analysis State
+	analysisStatus analysisStatus
+	analysisStep   int
+	analysisResult string
+	analysisError  string
 
 	// Sub-models
 	caseList    list.Model
@@ -86,6 +101,23 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.entityTable.SetRows(msg)
 		}
 
+	case TickMsg:
+		if m.state == ViewAnalysis && m.analysisStatus == AnalysisRunning {
+			m.analysisStep++
+			if m.analysisStep >= 4 {
+				return m, PerformActualAnalysis(m.selectedCaseID, m.modelName)
+			}
+			return m, tickCmd()
+		}
+
+	case AnalysisFinishedMsg:
+		m.analysisStatus = AnalysisComplete
+		m.analysisResult = FormatAnalysis(msg.Result)
+
+	case AnalysisErrorMsg:
+		m.analysisStatus = AnalysisError
+		m.analysisError = string(msg)
+
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
@@ -123,7 +155,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Global navigation if not in a list
 		switch msg.String() {
 		case "1": m.state = ViewCases
-		case "2": m.state = ViewAnalysis
+		case "2":
+			m.state = ViewAnalysis
+			if m.selectedCaseID != "" && m.analysisStatus == AnalysisIdle {
+				m.analysisStatus = AnalysisRunning
+				m.analysisStep = 0
+				return m, StartAnalysis(m.selectedCaseID, m.modelName)
+			}
 		case "3": m.state = ViewEvidence
 		case "4": m.state = ViewGraph
 		case "5": m.state = ViewTimeline
@@ -205,7 +243,42 @@ func (m model) renderContent() string {
 	case ViewEvidence:
 		content = fmt.Sprintf("EVIDENCE — %s\n\n", m.selectedCaseID) + m.entityTable.View()
 	case ViewAnalysis:
-		content = "ANALYSIS BRAIN\n\n⠋ Thinking..."
+		if m.selectedCaseID == "" {
+			content = "No case selected. Please select a case first (Press 1)."
+		} else {
+			switch m.analysisStatus {
+			case AnalysisIdle:
+				content = "Press '2' to start analysis."
+			case AnalysisRunning:
+				steps := []string{
+					"Collecting evidence...",
+					"Cross-checking sources...",
+					"Reasoning over timeline...",
+					"Synthesizing conclusion...",
+				}
+				var s strings.Builder
+				s.WriteString(fmt.Sprintf("ANALYSIS — Case %s\n", m.selectedCaseID))
+				s.WriteString("────────────────────────────────────\n\n")
+				s.WriteString("⠋ Running analysis pipeline...\n\n")
+
+				for i, step := range steps {
+					if m.analysisStep > i {
+						s.WriteString(fmt.Sprintf(" [✓] %s\n", step))
+					} else if m.analysisStep == i {
+						s.WriteString(fmt.Sprintf(" [▶] %s\n", step))
+					} else {
+						s.WriteString(fmt.Sprintf(" [ ] %s\n", step))
+					}
+				}
+				content = s.String()
+			case AnalysisComplete:
+				content = m.analysisResult
+			case AnalysisError:
+				content = StyleMuted.Foreground(ColorError).Render(fmt.Sprintf("Error: %s", m.analysisError))
+			}
+		}
+	case ViewGraph:
+		content = RenderASCIIGraph(m.selectedCaseID)
 	default:
 		content = "View not implemented yet."
 	}
