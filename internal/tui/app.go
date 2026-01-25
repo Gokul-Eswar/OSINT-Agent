@@ -182,6 +182,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd2
 		}
 
+		if m.state == ViewEvidence {
+			var cmd2 tea.Cmd
+			m.entityTable, cmd2 = m.entityTable.Update(msg)
+			return m, cmd2
+		}
+
 		// Global navigation if not in a list
 		switch msg.String() {
 		case "1": m.state = ViewCases
