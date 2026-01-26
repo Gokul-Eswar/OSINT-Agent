@@ -13,12 +13,17 @@ import (
 
 	"github.com/spectre/spectre/internal/collector"
 	"github.com/spectre/spectre/internal/core"
+	"github.com/spectre/spectre/internal/http"
 )
 
-type GeoIPCollector struct{}
+type GeoIPCollector struct {
+	BaseURL string
+}
 
 func init() {
-	collector.Register(&GeoIPCollector{})
+	collector.Register(&GeoIPCollector{
+		BaseURL: "http://ip-api.com/json/",
+	})
 }
 
 func (c *GeoIPCollector) Name() string {
@@ -34,9 +39,14 @@ func (c *GeoIPCollector) IsActive() bool {
 }
 
 func (c *GeoIPCollector) Collect(caseID string, target string) ([]core.Evidence, error) {
+	client := netclient.NewClient()
+
 	// API Request
-	url := fmt.Sprintf("http://ip-api.com/json/%s", target)
-	resp, err := http.Get(url)
+	url := c.BaseURL + target
+	if c.BaseURL == "" {
+		url = "http://ip-api.com/json/" + target
+	}
+	resp, err := client.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("geoip request failed: %w", err)
 	}

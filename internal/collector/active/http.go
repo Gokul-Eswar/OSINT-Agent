@@ -14,6 +14,7 @@ import (
 
 	"github.com/spectre/spectre/internal/collector"
 	"github.com/spectre/spectre/internal/core"
+	"github.com/spectre/spectre/internal/http"
 )
 
 type HTTPCollector struct{}
@@ -41,9 +42,7 @@ func (c *HTTPCollector) Collect(caseID string, target string) ([]core.Evidence, 
 		url = "https://" + target
 	}
 
-	client := &http.Client{
-		Timeout: 10 * time.Second,
-	}
+	client := netclient.NewClient()
 
 	resp, err := client.Get(url)
 	if err != nil {

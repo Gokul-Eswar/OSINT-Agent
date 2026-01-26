@@ -47,6 +47,8 @@ llm:
   timeout: 120
 
 # HTTP Configuration (Ghost Mode)
+ghost_mode: false
 http:
-  proxy: "" # e.g., "http://127.0.0.1:9050" or "socks5://127.0.0.1:9050"
+  proxy: "" # Global HTTP proxy
+  tor_proxy: "socks5://127.0.0.1:9050" # Default Tor SOCKS5 proxy
   insecure_skip_verify: false

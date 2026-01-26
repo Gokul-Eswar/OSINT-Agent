@@ -13,6 +13,7 @@ import (
 	"github.com/spectre/spectre/internal/collector"
 	"github.com/spectre/spectre/internal/config"
 	"github.com/spectre/spectre/internal/core"
+	"github.com/spectre/spectre/internal/http"
 )
 
 type GitHubCollector struct {
@@ -20,9 +21,7 @@ type GitHubCollector struct {
 }
 
 func init() {
-	collector.Register(&GitHubCollector{
-		Client: &http.Client{Timeout: 30 * time.Second},
-	})
+	collector.Register(&GitHubCollector{})
 }
 
 func (g *GitHubCollector) Name() string {
@@ -39,6 +38,7 @@ func (g *GitHubCollector) IsActive() bool {
 
 func (g *GitHubCollector) Collect(caseID string, target string) ([]core.Evidence, error) {
 	apiKey := config.GetAPIKey("github")
+	client := netclient.NewClient()
 	
 	// Search repositories
 	url := fmt.Sprintf("https://api.github.com/search/repositories?q=%s", target)
@@ -48,7 +48,7 @@ func (g *GitHubCollector) Collect(caseID string, target string) ([]core.Evidence
 		req.Header.Set("Authorization", "token "+apiKey)
 	}
 
-	resp, err := g.Client.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("github search failed: %w", err)
 	}

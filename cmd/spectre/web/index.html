@@ -16,9 +16,12 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
     <!-- Custom Config -->
+
     <script>
         tailwind.config = {
             theme: {
@@ -78,13 +81,17 @@
         }
 
         /* Graph Container */
-        #network { 
+        #network, #map { 
             height: 600px; 
             background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
             border-radius: 0.75rem; 
             border: 1px solid #1e293b;
             position: relative;
             overflow: hidden;
+        }
+
+        #map {
+            background: #0f172a;
         }
         
         /* Grid Pattern Overlay */
@@ -125,10 +132,13 @@
             const [searchTerm, setSearchTerm] = useState("");
             const [sidebarOpen, setSidebarOpen] = useState(true);
             const [isLive, setIsLive] = useState(false);
+            const [view, setView] = useState('graph'); // 'graph' or 'map'
             
             // Refs
             const networkRef = useRef(null);
             const visNetwork = useRef(null);
+            const mapRef = useRef(null);
+            const leafletMap = useRef(null);
 
             // Initial Data Fetch & Polling
             useEffect(() => {
@@ -169,7 +179,6 @@
                                 // Only update if entity count changed to avoid re-rendering graph constantly
                                 if (prev.entities.length !== data.entities.length || 
                                     prev.relationships.length !== data.relationships.length) {
-                                    renderGraph(data);
                                     return data;
                                 }
                                 return prev;
@@ -208,13 +217,56 @@
                     .then(data => {
                         setSelectedCase(data);
                         setLoading(false);
-                        // Allow DOM to update before rendering graph
-                        setTimeout(() => renderGraph(data), 50);
                     })
                     .catch(err => {
                         console.error("Failed to load graph:", err);
                         setLoading(false);
                     });
+            };
+
+            const renderMap = (data) => {
+                if (!mapRef.current) return;
+                
+                // Filter entities with geo data
+                const geoEntities = data.entities.filter(e => e.metadata && e.metadata.lat && e.metadata.lon);
+                
+                if (leafletMap.current) {
+                    leafletMap.current.remove();
+                }
+
+                // Initialize map
+                leafletMap.current = L.map(mapRef.current).setView([20, 0], 2);
+                
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                    subdomains: 'abcd',
+                    maxZoom: 20
+                }).addTo(leafletMap.current);
+
+                // Add markers
+                geoEntities.forEach(e => {
+                    const marker = L.circleMarker([e.metadata.lat, e.metadata.lon], {
+                        radius: 8,
+                        fillColor: "#6366f1",
+                        color: "#fff",
+                        weight: 1,
+                        opacity: 1,
+                        fillOpacity: 0.8
+                    }).addTo(leafletMap.current);
+                    
+                    marker.bindPopup(`
+                        <div class="text-slate-900 p-1">
+                            <strong class="font-bold">${e.value}</strong><br>
+                            <span class="text-xs text-slate-500">${e.metadata.city || ""}, ${e.metadata.country || ""}</span><br>
+                            <span class="text-xs text-slate-500">${e.metadata.isp || ""}</span>
+                        </div>
+                    `);
+                });
+
+                if (geoEntities.length > 0) {
+                    const group = new L.featureGroup(geoEntities.map(e => L.circleMarker([e.metadata.lat, e.metadata.lon])));
+                    leafletMap.current.fitBounds(group.getBounds().pad(0.1));
+                }
             };
 
             // Vis.js Graph Rendering
@@ -291,6 +343,16 @@
                 if (visNetwork.current) visNetwork.current.destroy();
                 visNetwork.current = new vis.Network(networkRef.current, { nodes, edges }, options);
             };
+
+            // Effect to re-render visualization when view or selectedCase changes
+            useEffect(() => {
+                if (!selectedCase) return;
+                if (view === 'graph') {
+                    setTimeout(() => renderGraph(selectedCase), 50);
+                } else if (view === 'map') {
+                    setTimeout(() => renderMap(selectedCase), 50);
+                }
+            }, [view, selectedCase]);
 
             // Helpers
             const formatDate = (ts) => new Date().toLocaleDateString(); // Placeholder, backend needs to send timestamp
@@ -429,14 +491,35 @@
                                         </div>
                                     </div>
 
-                                    {/* Intelligence Graph */}
-                                    <div className="glass-panel p-1 rounded-xl shadow-2xl relative group">
-                                        <div className="absolute top-4 left-4 z-10 flex gap-2">
-                                            <div className="px-3 py-1 bg-slate-900/80 backdrop-blur rounded text-xs font-mono text-slate-400 border border-slate-800">
-                                                Force Atlas 2
-                                            </div>
+                                    {/* Intelligence Visualization */}
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-2 p-1 bg-slate-900 rounded-lg w-fit border border-slate-800">
+                                            <button 
+                                                onClick={() => setView('graph')}
+                                                className={`px-4 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-2 ${view === 'graph' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:text-white'}`}
+                                            >
+                                                <i data-lucide="share-2" className="w-3.5 h-3.5"></i> Graph View
+                                            </button>
+                                            <button 
+                                                onClick={() => setView('map')}
+                                                className={`px-4 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-2 ${view === 'map' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:text-white'}`}
+                                            >
+                                                <i data-lucide="map" className="w-3.5 h-3.5"></i> Map View
+                                            </button>
                                         </div>
-                                        <div id="network" ref={networkRef}></div>
+
+                                        <div className="glass-panel p-1 rounded-xl shadow-2xl relative group">
+                                            <div className="absolute top-4 left-4 z-10 flex gap-2 pointer-events-none">
+                                                <div className="px-3 py-1 bg-slate-900/80 backdrop-blur rounded text-xs font-mono text-slate-400 border border-slate-800">
+                                                    {view === 'graph' ? 'Force Atlas 2' : 'Geospatial Intelligence'}
+                                                </div>
+                                            </div>
+                                            {view === 'graph' ? (
+                                                <div id="network" ref={networkRef}></div>
+                                            ) : (
+                                                <div id="map" ref={mapRef} style={{ height: '600px' }}></div>
+                                            )}
+                                        </div>
                                     </div>
                                     
                                     {/* Bottom Grid */}
