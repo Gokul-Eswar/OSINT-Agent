@@ -23,9 +23,40 @@ func IngestEvidence(ev *core.Evidence) error {
 		return ingestPorts(ev)
 	case "http":
 		return ingestHTTP(ev)
+	case "screenshot":
+		return ingestScreenshot(ev)
 	default:
 		return nil // No ingestion logic for this collector yet
 	}
+}
+
+func ingestScreenshot(ev *core.Evidence) error {
+	target := ev.Metadata["target"].(string)
+
+	// Ensure target entity exists (usually a domain or IP)
+	targetEnt, _ := GetEntityByValue(ev.CaseID, target)
+	if targetEnt == nil {
+		// Try to guess type
+		entityType := "domain"
+		if len(target) > 0 && (target[0] >= '0' && target[0] <= '9') {
+			entityType = "ip"
+		}
+		targetEnt = &core.Entity{CaseID: ev.CaseID, Type: entityType, Value: target, Source: "screenshot"}
+		CreateEntity(targetEnt)
+	}
+
+	// Link target to the screenshot evidence
+	// We don't create a new entity for the screenshot itself, 
+	// but the relationship record stores the EvidenceID.
+	rel := &core.Relationship{
+		CaseID:       ev.CaseID,
+		FromEntityID: targetEnt.ID,
+		ToEntityID:   targetEnt.ID, // Self-link to represent property/evidence
+		Type:         "has_screenshot",
+		EvidenceID:   ev.ID,
+		Confidence:   1.0,
+	}
+	return CreateRelationship(rel)
 }
 
 func ingestPorts(ev *core.Evidence) error {

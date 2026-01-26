@@ -128,6 +128,7 @@
             const [cases, setCases] = useState([]);
             const [filteredCases, setFilteredCases] = useState([]);
             const [selectedCase, setSelectedCase] = useState(null);
+            const [selectedEntity, setSelectedEntity] = useState(null);
             const [loading, setLoading] = useState(true);
             const [searchTerm, setSearchTerm] = useState("");
             const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -342,6 +343,16 @@
 
                 if (visNetwork.current) visNetwork.current.destroy();
                 visNetwork.current = new vis.Network(networkRef.current, { nodes, edges }, options);
+
+                visNetwork.current.on("click", function (params) {
+                    if (params.nodes.length > 0) {
+                        const nodeId = params.nodes[0];
+                        const entity = data.entities.find(e => e.id === nodeId);
+                        if (entity) setSelectedEntity(entity);
+                    } else {
+                        setSelectedEntity(null);
+                    }
+                });
             };
 
             // Effect to re-render visualization when view or selectedCase changes
@@ -523,56 +534,129 @@
                                     </div>
                                     
                                     {/* Bottom Grid */}
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                        {/* Key Findings */}
-                                        <div className="glass-panel p-6 rounded-xl border border-slate-800/60">
-                                            <div className="flex items-center gap-3 mb-6">
-                                                <div className="p-2 bg-amber-500/10 rounded-lg">
-                                                    <i data-lucide="zap" className="w-5 h-5 text-amber-500"></i>
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                        {/* Entity Details / Evidence Viewer */}
+                                        <div className="glass-panel p-6 rounded-xl border border-slate-800/60 lg:col-span-2">
+                                            <div className="flex items-center justify-between mb-6">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2 bg-indigo-500/10 rounded-lg">
+                                                        <i data-lucide="eye" className="w-5 h-5 text-indigo-500"></i>
+                                                    </div>
+                                                    <h3 className="text-lg font-semibold text-white">
+                                                        {selectedEntity ? 'Entity Intelligence' : 'Visual Evidence'}
+                                                    </h3>
                                                 </div>
-                                                <h3 className="text-lg font-semibold text-white">Automated Insights</h3>
+                                                {selectedEntity && (
+                                                    <button onClick={() => setSelectedEntity(null)} className="text-xs text-slate-500 hover:text-white">Clear Selection</button>
+                                                )}
                                             </div>
-                                            <div className="space-y-4">
-                                                <div className="p-4 rounded-lg bg-slate-900/50 border border-slate-800/50 flex items-start gap-3">
-                                                    <i data-lucide="info" className="w-5 h-5 text-blue-400 mt-0.5"></i>
-                                                    <div>
-                                                        <h4 className="text-sm font-medium text-slate-200">Analysis Pending</h4>
-                                                        <p className="text-xs text-slate-500 mt-1">
-                                                            Run the active collector to generate automated insights for this case.
-                                                        </p>
+
+                                            {selectedEntity ? (
+                                                <div className="space-y-6">
+                                                    <div className="flex items-start justify-between">
+                                                        <div>
+                                                            <div className="text-xs uppercase tracking-widest text-indigo-500 font-bold mb-1">{selectedEntity.type}</div>
+                                                            <div className="text-2xl font-mono text-white break-all">{selectedEntity.value}</div>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <div className="text-xs text-slate-500 mb-1">Source</div>
+                                                            <div className="px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-slate-300 inline-block">{selectedEntity.source}</div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Associated Evidence */}
+                                                    <div className="space-y-4">
+                                                        <h4 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Associated Evidence</h4>
+                                                        <div className="grid grid-cols-1 gap-4">
+                                                            {selectedCase.evidence
+                                                                .filter(ev => ev.metadata.target === selectedEntity.value || (selectedEntity.type === 'ip' && ev.metadata.target === selectedEntity.value))
+                                                                .map((ev, idx) => (
+                                                                    <div key={idx} className="bg-slate-900/50 border border-slate-800 rounded-lg overflow-hidden">
+                                                                        <div className="p-3 border-b border-slate-800 flex items-center justify-between bg-slate-900/80">
+                                                                            <span className="text-xs font-mono text-slate-400">{ev.collector.toUpperCase()} Evidence</span>
+                                                                            <a href={`/evidence/${ev.case_id}/${ev.file_path.split(/[\\/]/).pop()}`} target="_blank" className="text-[10px] text-indigo-400 hover:text-indigo-300 underline">Open Raw</a>
+                                                                        </div>
+                                                                        {ev.collector === 'screenshot' ? (
+                                                                            <div className="p-2 bg-black/40">
+                                                                                <img 
+                                                                                    src={`/evidence/${ev.case_id}/${ev.file_path.split(/[\\/]/).pop()}`} 
+                                                                                    alt="Screenshot" 
+                                                                                    className="w-full rounded border border-slate-700 hover:scale-[1.02] transition-transform cursor-zoom-in"
+                                                                                    onClick={() => window.open(`/evidence/${ev.case_id}/${ev.file_path.split(/[\\/]/).pop()}`, '_blank')}
+                                                                                />
+                                                                            </div>
+                                                                        ) : (
+                                                                            <div className="p-4 text-xs font-mono text-slate-500">
+                                                                                File: {ev.file_path.split(/[\\/]/).pop()}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                ))
+                                                            }
+                                                            {selectedCase.evidence.filter(ev => ev.metadata.target === selectedEntity.value).length === 0 && (
+                                                                <div className="text-center py-8 border-2 border-dashed border-slate-800 rounded-lg">
+                                                                    <span className="text-sm text-slate-600">No direct evidence files for this entity.</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                <div className="h-24 flex items-center justify-center border-2 border-dashed border-slate-800 rounded-lg">
-                                                    <span className="text-sm text-slate-600">No critical anomalies detected yet.</span>
+                                            ) : (
+                                                <div className="h-64 flex flex-col items-center justify-center text-slate-600 border-2 border-dashed border-slate-800 rounded-xl">
+                                                    <i data-lucide="mouse-pointer-2" className="w-8 h-8 mb-2 opacity-20"></i>
+                                                    <p className="text-sm">Click a node in the graph to view intelligence details and evidence.</p>
                                                 </div>
-                                            </div>
+                                            )}
                                         </div>
 
-                                        {/* Evidence Feed */}
-                                        <div className="glass-panel p-6 rounded-xl border border-slate-800/60">
-                                            <div className="flex items-center gap-3 mb-6">
-                                                <div className="p-2 bg-purple-500/10 rounded-lg">
-                                                    <i data-lucide="activity" className="w-5 h-5 text-purple-500"></i>
-                                                </div>
-                                                <h3 className="text-lg font-semibold text-white">Live Feed</h3>
-                                            </div>
-                                            <div className="space-y-3 max-h-80 overflow-y-auto custom-scrollbar pr-2">
-                                                {selectedCase.entities.slice(0, 10).map((e, idx) => (
-                                                    <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-slate-900/50 border border-slate-800/50 hover:border-slate-700 transition-colors group">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className={`w-2 h-2 rounded-full ${
-                                                                e.type === 'domain' ? 'bg-blue-500' :
-                                                                e.type === 'ip' ? 'bg-amber-500' :
-                                                                e.type === 'email' ? 'bg-emerald-500' : 'bg-slate-500'
-                                                            }`}></div>
-                                                            <div className="flex flex-col">
-                                                                <span className="text-sm font-mono text-slate-300 group-hover:text-indigo-400 transition-colors">{e.value}</span>
-                                                                <span className="text-[10px] uppercase tracking-wider text-slate-600">{e.type}</span>
-                                                            </div>
-                                                        </div>
-                                                        <span className="text-xs text-slate-500 bg-slate-900 px-2 py-1 rounded border border-slate-800">{e.source}</span>
+                                        {/* Key Findings (Narrowed) */}
+                                        <div className="space-y-6">
+                                            <div className="glass-panel p-6 rounded-xl border border-slate-800/60">
+                                                <div className="flex items-center gap-3 mb-6">
+                                                    <div className="p-2 bg-amber-500/10 rounded-lg">
+                                                        <i data-lucide="zap" className="w-5 h-5 text-amber-500"></i>
                                                     </div>
-                                                ))}
+                                                    <h3 className="text-lg font-semibold text-white">Insights</h3>
+                                                </div>
+                                                <div className="space-y-4">
+                                                    <div className="p-4 rounded-lg bg-slate-900/50 border border-slate-800/50 flex items-start gap-3">
+                                                        <i data-lucide="info" className="w-5 h-5 text-blue-400 mt-0.5"></i>
+                                                        <div>
+                                                            <h4 className="text-sm font-medium text-slate-200">Analysis Pending</h4>
+                                                            <p className="text-xs text-slate-500 mt-1">
+                                                                Run the active collector to generate automated insights.
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Evidence Feed */}
+                                            <div className="glass-panel p-6 rounded-xl border border-slate-800/60">
+                                                <div className="flex items-center gap-3 mb-6">
+                                                    <div className="p-2 bg-purple-500/10 rounded-lg">
+                                                        <i data-lucide="activity" className="w-5 h-5 text-purple-500"></i>
+                                                    </div>
+                                                    <h3 className="text-lg font-semibold text-white">Live Feed</h3>
+                                                </div>
+                                                <div className="space-y-3 max-h-80 overflow-y-auto custom-scrollbar pr-2">
+                                                    {selectedCase.entities.slice(0, 10).map((e, idx) => (
+                                                        <div key={idx} onClick={() => setSelectedEntity(e)} className="flex items-center justify-between p-3 rounded-lg bg-slate-900/50 border border-slate-800/50 hover:border-indigo-500/50 transition-colors group cursor-pointer">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className={`w-2 h-2 rounded-full ${
+                                                                    e.type === 'domain' ? 'bg-blue-500' :
+                                                                    e.type === 'ip' ? 'bg-amber-500' :
+                                                                    e.type === 'email' ? 'bg-emerald-500' : 'bg-slate-500'
+                                                                }`}></div>
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-sm font-mono text-slate-300 group-hover:text-indigo-400 transition-colors">{e.value}</span>
+                                                                    <span className="text-[10px] uppercase tracking-wider text-slate-600">{e.type}</span>
+                                                                </div>
+                                                            </div>
+                                                            <i data-lucide="chevron-right" className="w-3 h-3 text-slate-700 group-hover:text-indigo-500 transition-colors"></i>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

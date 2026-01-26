@@ -45,8 +45,17 @@ func (c *ScreenshotCollector) Collect(caseID string, target string) ([]core.Evid
 		chromedp.Flag("disable-gpu", true),
 	)
 
-	// Add proxy if configured
-	proxy := viper.GetString("http.proxy")
+	// Proxy Logic (Respect Ghost Mode)
+	var proxy string
+	if viper.GetBool("ghost_mode") {
+		proxy = viper.GetString("http.tor_proxy")
+		if proxy == "" {
+			proxy = "socks5://127.0.0.1:9050"
+		}
+	} else {
+		proxy = viper.GetString("http.proxy")
+	}
+
 	if proxy != "" {
 		opts = append(opts, chromedp.ProxyServer(proxy))
 	}

@@ -84,10 +84,16 @@ func ExportCaseForViz(caseID string) (map[string]interface{}, error) {
 		return nil, err
 	}
 
+	evidence, err := storage.ListEvidenceByCase(caseID)
+	if err != nil {
+		return nil, err
+	}
+
 	return map[string]interface{}{
 		"case_id":       caseID,
 		"case_name":     c.Name,
 		"entities":      entities,
 		"relationships": rels,
+		"evidence":      evidence,
 	}, nil
 }
