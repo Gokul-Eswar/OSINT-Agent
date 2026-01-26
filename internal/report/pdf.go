@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/jung-kurt/gofpdf"
+	"github.com/spectre/spectre/internal/core"
 	"github.com/spectre/spectre/internal/storage"
 )
 
@@ -22,6 +23,7 @@ func GeneratePDFReport(caseID string) (string, error) {
 	// rels, _ := storage.ListRelationshipsByCase(caseID)
 	timeline, _ := storage.GetCaseTimeline(caseID)
 	analysis, _ := storage.GetLatestAnalysis(caseID)
+	evidence, _ := storage.ListEvidenceByCase(caseID)
 
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	pdf.SetHeaderFunc(func() {
@@ -81,6 +83,61 @@ func GeneratePDFReport(caseID string) (string, error) {
 		}
 	} else {
 		pdf.MultiCell(0, 6, "No AI analysis has been performed for this case yet.", "", "L", false)
+	}
+
+	// --- Geo-Intelligence ---
+	geoEntities := []*core.Entity{}
+	for _, e := range entities {
+		if e.Metadata != nil && (e.Metadata["lat"] != nil || e.Metadata["country"] != nil) {
+			geoEntities = append(geoEntities, e)
+		}
+	}
+
+	if len(geoEntities) > 0 {
+		pdf.AddPage()
+		pdf.SetFont("Arial", "B", 16)
+		pdf.Cell(0, 10, "Geo-Intelligence")
+		pdf.Ln(15)
+
+		pdf.SetFont("Arial", "B", 10)
+		pdf.SetFillColor(240, 240, 240)
+		pdf.CellFormat(60, 8, "Target", "1", 0, "", true, 0, "")
+		pdf.CellFormat(130, 8, "Location / ISP", "1", 1, "", true, 0, "")
+
+		pdf.SetFont("Arial", "", 9)
+		for _, e := range geoEntities {
+			pdf.CellFormat(60, 8, e.Value, "1", 0, "", false, 0, "")
+			loc := fmt.Sprintf("%v, %v (%v)", e.Metadata["city"], e.Metadata["country"], e.Metadata["isp"])
+			pdf.CellFormat(130, 8, loc, "1", 1, "", false, 0, "")
+		}
+	}
+
+	// --- Visual Evidence ---
+	screenshots := []*core.Evidence{}
+	for _, ev := range evidence {
+		if ev.Collector == "screenshot" {
+			screenshots = append(screenshots, ev)
+		}
+	}
+
+	if len(screenshots) > 0 {
+		for _, s := range screenshots {
+			pdf.AddPage()
+			pdf.SetFont("Arial", "B", 16)
+			pdf.Cell(0, 10, fmt.Sprintf("Visual Evidence: %s", s.Metadata["target"]))
+			pdf.Ln(15)
+
+			// Add Image (Scale to fit page width)
+			opt := gofpdf.ImageOptions{
+				ImageType: "PNG",
+				ReadDpi:   true,
+			}
+			pdf.ImageOptions(s.FilePath, 10, 35, 190, 0, false, opt, 0, "")
+			
+			pdf.SetY(260)
+			pdf.SetFont("Arial", "I", 8)
+			pdf.Cell(0, 10, fmt.Sprintf("Collected At: %s", s.CollectedAt.Format("2006-01-02 15:04:05")))
+		}
 	}
 
 	// --- Entities ---

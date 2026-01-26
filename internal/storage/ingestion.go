@@ -25,9 +25,66 @@ func IngestEvidence(ev *core.Evidence) error {
 		return ingestHTTP(ev)
 	case "screenshot":
 		return ingestScreenshot(ev)
+	case "social":
+		return ingestSocial(ev)
 	default:
 		return nil // No ingestion logic for this collector yet
 	}
+}
+
+func ingestSocial(ev *core.Evidence) error {
+	username := ev.Metadata["target"].(string)
+
+	data, err := os.ReadFile(ev.FilePath)
+	if err != nil {
+		return err
+	}
+
+	var results []struct {
+		Site string `json:"site"`
+		URL  string `json:"url"`
+	}
+	if err := json.Unmarshal(data, &results); err != nil {
+		return err
+	}
+
+	// Ensure username entity exists
+	userEnt, _ := GetEntityByValue(ev.CaseID, username)
+	if userEnt == nil {
+		userEnt = &core.Entity{CaseID: ev.CaseID, Type: "username", Value: username, Source: "social"}
+		CreateEntity(userEnt)
+	}
+
+	for _, res := range results {
+		// Create site entity
+		siteEnt := &core.Entity{
+			CaseID: ev.CaseID,
+			Type:   "account",
+			Value:  res.URL,
+			Source: "social",
+			Metadata: map[string]interface{}{
+				"platform": res.Site,
+			},
+		}
+		
+		existing, _ := GetEntityByValue(ev.CaseID, res.URL)
+		if existing == nil {
+			CreateEntity(siteEnt)
+		} else {
+			siteEnt = existing
+		}
+
+		// Link Username -> has_account -> Site
+		rel := &core.Relationship{
+			CaseID:       ev.CaseID,
+			FromEntityID: userEnt.ID,
+			ToEntityID:   siteEnt.ID,
+			Type:         "has_account",
+			EvidenceID:   ev.ID,
+		}
+		CreateRelationship(rel)
+	}
+	return nil
 }
 
 func ingestScreenshot(ev *core.Evidence) error {

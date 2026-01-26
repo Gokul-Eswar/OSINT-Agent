@@ -9,7 +9,9 @@ import (
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/spectre/spectre/internal/core"
 	"github.com/spectre/spectre/internal/report"
+	"github.com/spf13/viper"
 )
 
 type sessionState int
@@ -225,16 +227,29 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
-		if m.state == ViewReports && msg.String() == "1" && m.selectedCaseID != "" {
-			return m, func() tea.Msg {
-				content, err := report.GenerateMarkdownReport(m.selectedCaseID)
-				if err != nil {
-					return AnalysisErrorMsg(err.Error())
+		if m.state == ViewReports {
+			if msg.String() == "1" && m.selectedCaseID != "" {
+				return m, func() tea.Msg {
+					content, err := report.GenerateMarkdownReport(m.selectedCaseID)
+					if err != nil {
+						return AnalysisErrorMsg(err.Error())
+					}
+					// Save to file
+					filename := fmt.Sprintf("report_%s.md", m.selectedCaseID)
+					os.WriteFile(filename, []byte(content), 0644)
+					return AnalysisFinishedMsg{nil} // Signal success (nil result means just update status)
 				}
-				// Save to file
-				filename := fmt.Sprintf("report_%s.md", m.selectedCaseID)
-				os.WriteFile(filename, []byte(content), 0644)
-				return AnalysisFinishedMsg{nil} // Signal success (nil result means just update status)
+			}
+			if msg.String() == "p" && m.selectedCaseID != "" {
+				return m, func() tea.Msg {
+					filename, err := report.GeneratePDFReport(m.selectedCaseID)
+					if err != nil {
+						return AnalysisErrorMsg(err.Error())
+					}
+					return AnalysisFinishedMsg{&core.Analysis{
+						Findings: []string{fmt.Sprintf("PDF Report generated: %s", filename)},
+					}}
+				}
 			}
 		}
 	}
@@ -371,10 +386,10 @@ func (m model) renderContent() string {
 		content = RenderTimeline(m.selectedCaseID)
 	case ViewReports:
 		status := ""
-		if m.analysisStatus == AnalysisComplete && strings.Contains(m.analysisResult, "Report generated") {
+		if m.analysisStatus == AnalysisComplete {
 			status = "\n\n" + StyleMuted.Foreground(ColorSuccess).Render(m.analysisResult)
 		}
-		content = "REPORTS\n───────\n\n[1] Generate Markdown Report\n[2] View Latest Analysis\n\n(Export to PDF coming soon...)" + status
+		content = "REPORTS\n───────\n\n[1] Generate Markdown Report\n[p] Generate Professional PDF\n[2] View Latest Analysis" + status
 	case ViewSettings:
 		content = fmt.Sprintf("SETTINGS\n────────\n\nModel: %s\nTheme: Professional Dark\nStreaming: Enabled\n\n(Press [s] to change model)", m.modelName)
 	default:
@@ -385,8 +400,10 @@ func (m model) renderContent() string {
 }
 
 func (m model) renderFooter() string {
-
 	status := "● Connected"
+	if viper.GetBool("ghost_mode") {
+		status = "👻 GHOST MODE ACTIVE"
+	}
 
 	info := "ollama:localhost:11434  |  Press ? for help"
 
