@@ -3,13 +3,13 @@ package tui
 import "github.com/charmbracelet/lipgloss"
 
 var (
-	// Colors
-	ColorPrimary = lipgloss.Color("#7C3AED") // Violet
-	ColorAccent  = lipgloss.Color("#22D3EE") // Cyan
-	ColorMuted   = lipgloss.Color("#6B7280") // Gray
-	ColorError   = lipgloss.Color("#EF4444") // Red
-	ColorSuccess = lipgloss.Color("#10B981") // Green
-	ColorBG      = lipgloss.Color("#111827") // Dark background
+	// Colors - Stealth/Retro (Gruvbox Inspired)
+	ColorPrimary = lipgloss.Color("#689D6A") // Retro Green/Aqua
+	ColorAccent  = lipgloss.Color("#FABD2F") // Retro Yellow/Amber
+	ColorMuted   = lipgloss.Color("#7C6F64") // Warm Gray
+	ColorError   = lipgloss.Color("#CC241D") // Dim Red
+	ColorSuccess = lipgloss.Color("#98971A") // Olive Green
+	ColorBG      = lipgloss.Color("#1D2021") // Dark Hard Background
 
 	// Styles
 	StyleTitle = lipgloss.NewStyle().
@@ -19,8 +19,9 @@ var (
 
 	StyleHeader = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("#FFFFFF")).
-			Background(ColorPrimary).
+			Foreground(ColorPrimary).
+			Border(lipgloss.DoubleBorder(), false, false, true, false).
+			BorderForeground(ColorMuted).
 			Padding(0, 1)
 
 	StyleNav = lipgloss.NewStyle().
