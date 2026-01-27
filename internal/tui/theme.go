@@ -29,16 +29,19 @@ var (
 	StyleNav = lipgloss.NewStyle().
 			Border(lipgloss.NormalBorder(), false, true, false, false).
 			BorderForeground(ColorMuted).
-			Padding(1, 2)
+			Padding(1, 2).
+			Background(ColorBG)
 
 	StyleMain = lipgloss.NewStyle().
-			Padding(1, 2)
+			Padding(1, 2).
+			Background(ColorBG)
 
 	StyleStatus = lipgloss.NewStyle().
 			Foreground(ColorMuted).
 			Border(lipgloss.NormalBorder(), true, false, false, false).
 			BorderForeground(ColorMuted).
-			Padding(0, 1)
+			Padding(0, 1).
+			Background(ColorBG)
 
 	StyleSelectedNav = lipgloss.NewStyle().
 				Foreground(ColorAccent).

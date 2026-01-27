@@ -344,7 +344,8 @@ func (m model) View() string {
 
 	mainArea := lipgloss.JoinHorizontal(lipgloss.Top, nav, content)
 	
-	return lipgloss.JoinVertical(lipgloss.Left, header, mainArea, footer)
+	appView := lipgloss.JoinVertical(lipgloss.Left, header, mainArea, footer)
+	return lipgloss.NewStyle().Background(ColorBG).Render(appView)
 }
 
 func (m model) renderHeader() string {
