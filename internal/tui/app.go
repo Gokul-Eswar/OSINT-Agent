@@ -9,6 +9,7 @@ import (
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/spectre/spectre/internal/analysis"
 	"github.com/spectre/spectre/internal/config"
 	"github.com/spectre/spectre/internal/core"
 	"github.com/spectre/spectre/internal/report"
@@ -51,6 +52,8 @@ type model struct {
 	// Settings State
 	settingsCursor int
 
+	availableModels []string
+
 	// Analysis State
 	analysisStatus analysisStatus
 	analysisStep   int
@@ -77,6 +80,7 @@ func InitialModel() model {
 		relTable:       NewRelationshipTable(),
 		runner:         NewRunnerModel(),
 		modelName:      "llama3:8b",
+		availableModels: []string{"llama3:8b", "mistral"},
 	}
 }
 
@@ -131,6 +135,23 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// This was a report generation success
 			m.analysisStatus = AnalysisComplete
 			m.analysisResult = "Report generated successfully! Check report_<case_id>.md"
+		}
+
+	case ModelsFoundMsg:
+		m.availableModels = msg
+		// If current model is not in list, switch to first
+		if len(m.availableModels) > 0 {
+			found := false
+			for _, mod := range m.availableModels {
+				if mod == m.modelName {
+					found = true
+					break
+				}
+			}
+			if !found {
+				m.modelName = m.availableModels[0]
+				viper.Set("llm.model", m.modelName)
+			}
 		}
 
 	case AnalysisErrorMsg:
@@ -228,6 +249,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Specific View Keybindings
 		if m.state == ViewSettings {
+			if msg.String() == "r" && m.settingsCursor == 1 {
+				return m, fetchModelsCmd
+			}
+
 			switch msg.String() {
 			case "j", "down":
 				if m.settingsCursor < 6 {
@@ -242,10 +267,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				case 0: // Ghost Mode
 					viper.Set("ghost_mode", !viper.GetBool("ghost_mode"))
 				case 1: // Model
-					if m.modelName == "llama3:8b" {
-						m.modelName = "mistral"
-					} else {
-						m.modelName = "llama3:8b"
+					idx := 0
+					for i, mod := range m.availableModels {
+						if mod == m.modelName {
+							idx = i
+							break
+						}
+					}
+					if len(m.availableModels) > 0 {
+						idx = (idx + 1) % len(m.availableModels)
+						m.modelName = m.availableModels[idx]
 					}
 					viper.Set("llm.model", m.modelName)
 				case 2: // DNS
@@ -432,12 +463,17 @@ func (m model) renderContent() string {
 		content = "REPORTS\n───────\n\n[1] Generate Markdown Report\n[p] Generate Professional PDF\n[2] View Latest Analysis" + status
 	case ViewSettings:
 		// Settings Menu
+		modelLabel := m.modelName
+		if m.settingsCursor == 1 {
+			modelLabel += " (Press 'r' to scan)"
+		}
+
 		opts := []struct {
 			label string
 			val   string
 		}{
 			{"Ghost Mode", formatBool(viper.GetBool("ghost_mode"))},
-			{"Model", m.modelName},
+			{"Model", modelLabel},
 			{"DNS Collector", formatBool(viper.GetBool("collectors.dns.enabled"))},
 			{"Whois Collector", formatBool(viper.GetBool("collectors.whois.enabled"))},
 			{"GitHub Collector", formatBool(viper.GetBool("collectors.github.enabled"))},
@@ -516,4 +552,14 @@ func formatBool(b bool) string {
 		return "[ON]"
 	}
 	return "[OFF]"
+}
+
+type ModelsFoundMsg []string
+
+func fetchModelsCmd() tea.Msg {
+	models, err := analysis.FetchAvailableModels()
+	if err != nil {
+		return AnalysisErrorMsg("Scan failed: " + err.Error())
+	}
+	return ModelsFoundMsg(models)
 }
