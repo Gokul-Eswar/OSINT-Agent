@@ -116,6 +116,105 @@
             return <i data-lucide={name} className={className} style={{ width: size, height: size }}></i>;
         };
 
+        // --- Settings Modal Component ---
+        const SettingsModal = ({ isOpen, onClose }) => {
+            const [settings, setSettings] = useState(null);
+
+            useEffect(() => {
+                if (isOpen) {
+                    fetch('/api/settings')
+                        .then(res => res.json())
+                        .then(setSettings)
+                        .catch(err => console.error("Failed to load settings:", err));
+                }
+            }, [isOpen]);
+
+            // Re-render icons when modal opens
+            useEffect(() => {
+                if (isOpen && settings) {
+                    setTimeout(() => lucide.createIcons(), 100);
+                }
+            }, [isOpen, settings]);
+
+            const toggleGhostMode = () => {
+                if (!settings) return;
+                const newMode = !settings.ghost_mode;
+                setSettings({ ...settings, ghost_mode: newMode });
+                
+                fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ghost_mode: newMode })
+                }).catch(err => console.error("Failed to save settings:", err));
+            };
+
+            if (!isOpen) return null;
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+                        <div className="flex items-center justify-between p-4 border-b border-slate-800 bg-slate-900/50">
+                            <h3 className="font-semibold text-white flex items-center gap-2">
+                                <i data-lucide="settings" className="w-4 h-4 text-slate-400"></i>
+                                System Configuration
+                            </h3>
+                            <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
+                                <i data-lucide="x" className="w-5 h-5"></i>
+                            </button>
+                        </div>
+                        
+                        <div className="p-6 space-y-6">
+                            {settings ? (
+                                <>
+                                    <div className="flex items-center justify-between p-4 rounded-lg bg-slate-800/50 border border-slate-700">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`p-2 rounded-lg ${settings.ghost_mode ? 'bg-purple-500/20 text-purple-400' : 'bg-slate-700/50 text-slate-400'}`}>
+                                                <i data-lucide="ghost" className="w-5 h-5"></i>
+                                            </div>
+                                            <div>
+                                                <div className="font-medium text-slate-200">Ghost Mode</div>
+                                                <div className="text-xs text-slate-500">Anonymize requests via Tor/Proxy</div>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            onClick={toggleGhostMode}
+                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-900 ${settings.ghost_mode ? 'bg-indigo-600' : 'bg-slate-700'}`}
+                                        >
+                                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.ghost_mode ? 'translate-x-6' : 'translate-x-1'}`} />
+                                        </button>
+                                    </div>
+                                    
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Logging Level</label>
+                                        <select 
+                                            value={settings.logging}
+                                            disabled
+                                            className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-slate-400 cursor-not-allowed"
+                                        >
+                                            <option value="info">Info</option>
+                                            <option value="debug">Debug</option>
+                                            <option value="error">Error</option>
+                                        </select>
+                                        <p className="text-[10px] text-slate-600">Logging level changes require restart.</p>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="flex justify-center py-8">
+                                    <i data-lucide="loader-2" className="w-6 h-6 text-indigo-500 animate-spin"></i>
+                                </div>
+                            )}
+                        </div>
+                        
+                        <div className="p-4 border-t border-slate-800 bg-slate-900/50 flex justify-end">
+                            <button onClick={onClose} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-md text-sm font-medium transition-colors">
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         // --- Main App Component ---
         function App() {
             const [cases, setCases] = useState([]);
@@ -125,6 +224,7 @@
             const [searchTerm, setSearchTerm] = useState("");
             const [sidebarOpen, setSidebarOpen] = useState(true);
             const [isLive, setIsLive] = useState(false);
+            const [settingsOpen, setSettingsOpen] = useState(false);
             
             // Refs
             const networkRef = useRef(null);
@@ -169,10 +269,6 @@
                                     };
                                     
                                     // Trigger graph re-render
-                                    // Note: In a real React app, we'd use a separate effect for graph, 
-                                    // but here we manually call renderGraph to force Vis.js update
-                                    // We need to wait for state update to settle or pass new data directly
-                                    // Since we can't easily wait for state in this callback, we pass new data
                                     setTimeout(() => renderGraph(newCaseData), 50);
                                     
                                     return newCaseData;
@@ -303,8 +399,10 @@
                 visNetwork.current = new vis.Network(networkRef.current, { nodes, edges }, options);
             };
 
-            // Helpers
-            const formatDate = (ts) => new Date().toLocaleDateString(); // Placeholder, backend needs to send timestamp
+            // Go to Dashboard Home
+            const goToDashboard = () => {
+                setSelectedCase(null);
+            };
 
             return (
                 <div className="flex h-screen bg-slate-950 text-slate-200 font-sans overflow-hidden">
@@ -327,6 +425,17 @@
                             )}
                             <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-slate-500 hover:text-white transition-colors">
                                 <i data-lucide={sidebarOpen ? "chevron-left" : "chevron-right"} className="w-5 h-5"></i>
+                            </button>
+                        </div>
+
+                        {/* Navigation Items (Dashboard Button) */}
+                        <div className="p-3 pb-0">
+                            <button 
+                                onClick={goToDashboard}
+                                className={`w-full flex items-center gap-3 p-2.5 rounded-lg transition-colors ${!selectedCase ? 'bg-indigo-600/10 text-indigo-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+                            >
+                                <i data-lucide="layout-dashboard" className="w-5 h-5"></i>
+                                {sidebarOpen && <span className="font-medium text-sm">Dashboard</span>}
                             </button>
                         </div>
 
@@ -382,6 +491,17 @@
                                 </div>
                             </div>
                         )}
+
+                        {/* Footer / Settings */}
+                        <div className="p-4 border-t border-slate-800 bg-slate-900">
+                             <button 
+                                onClick={() => setSettingsOpen(true)}
+                                className={`w-full flex items-center gap-3 p-2.5 rounded-lg transition-colors text-slate-400 hover:bg-slate-800 hover:text-white group`}
+                            >
+                                <i data-lucide="settings" className="w-5 h-5 group-hover:rotate-45 transition-transform duration-500"></i>
+                                {sidebarOpen && <span className="font-medium text-sm">Settings</span>}
+                            </button>
+                        </div>
                     </aside>
 
                     {/* Main Content */}
@@ -533,6 +653,7 @@
                             )}
                         </div>
                     </main>
+                    <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
                 </div>
             );
         }

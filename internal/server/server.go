@@ -11,6 +11,7 @@ import (
 	"github.com/spectre/spectre/internal/analysis"
 	"github.com/spectre/spectre/internal/core"
 	"github.com/spectre/spectre/internal/storage"
+	"github.com/spf13/viper"
 )
 
 var (
@@ -32,6 +33,7 @@ func Start(port int) error {
 	mux.HandleFunc("/api/cases", handleCases)
 	mux.HandleFunc("/api/cases/", handleCaseDetail) // /api/cases/{id} and /api/cases/{id}/graph
 	mux.HandleFunc("/api/events", handleEvents)
+	mux.HandleFunc("/api/settings", handleSettings)
 
 	// Static Assets
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -166,4 +168,53 @@ func handleCaseDetail(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(c)
+}
+
+func handleSettings(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method == http.MethodGet {
+		settings := map[string]interface{}{
+			"ghost_mode": viper.GetBool("ghost_mode"),
+			"logging":    viper.GetString("logging.level"),
+			"collectors": viper.GetStringMap("collectors"),
+			"ethics":     viper.GetStringMap("ethics"),
+		}
+		json.NewEncoder(w).Encode(settings)
+		return
+	}
+
+	if r.Method == http.MethodPost {
+		var payload map[string]interface{}
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		// Update Settings
+		if val, ok := payload["ghost_mode"]; ok {
+			viper.Set("ghost_mode", val)
+		}
+		if val, ok := payload["logging"]; ok {
+			viper.Set("logging.level", val)
+		}
+		// Handle nested collectors if needed, for now simplified to top-level knowns
+		// Deep merging map structures with viper can be tricky, so we might need more specific handling
+		// if we allow editing complex objects. For now, simple toggles.
+
+		// Save Config
+		if err := viper.WriteConfig(); err != nil {
+			// If no config file exists yet, safe write
+			if err = viper.SafeWriteConfig(); err != nil {
+				http.Error(w, "Failed to save config: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]string{"status": "updated"})
+		return
+	}
+
+	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 }
