@@ -9,6 +9,7 @@ import (
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/spectre/spectre/internal/config"
 	"github.com/spectre/spectre/internal/core"
 	"github.com/spectre/spectre/internal/report"
 	"github.com/spf13/viper"
@@ -24,6 +25,7 @@ const (
 	ViewTimeline
 	ViewReports
 	ViewSettings
+	ViewDashboard
 )
 
 type analysisStatus int
@@ -46,6 +48,9 @@ type model struct {
 	focusNav       bool   // Focus state: true=Sidebar, false=MainContent
 	navCursor      int    // Cursor for sidebar selection
 
+	// Settings State
+	settingsCursor int
+
 	// Analysis State
 	analysisStatus analysisStatus
 	analysisStep   int
@@ -64,13 +69,14 @@ func InitialModel() model {
 	l.Title = "CASES"
 
 	return model{
-		state:       ViewCases,
-		navCursor:   0,
-		caseList:    l,
-		entityTable: NewEntityTable(),
-		relTable:    NewRelationshipTable(),
-		runner:      NewRunnerModel(),
-		modelName:   "llama3:8b",
+		state:          ViewCases,
+		navCursor:      0,
+		settingsCursor: 0,
+		caseList:       l,
+		entityTable:    NewEntityTable(),
+		relTable:       NewRelationshipTable(),
+		runner:         NewRunnerModel(),
+		modelName:      "llama3:8b",
 	}
 }
 
@@ -152,7 +158,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.focusNav {
 			switch msg.String() {
 			case "j", "down":
-				if m.navCursor < int(ViewSettings) {
+				if m.navCursor < int(ViewDashboard) {
 					m.navCursor++
 				}
 			case "k", "up":
@@ -166,6 +172,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.analysisStatus = AnalysisRunning
 					m.analysisStep = 0
 					return m, StartAnalysis(m.selectedCaseID, m.modelName)
+				}
+				if m.state == ViewDashboard {
+					openBrowser("http://localhost:8080")
 				}
 			}
 			return m, nil
@@ -218,11 +227,41 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		// Specific View Keybindings
-		if m.state == ViewSettings && msg.String() == "s" {
-			if m.modelName == "llama3:8b" {
-				m.modelName = "mistral"
-			} else {
-				m.modelName = "llama3:8b"
+		if m.state == ViewSettings {
+			switch msg.String() {
+			case "j", "down":
+				if m.settingsCursor < 6 {
+					m.settingsCursor++
+				}
+			case "k", "up":
+				if m.settingsCursor > 0 {
+					m.settingsCursor--
+				}
+			case "enter", " ":
+				switch m.settingsCursor {
+				case 0: // Ghost Mode
+					viper.Set("ghost_mode", !viper.GetBool("ghost_mode"))
+				case 1: // Model
+					if m.modelName == "llama3:8b" {
+						m.modelName = "mistral"
+					} else {
+						m.modelName = "llama3:8b"
+					}
+					viper.Set("llm.model", m.modelName)
+				case 2: // DNS
+					viper.Set("collectors.dns.enabled", !viper.GetBool("collectors.dns.enabled"))
+				case 3: // Whois
+					viper.Set("collectors.whois.enabled", !viper.GetBool("collectors.whois.enabled"))
+				case 4: // GitHub
+					viper.Set("collectors.github.enabled", !viper.GetBool("collectors.github.enabled"))
+				case 5: // Geo
+					viper.Set("collectors.geo.enabled", !viper.GetBool("collectors.geo.enabled"))
+				case 6: // Ports
+					viper.Set("collectors.ports.enabled", !viper.GetBool("collectors.ports.enabled"))
+				}
+				// Save config
+				config.ApplyEthicsConfig() // Re-apply ethics if needed
+				viper.WriteConfig()
 			}
 			return m, nil
 		}
@@ -307,6 +346,7 @@ func (m model) renderNav() string {
 		{ViewTimeline, "Timeline"},
 		{ViewReports, "Reports"},
 		{ViewSettings, "Settings"},
+		{ViewDashboard, "Web Dashboard"},
 	}
 
 	var s strings.Builder
@@ -391,7 +431,43 @@ func (m model) renderContent() string {
 		}
 		content = "REPORTS\n───────\n\n[1] Generate Markdown Report\n[p] Generate Professional PDF\n[2] View Latest Analysis" + status
 	case ViewSettings:
-		content = fmt.Sprintf("SETTINGS\n────────\n\nModel: %s\nTheme: Professional Dark\nStreaming: Enabled\n\n(Press [s] to change model)", m.modelName)
+		// Settings Menu
+		opts := []struct {
+			label string
+			val   string
+		}{
+			{"Ghost Mode", formatBool(viper.GetBool("ghost_mode"))},
+			{"Model", m.modelName},
+			{"DNS Collector", formatBool(viper.GetBool("collectors.dns.enabled"))},
+			{"Whois Collector", formatBool(viper.GetBool("collectors.whois.enabled"))},
+			{"GitHub Collector", formatBool(viper.GetBool("collectors.github.enabled"))},
+			{"Geo Collector", formatBool(viper.GetBool("collectors.geo.enabled"))},
+			{"Ports Collector", formatBool(viper.GetBool("collectors.ports.enabled"))},
+		}
+
+		var s strings.Builder
+		s.WriteString("SETTINGS\n────────\n\n")
+
+		for i, opt := range opts {
+			cursor := "  "
+			if m.settingsCursor == i {
+				cursor = "> "
+			}
+
+			style := lipgloss.NewStyle()
+			if m.settingsCursor == i {
+				style = StyleSelectedNav
+			}
+
+			s.WriteString(fmt.Sprintf("%s%s: %s\n", cursor, style.Render(opt.label), opt.val))
+		}
+		
+		s.WriteString("\n(Press 'Enter' or 'Space' to toggle/change)\n")
+		content = s.String()
+
+	case ViewDashboard:
+		content = "Opening Web Dashboard in your default browser...\n\nURL: http://localhost:8080"
+	
 	default:
 		content = "View not implemented yet."
 	}
@@ -433,4 +509,11 @@ func (m model) renderFooter() string {
 
 	return StyleStatus.Width(m.width).Render(footer)
 
+}
+
+func formatBool(b bool) string {
+	if b {
+		return "[ON]"
+	}
+	return "[OFF]"
 }
