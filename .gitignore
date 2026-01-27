@@ -32,6 +32,7 @@ analyzer/__pycache__/
 .gemini/
 .gemini-clipboard/
 tmp/
+conductor/setup_state.json
 
 # Runtime Data & Logs
 logs/
