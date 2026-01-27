@@ -120,16 +120,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case TickMsg:
 		if m.state == ViewAnalysis && m.analysisStatus == AnalysisRunning {
-			m.analysisStep++
-			if m.analysisStep >= 4 {
-				return m, PerformActualAnalysis(m.selectedCaseID, m.modelName)
+			if m.analysisStep < 4 {
+				m.analysisStep++
+				return m, tickCmd()
 			}
-			return m, tickCmd()
+			// If steps are done but analysis isn't, keep spinning on the last step?
+			// Or just stop ticking and wait for the result.
+			return m, nil 
 		}
 
 	case AnalysisFinishedMsg:
+		m.analysisStatus = AnalysisComplete
 		if msg.Result != nil {
-			m.analysisStatus = AnalysisComplete
 			m.analysisResult = FormatAnalysis(msg.Result)
 		} else {
 			// This was a report generation success

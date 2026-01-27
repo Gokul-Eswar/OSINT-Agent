@@ -18,13 +18,17 @@ type AnalysisErrorMsg string
 type TickMsg time.Time
 
 func tickCmd() tea.Cmd {
-	return tea.Tick(800*time.Millisecond, func(t time.Time) tea.Msg {
+	return tea.Tick(600*time.Millisecond, func(t time.Time) tea.Msg {
 		return TickMsg(t)
 	})
 }
 
 func StartAnalysis(caseID string, modelName string) tea.Cmd {
-	return tickCmd()
+	// Optimisation: Run analysis in parallel with the visual effects
+	return tea.Batch(
+		tickCmd(),
+		PerformActualAnalysis(caseID, modelName),
+	)
 }
 
 func PerformActualAnalysis(caseID string, modelName string) tea.Cmd {
