@@ -7,16 +7,16 @@ This document outlines the step-by-step process to validate, build, and release 
 ## 🏗️ Track 1: Release Engineering (Versioning & Build)
 **Goal:** Prepare the codebase for distribution.
 
-- [ ] **Task 1.1: Version Stamp**
+- [x] **Task 1.1: Version Stamp**
     - Create `internal/version/version.go` package.
     - Define `const Version = "v1.0.0"`.
     - Implement `spectre version` command in `internal/cli/version.go`.
-- [ ] **Task 1.2: Documentation Polish**
+- [x] **Task 1.2: Documentation Polish**
     - Update `README.md`:
         - Verify "Installation" instructions.
         - Ensure "Quick Start" commands are copy-paste ready.
     - Update `docs/features.md` to reflect final v1 feature set.
-- [ ] **Task 1.3: Cross-Compilation Script**
+- [x] **Task 1.3: Cross-Compilation Script**
     - Create `scripts/build_release.sh` (or `.bat`) to generate:
         - `dist/spectre_v1.0.0_windows_amd64.exe`
         - `dist/spectre_v1.0.0_linux_amd64`
@@ -29,10 +29,10 @@ This document outlines the step-by-step process to validate, build, and release 
 
 **Target:** `scanme.nmap.org` (Authorized for scanning)
 
-- [ ] **Task 2.1: Environment Reset**
+- [x] **Task 2.1: Environment Reset**
     - Archive/Delete existing `spectre.db` and `evidence_storage/`.
     - Run `spectre init`.
-- [ ] **Task 2.2: The Investigation Cycle (Manual Test)**
+- [x] **Task 2.2: The Investigation Cycle (Manual Test)**
     1.  **Create Case:** `spectre case new --name "v1_Verification_Run"`
     2.  **Passive Collect:** `spectre collect --case <ID> --target scanme.nmap.org --scanners dns,whois,geo`
     3.  **Active Collect:** `spectre collect --case <ID> --target scanme.nmap.org --scanners ports,http,screenshot --active`
