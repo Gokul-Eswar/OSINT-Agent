@@ -64,8 +64,8 @@ func Start(port int) error {
 		})
 	}
 
-	fmt.Printf("SPECTRE API Server starting on :%d...\n", port)
-	return http.ListenAndServe(fmt.Sprintf(":%d", port), mux)
+	fmt.Printf("SPECTRE API Server starting on 127.0.0.1:%d...\n", port)
+	return http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", port), mux)
 }
 
 func handleEvents(w http.ResponseWriter, r *http.Request) {
