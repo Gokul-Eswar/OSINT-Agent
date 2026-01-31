@@ -324,6 +324,15 @@
                     });
             };
 
+            const escapeHtml = (unsafe) => {
+                return unsafe
+                     .replace(/&/g, "&amp;")
+                     .replace(/</g, "&lt;")
+                     .replace(/>/g, "&gt;")
+                     .replace(/"/g, "&quot;")
+                     .replace(/'/g, "&#039;");
+            }
+
             // Vis.js Graph Rendering
             const renderGraph = (data) => {
                 if (!networkRef.current) return;
@@ -334,9 +343,9 @@
                     group: e.type,
                     title: `
                         <div class="p-2 text-xs font-sans">
-                            <strong>Type:</strong> ${e.type}<br>
-                            <strong>Value:</strong> ${e.value}<br>
-                            <strong>Source:</strong> ${e.source}
+                            <strong>Type:</strong> ${escapeHtml(e.type)}<br>
+                            <strong>Value:</strong> ${escapeHtml(e.value)}<br>
+                            <strong>Source:</strong> ${escapeHtml(e.source)}
                         </div>
                     `,
                     val: 1 // Base size, physics will adjust
