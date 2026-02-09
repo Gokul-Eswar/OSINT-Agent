@@ -5,9 +5,11 @@ import (
 	"os"
 	"text/tabwriter"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/spectre/spectre/internal/extensions"
+	"github.com/spectre/spectre/internal/tui/store"
 )
 
 var extCmd = &cobra.Command{
@@ -15,6 +17,10 @@ var extCmd = &cobra.Command{
 	Short: "Manage extensions (search, install, list)",
 	Long:  `Search for and install extensions from the official Spectre registry.`,
 	Aliases: []string{"ext"},
+	Run: func(cmd *cobra.Command, args []string) {
+		// Default to UI
+		startTUI()
+	},
 }
 
 func getManager() *extensions.Manager {
@@ -24,6 +30,24 @@ func getManager() *extensions.Manager {
 		url = "https://raw.githubusercontent.com/spectre-org/registry/main/registry.json"
 	}
 	return extensions.NewManager("plugins", url)
+}
+
+func startTUI() {
+	mgr := getManager()
+	model := store.NewModel(mgr)
+	p := tea.NewProgram(model, tea.WithAltScreen())
+	if err := p.Start(); err != nil {
+		fmt.Printf("Error starting store UI: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+var extUiCmd = &cobra.Command{
+	Use:   "ui",
+	Short: "Open the interactive extension store",
+	Run: func(cmd *cobra.Command, args []string) {
+		startTUI()
+	},
 }
 
 var extListCmd = &cobra.Command{
@@ -116,6 +140,7 @@ func init() {
 	extCmd.AddCommand(extSearchCmd)
 	extCmd.AddCommand(extInstallCmd)
 	extCmd.AddCommand(extRemoveCmd)
+	extCmd.AddCommand(extUiCmd)
 	
 	// Register with root
 	rootCmd.AddCommand(extCmd)

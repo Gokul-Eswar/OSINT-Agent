@@ -165,7 +165,7 @@ func (m *Manager) Install(extName string) error {
         return fmt.Errorf("git is not installed or not in PATH. Please install git to fetch extensions")
     }
 
-	cmd := exec.Command("git", "clone", target.URL, destPath)
+	cmd := exec.Command("git", "clone", "--depth", "1", target.URL, destPath)
     cmd.Stdout = os.Stdout
     cmd.Stderr = os.Stderr
     

@@ -17,15 +17,6 @@
       "url": "https://github.com/spectre-plugins/whois_advanced",
       "type": "collector",
       "tags": ["whois", "domain"]
-    },
-    {
-      "name": "hello_world",
-      "description": "Test extension for git clone",
-      "author": "Octocat",
-      "version": "1.0.0",
-      "url": "https://github.com/octocat/Hello-World.git",
-      "type": "collector",
-      "tags": ["test"]
     }
   ]
 }
