@@ -74,19 +74,27 @@ Spectre will capture this log and report the failure in the CLI/TUI.
 
 Spectre includes a built-in extension store to easily find and install community plugins.
 
-### Commands
+### Interactive Store
+
+The easiest way to manage extensions is through the interactive UI:
+```bash
+spectre extension
+```
+This opens a full-screen browser where you can search, select, and install extensions using arrow keys and **Enter**.
+
+### CLI Commands
 
 - **List installed extensions:**
   ```bash
   spectre extension list
   ```
 
-- **Search for extensions:**
+- **Search for extensions via CLI:**
   ```bash
   spectre extension search "port scanner"
   ```
 
-- **Install an extension:**
+- **Install an extension via CLI:**
   ```bash
   spectre extension install <name>
   ```

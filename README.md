@@ -14,6 +14,7 @@ Spectre is a commercial-grade OSINT platform that collects intelligence, builds 
 *   **Passive Recon:** DNS, Whois, GeoIP, GitHub.
 *   **Active Recon:** Port Scanning (Top-100/Custom), Screenshot Capture (Headless Browser), Social Media Username Checks.
 *   **Plugin System:** Extensible architecture for custom collectors (Python/Bash/Go).
+*   **Extension Store:** Interactive marketplace to search and install community plugins with one command.
 
 ### 🛡️ Operational Security (Ghost Mode)
 *   **Proxy Support:** Route all HTTP, Social, and Screenshot traffic through Tor/SOCKS5/HTTP proxies.
