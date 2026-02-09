@@ -69,3 +69,29 @@ This means you can query it later or use it in AI analysis.
 ### Error Handling
 If your plugin fails, exit with a non-zero status code. Print the error message to **Stderr**.
 Spectre will capture this log and report the failure in the CLI/TUI.
+
+## Extension Store
+
+Spectre includes a built-in extension store to easily find and install community plugins.
+
+### Commands
+
+- **List installed extensions:**
+  ```bash
+  spectre extension list
+  ```
+
+- **Search for extensions:**
+  ```bash
+  spectre extension search "port scanner"
+  ```
+
+- **Install an extension:**
+  ```bash
+  spectre extension install <name>
+  ```
+
+- **Remove an extension:**
+  ```bash
+  spectre extension remove <name>
+  ```
