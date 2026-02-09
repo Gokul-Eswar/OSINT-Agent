@@ -6,6 +6,7 @@ import (
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/spectre/spectre/internal/extensions"
 )
 
@@ -16,11 +17,20 @@ var extCmd = &cobra.Command{
 	Aliases: []string{"ext"},
 }
 
+func getManager() *extensions.Manager {
+	url := viper.GetString("extension_registry_url")
+	if url == "" {
+		// Fallback if not configured
+		url = "https://raw.githubusercontent.com/spectre-org/registry/main/registry.json"
+	}
+	return extensions.NewManager("plugins", url)
+}
+
 var extListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List installed extensions",
 	Run: func(cmd *cobra.Command, args []string) {
-		mgr := extensions.NewManager("plugins")
+		mgr := getManager()
 		installed, err := mgr.ListInstalled()
 		if err != nil {
 			fmt.Printf("Error listing extensions: %v\n", err)
@@ -44,7 +54,7 @@ var extSearchCmd = &cobra.Command{
 	Short: "Search the extension registry",
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		mgr := extensions.NewManager("plugins")
+		mgr := getManager()
 		
 		query := ""
 		if len(args) > 0 {
@@ -76,7 +86,7 @@ var extInstallCmd = &cobra.Command{
 	Short: "Install an extension",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		mgr := extensions.NewManager("plugins")
+		mgr := getManager()
 		err := mgr.Install(args[0])
 		if err != nil {
 			fmt.Printf("Error installing extension: %v\n", err)
@@ -91,7 +101,7 @@ var extRemoveCmd = &cobra.Command{
 	Short: "Remove an extension",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		mgr := extensions.NewManager("plugins")
+		mgr := getManager()
 		err := mgr.Remove(args[0])
 		if err != nil {
 			fmt.Printf("Error removing extension: %v\n", err)

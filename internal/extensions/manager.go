@@ -1,69 +1,88 @@
 package extensions
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
-// Mock Registry for now - in production this would be fetched from a remote JSON/YAML
-var defaultRegistry = Registry{
-	Extensions: []Extension{
-		{
-			Name:        "shodan_lookup",
-			Description: "Queries Shodan API for IP information",
-			Author:      "SpectreTeam",
-			Version:     "1.0.0",
-			URL:         "https://github.com/spectre-plugins/shodan_lookup",
-			Type:        "collector",
-			Tags:        []string{"osint", "ip", "passive"},
-		},
-		{
-			Name:        "whois_advanced",
-			Description: "Deep WHOIS lookup with historical data",
-			Author:      "Community",
-			Version:     "0.5.0",
-			URL:         "https://github.com/spectre-plugins/whois_advanced",
-			Type:        "collector",
-			Tags:        []string{"whois", "domain"},
-		},
-		{
-			Name:        "git_leaks",
-			Description: "Scans repositories for secrets",
-			Author:      "SecurityResearch",
-			Version:     "2.1.0",
-			URL:         "https://github.com/spectre-plugins/git_leaks",
-			Type:        "collector",
-			Tags:        []string{"git", "secrets", "active"},
-		},
-		{
-			Name:        "subdomain_brute",
-			Description: "Fast subdomain brute-forcing tool",
-			Author:      "RedTeamOps",
-			Version:     "1.2.0",
-			URL:         "https://github.com/spectre-plugins/subdomain_brute",
-			Type:        "collector",
-			Tags:        []string{"dns", "active", "subdomains"},
-		},
-	},
-}
-
 type Manager struct {
-	pluginsDir string
+	pluginsDir  string
+	registryURL string
+	cachedList  []Extension
 }
 
-func NewManager(pluginsDir string) *Manager {
-	return &Manager{pluginsDir: pluginsDir}
+func NewManager(pluginsDir string, registryURL string) *Manager {
+	return &Manager{
+		pluginsDir:  pluginsDir,
+		registryURL: registryURL,
+	}
+}
+
+// ensureRegistryFetched ensures we have the list of extensions.
+func (m *Manager) ensureRegistryFetched() error {
+	if m.cachedList != nil {
+		return nil
+	}
+
+	var extensions []Extension
+
+	// Check if URL is actually a local file path
+	// e.g. "file://C:/path/to/registry.json" or just "registry.json"
+	isLocal := strings.HasPrefix(m.registryURL, "file://") || 
+              (strings.HasSuffix(m.registryURL, ".json") && !strings.HasPrefix(m.registryURL, "http"))
+
+	if isLocal {
+		cleanPath := strings.TrimPrefix(m.registryURL, "file://")
+		data, err := os.ReadFile(cleanPath)
+		if err != nil {
+			return fmt.Errorf("failed to read local registry file '%s': %w", cleanPath, err)
+		}
+		
+		var reg Registry
+		if err := json.Unmarshal(data, &reg); err != nil {
+			return fmt.Errorf("failed to parse local registry JSON: %w", err)
+		}
+		extensions = reg.Extensions
+
+	} else {
+		// HTTP Fetch
+		client := &http.Client{Timeout: 10 * time.Second}
+		resp, err := client.Get(m.registryURL)
+		if err != nil {
+			return fmt.Errorf("failed to fetch registry from %s: %w", m.registryURL, err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("registry returned status %d", resp.StatusCode)
+		}
+
+		var reg Registry
+		if err := json.NewDecoder(resp.Body).Decode(&reg); err != nil {
+			return fmt.Errorf("failed to decode registry from URL: %w", err)
+		}
+		extensions = reg.Extensions
+	}
+
+	m.cachedList = extensions
+	return nil
 }
 
 func (m *Manager) Search(query string) ([]Extension, error) {
-	// In a real scenario, this would fetch from a remote URL.
-	// For now, filtering the defaultRegistry.
+	if err := m.ensureRegistryFetched(); err != nil {
+		return nil, err
+	}
+
 	var results []Extension
 	query = strings.ToLower(query)
 
-	for _, ext := range defaultRegistry.Extensions {
+	for _, ext := range m.cachedList {
 		if strings.Contains(strings.ToLower(ext.Name), query) ||
 			strings.Contains(strings.ToLower(ext.Description), query) {
 			results = append(results, ext)
@@ -73,7 +92,10 @@ func (m *Manager) Search(query string) ([]Extension, error) {
 }
 
 func (m *Manager) ListRemote() ([]Extension, error) {
-	return defaultRegistry.Extensions, nil
+	if err := m.ensureRegistryFetched(); err != nil {
+		return nil, err
+	}
+	return m.cachedList, nil
 }
 
 func (m *Manager) ListInstalled() ([]string, error) {
@@ -98,17 +120,35 @@ func (m *Manager) ListInstalled() ([]string, error) {
 }
 
 func (m *Manager) Install(extName string) error {
+	if err := m.ensureRegistryFetched(); err != nil {
+		return err
+	}
+
 	// 1. Find the extension
 	var target *Extension
-	for _, ext := range defaultRegistry.Extensions {
+	for _, ext := range m.cachedList {
 		if ext.Name == extName {
 			target = &ext
 			break
 		}
 	}
 
+	// Because we are iterating over a slice of structs, target is a pointer to the loop variable.
+	// But since we break immediately, it's fine. 
+	// However, correct Go idiom is:
 	if target == nil {
-		return fmt.Errorf("extension '%s' not found in registry", extName)
+		// Re-check just to be safe if loop finished
+		found := false
+		for i := range m.cachedList {
+			if m.cachedList[i].Name == extName {
+				target = &m.cachedList[i]
+				found = true
+				break
+			}
+		}
+		if !found {
+			return fmt.Errorf("extension '%s' not found in registry", extName)
+		}
 	}
 
 	// 2. Check if already installed
@@ -117,59 +157,29 @@ func (m *Manager) Install(extName string) error {
 		return fmt.Errorf("extension '%s' is already installed", target.Name)
 	}
 
-	// 3. Clone/Download
-	// Since we are simulating, and these repos don't actually exist, 
-	// I will mock the installation by creating the folder and a dummy plugin.yaml/script.
-	// IN REALITY: cmd := exec.Command("git", "clone", target.URL, destPath)
-
+	// 3. Real Git Clone
 	fmt.Printf("Installing %s from %s...\n", target.Name, target.URL)
 
-	// MOCK INSTALLATION START
-	if err := os.MkdirAll(destPath, 0755); err != nil {
-		return err
-	}
+    // Ensure git is installed
+    if _, err := exec.LookPath("git"); err != nil {
+        return fmt.Errorf("git is not installed or not in PATH. Please install git to fetch extensions")
+    }
 
-	isActive := false
-	for _, tag := range target.Tags {
-		if tag == "active" {
-			isActive = true
-			break
-		}
-	}
+	cmd := exec.Command("git", "clone", target.URL, destPath)
+    cmd.Stdout = os.Stdout
+    cmd.Stderr = os.Stderr
+    
+    if err := cmd.Run(); err != nil {
+        return fmt.Errorf("git clone failed: %w", err)
+    }
 
-	dummyYaml := fmt.Sprintf(`name: "%s"
-description: "%s"
-command: "python"
-args: ["main.py"]
-is_active: %t
-`, target.Name, target.Description, isActive)
-
-	if err := os.WriteFile(filepath.Join(destPath, "plugin.yaml"), []byte(dummyYaml), 0644); err != nil {
-		return err
-	}
-
-	dummyPy := `import sys
-import json
-
-# This is a placeholder script for the installed extension.
-# In a real scenario, this would be the actual tool logic.
-
-try:
-    target = sys.argv[1]
-except IndexError:
-    target = "unknown"
-
-print(json.dumps({
-    "source": "extension_store",
-    "status": "success", 
-    "message": "Extension executed successfully",
-    "target": target
-}))
-`
-	if err := os.WriteFile(filepath.Join(destPath, "main.py"), []byte(dummyPy), 0644); err != nil {
-		return err
-	}
-	// MOCK INSTALLATION END
+	// 4. Verification (Optional but recommended)
+    // Check if plugin.yaml exists in the cloned repo
+    if _, err := os.Stat(filepath.Join(destPath, "plugin.yaml")); err != nil {
+        // Rollback
+        // os.RemoveAll(destPath) // DISABLED for safety, user might want to inspect
+        return fmt.Errorf("warning: 'plugin.yaml' missing in repository. Extension may not load")
+    }
 
 	return nil
 }

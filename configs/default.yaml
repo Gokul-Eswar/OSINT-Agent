@@ -4,6 +4,9 @@
 database:
   path: "spectre.db"
 
+# Extension Store
+extension_registry_url: "file://registry_sample.json"
+
 # Logging configuration
 logging:
   level: "info"
