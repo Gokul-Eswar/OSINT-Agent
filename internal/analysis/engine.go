@@ -65,28 +65,13 @@ func AnalyzeCase(caseID string, model string) (*core.Analysis, error) {
 		return nil, fmt.Errorf("failed to parse AI response: %w\nResponse was: %s", err, responseJSON)
 	}
 
-		result.CaseID = caseID
+	result.CaseID = caseID
+	result.ContextHash = hashStr
 
-		result.ContextHash = hashStr
+	// 6. Save
+	if err := storage.SaveAnalysis(&result); err != nil {
+		return nil, err
+	}
 
-		
-
-		// 6. Save
-
-		if err := storage.SaveAnalysis(&result); err != nil {
-
-	
-	
-				return nil, err
-	
-			}
-	
-		
-	
-			return &result, nil
-	
-		}
-	
-		
-	
-	
+	return &result, nil
+}

@@ -62,8 +62,8 @@ var collectCmd = &cobra.Command{
 			go func(cName string) {
 				defer wg.Done()
 
-				// Execute
-				evidenceList, err := collector.Run(cName, caseID, target, activeAllowed)
+				// Execute and Save
+				_, err := collector.RunAndSave(cName, caseID, target, activeAllowed)
 				
 				printMu.Lock()
 				defer printMu.Unlock()
@@ -73,19 +73,7 @@ var collectCmd = &cobra.Command{
 					return
 				}
 
-				fmt.Printf("[+] %s: Completed (%d evidence items)\n", cName, len(evidenceList))
-
-				for _, ev := range evidenceList {
-					if err := storage.CreateEvidence(&ev); err != nil {
-						fmt.Printf("    - Failed to save evidence: %v\n", err)
-						continue
-					}
-					// fmt.Printf("    - Saved: %s\n", ev.FilePath) // Reduced verbosity for "fluidity"
-					
-					if err := storage.IngestEvidence(&ev); err != nil {
-						fmt.Printf("    - Warning: ingestion failed: %v\n", err)
-					}
-				}
+				fmt.Printf("[+] %s: Completed and Ingested\n", cName)
 			}(name)
 		}
 

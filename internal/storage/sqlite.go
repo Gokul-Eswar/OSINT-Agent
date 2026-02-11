@@ -19,7 +19,8 @@ func InitDB() error {
 	}
 
 	var err error
-	DB, err = sql.Open("sqlite3", dbPath)
+	dsn := fmt.Sprintf("%s?_journal_mode=WAL&_busy_timeout=5000", dbPath)
+	DB, err = sql.Open("sqlite3", dsn)
 	if err != nil {
 		return fmt.Errorf("failed to open database: %w", err)
 	}

@@ -107,7 +107,7 @@ func (m runnerModel) Update(msg tea.Msg) (runnerModel, tea.Cmd) {
 			}
 			m.state = executing
 			return m, func() tea.Msg {
-				_, err := collector.Run(m.selectedColl, m.selectedCaseID, target, m.activeAllowed)
+				_, err := collector.RunAndSave(m.selectedColl, m.selectedCaseID, target, m.activeAllowed)
 				if err != nil {
 					return err
 				}

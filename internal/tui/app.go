@@ -522,32 +522,18 @@ func (m model) renderFooter() string {
 
 	info := "ollama:localhost:11434  |  Press ? for help"
 
-	
-
 	gapSize := m.width - lipgloss.Width(status) - lipgloss.Width(info) - 4
-
 	if gapSize < 0 {
-
 		gapSize = 0
-
 	}
 
-
-
-	footer := lipgloss.JoinHorizontal(lipgloss.Center, 
-
+	footer := lipgloss.JoinHorizontal(lipgloss.Center,
 		lipgloss.NewStyle().Foreground(ColorSuccess).Render(status),
-
 		strings.Repeat(" ", gapSize),
-
 		info,
-
 	)
 
-	
-
 	return StyleStatus.Width(m.width).Render(footer)
-
 }
 
 func formatBool(b bool) string {
