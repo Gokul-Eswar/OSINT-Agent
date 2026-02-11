@@ -73,6 +73,14 @@ var linkListCmd = &cobra.Command{
 	Short: "List all links in a case",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if caseID == "" {
+			ctxID, err := LoadContext()
+			if err == nil && ctxID != "" {
+				caseID = ctxID
+				fmt.Printf("Using current case: %s\n", caseID)
+			}
+		}
+
+		if caseID == "" {
 			return fmt.Errorf("case ID is required (use --case)")
 		}
 
@@ -90,11 +98,25 @@ var linkListCmd = &cobra.Command{
 			return nil
 		}
 
+		// Fetch entities to map IDs to values
+		entities, err := storage.ListEntitiesByCase(caseID)
+		if err != nil {
+			return err
+		}
+		entityMap := make(map[string]string)
+		for _, e := range entities {
+			entityMap[e.ID] = fmt.Sprintf("%s (%s)", e.Value, e.Type)
+		}
+
 		fmt.Printf("Links for case %s:\n", caseID)
-		fmt.Printf("% -36s | % -36s | % -20s\n", "FROM ID", "TO ID", "TYPE")
+		fmt.Printf("%-40s | %-40s | %-20s\n", "FROM", "TO", "TYPE")
 		fmt.Println("---------------------------------------------------------------------------------------------------")
 		for _, r := range rels {
-			fmt.Printf("% -36s | % -36s | % -20s\n", r.FromEntityID, r.ToEntityID, r.Type)
+			from := entityMap[r.FromEntityID]
+			if from == "" { from = r.FromEntityID }
+			to := entityMap[r.ToEntityID]
+			if to == "" { to = r.ToEntityID }
+			fmt.Printf("%-40s | %-40s | %-20s\n", from, to, r.Type)
 		}
 
 		return nil

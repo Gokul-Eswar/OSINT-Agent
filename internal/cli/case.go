@@ -42,7 +42,36 @@ var newCaseCmd = &cobra.Command{
 	},
 }
 
+var caseListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List all investigation cases",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if err := storage.InitDB(); err != nil {
+			return err
+		}
+
+		cases, err := storage.ListCases()
+		if err != nil {
+			return err
+		}
+
+		if len(cases) == 0 {
+			fmt.Println("No cases found.")
+			return nil
+		}
+
+		fmt.Printf("%-36s | %-20s | %-10s\n", "ID", "NAME", "STATUS")
+		fmt.Println("----------------------------------------------------------------------")
+		for _, c := range cases {
+			fmt.Printf("%-36s | %-20s | %-10s\n", c.ID, c.Name, c.Status)
+		}
+
+		return nil
+	},
+}
+
 func init() {
 	caseCmd.AddCommand(newCaseCmd)
+	caseCmd.AddCommand(caseListCmd)
 	rootCmd.AddCommand(caseCmd)
 }
