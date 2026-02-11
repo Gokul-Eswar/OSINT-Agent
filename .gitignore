@@ -38,6 +38,14 @@ conductor/setup_state.json
 logs/
 evidence_storage/
 spectre.db
+*.log
 
 # Build Artifacts
+
+dist/
+
 spectre
+
+*.env
+
+*.env.*
