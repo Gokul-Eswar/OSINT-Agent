@@ -15,6 +15,7 @@ require (
 	github.com/rs/zerolog v1.34.0
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
+	github.com/stretchr/testify v1.11.1
 	golang.org/x/time v0.14.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -28,6 +29,7 @@ require (
 	github.com/charmbracelet/x/term v0.2.1 // indirect
 	github.com/chromedp/cdproto v0.0.0-20250803210736-d308e07a266d // indirect
 	github.com/chromedp/sysutil v1.1.0 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-json-experiment/json v0.0.0-20251027170946-4849db3c2f7e // indirect
@@ -46,6 +48,7 @@ require (
 	github.com/muesli/cancelreader v0.2.2 // indirect
 	github.com/muesli/termenv v0.16.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/sagikazarmark/locafero v0.12.0 // indirect
 	github.com/sahilm/fuzzy v0.1.1 // indirect

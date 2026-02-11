@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"os/exec"
 	"time"
 )
@@ -39,8 +40,19 @@ func RunPythonTask(req Request) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
 
-	// Execute: python -m analyzer --task <task> --input <json>
-	cmd := exec.CommandContext(ctx, "python", "-m", "analyzer", "--task", req.Task, "--input", string(inputJSON))
+	// Determine Python executable
+	pythonPath := "python" // Default to system path
+	
+	// Check for local venv (Windows)
+	if _, err := os.Stat(".venv/Scripts/python.exe"); err == nil {
+		pythonPath = ".venv/Scripts/python.exe"
+	} else if _, err := os.Stat(".venv/bin/python"); err == nil {
+		// Unix/Mac
+		pythonPath = ".venv/bin/python"
+	}
+
+	// Execute: <python> -m analyzer --task <task> --input <json>
+	cmd := exec.CommandContext(ctx, pythonPath, "-m", "analyzer", "--task", req.Task, "--input", string(inputJSON))
 	
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
