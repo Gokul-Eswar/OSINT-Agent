@@ -38,6 +38,8 @@ conductor/setup_state.json
 logs/
 evidence_storage/
 spectre.db
+spectre.db-shm
+spectre.db-wal
 *.log
 
 # Build Artifacts
