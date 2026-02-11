@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/rs/zerolog/log"
 	"github.com/spectre/spectre/internal/collector"
 	"github.com/spectre/spectre/internal/core"
 	"github.com/spectre/spectre/internal/ethics"
@@ -35,6 +36,12 @@ func (c *PortCollector) IsActive() bool {
 }
 
 func (c *PortCollector) Collect(caseID string, target string) ([]core.Evidence, error) {
+	log.Info().
+		Str("collector", "ports").
+		Str("case_id", caseID).
+		Str("target", target).
+		Msg("collection_started")
+
 	mode := viper.GetString("collectors.ports.mode")
 	var ports []int
 
@@ -53,7 +60,7 @@ func (c *PortCollector) Collect(caseID string, target string) ([]core.Evidence, 
 	for _, port := range ports {
 		// Apply rate limit
 		if err := ethics.Wait("ports"); err != nil {
-			// If context is cancelled, we should probably stop
+			log.Error().Err(err).Msg("rate limit wait failed")
 			return nil, err
 		}
 
@@ -67,19 +74,22 @@ func (c *PortCollector) Collect(caseID string, target string) ([]core.Evidence, 
 
 	data, err := json.MarshalIndent(results, "", "  ")
 	if err != nil {
-		return nil, err
+		log.Error().Err(err).Msg("failed to marshal ports results")
+		return nil, fmt.Errorf("failed to marshal ports results: %w", err)
 	}
 
 	// Store file
 	storageDir := filepath.Join("evidence_storage", caseID)
 	if err := os.MkdirAll(storageDir, 0755); err != nil {
-		return nil, err
+		log.Error().Err(err).Str("dir", storageDir).Msg("failed to create storage directory")
+		return nil, fmt.Errorf("failed to create storage directory %s: %w", storageDir, err)
 	}
 
 	fileName := fmt.Sprintf("ports_%s_%d.json", target, time.Now().Unix())
 	filePath := filepath.Join(storageDir, fileName)
 	if err := os.WriteFile(filePath, data, 0644); err != nil {
-		return nil, err
+		log.Error().Err(err).Str("path", filePath).Msg("failed to write ports evidence file")
+		return nil, fmt.Errorf("failed to write ports evidence file %s: %w", filePath, err)
 	}
 
 	// Hash
@@ -98,6 +108,13 @@ func (c *PortCollector) Collect(caseID string, target string) ([]core.Evidence, 
 			"mode":   mode,
 		},
 	}
+
+	log.Info().
+		Str("collector", "ports").
+		Str("case_id", caseID).
+		Str("target", target).
+		Int("open_ports_count", len(results)).
+		Msg("collection_completed")
 
 	return []core.Evidence{evidence}, nil
 }

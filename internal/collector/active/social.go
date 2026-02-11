@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/rs/zerolog/log"
 	"github.com/spectre/spectre/internal/collector"
 	"github.com/spectre/spectre/internal/core"
 	"github.com/spectre/spectre/internal/ethics"
@@ -71,6 +72,12 @@ type SiteResult struct {
 }
 
 func (c *SocialCollector) Collect(caseID string, target string) ([]core.Evidence, error) {
+	log.Info().
+		Str("collector", "social").
+		Str("case_id", caseID).
+		Str("username", target).
+		Msg("collection_started")
+
 	// Target is assumed to be the username
 	username := target
 	
@@ -128,24 +135,32 @@ func (c *SocialCollector) Collect(caseID string, target string) ([]core.Evidence
 	wg.Wait()
 
 	if len(results) == 0 {
+		log.Info().
+			Str("collector", "social").
+			Str("case_id", caseID).
+			Str("username", username).
+			Msg("collection_completed_no_results")
 		return nil, nil // No evidence found
 	}
 
 	data, err := json.MarshalIndent(results, "", "  ")
 	if err != nil {
-		return nil, err
+		log.Error().Err(err).Msg("failed to marshal social results")
+		return nil, fmt.Errorf("failed to marshal social results: %w", err)
 	}
 
 	// Store file
 	storageDir := filepath.Join("evidence_storage", caseID)
 	if err := os.MkdirAll(storageDir, 0755); err != nil {
-		return nil, err
+		log.Error().Err(err).Str("dir", storageDir).Msg("failed to create storage directory")
+		return nil, fmt.Errorf("failed to create storage directory %s: %w", storageDir, err)
 	}
 
 	fileName := fmt.Sprintf("social_%s_%d.json", username, time.Now().Unix())
 	filePath := filepath.Join(storageDir, fileName)
 	if err := os.WriteFile(filePath, data, 0644); err != nil {
-		return nil, err
+		log.Error().Err(err).Str("path", filePath).Msg("failed to write social evidence file")
+		return nil, fmt.Errorf("failed to write social evidence file %s: %w", filePath, err)
 	}
 
 	// Hash
@@ -163,6 +178,13 @@ func (c *SocialCollector) Collect(caseID string, target string) ([]core.Evidence
 			"count":  len(results),
 		},
 	}
+
+	log.Info().
+		Str("collector", "social").
+		Str("case_id", caseID).
+		Str("username", username).
+		Int("results_count", len(results)).
+		Msg("collection_completed")
 
 	return []core.Evidence{evidence}, nil
 }

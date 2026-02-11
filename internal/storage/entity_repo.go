@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/rs/zerolog/log"
 	"github.com/spectre/spectre/internal/core"
 )
 
@@ -31,14 +32,21 @@ func CreateEntity(e *core.Entity) error {
 
 	metadataJSON, err := json.Marshal(e.Metadata)
 	if err != nil {
-		return fmt.Errorf("failed to marshal metadata: %w", err)
+		log.Error().Err(err).Str("entity_id", e.ID).Msg("failed to marshal entity metadata")
+		return fmt.Errorf("failed to marshal metadata for entity %s: %w", e.ID, err)
 	}
 
 	query := `INSERT INTO entities (id, case_id, type, value, source, confidence, discovered_at, metadata) 
 	          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
 	_, err = DB.Exec(query, e.ID, e.CaseID, e.Type, e.Value, e.Source, e.Confidence, e.DiscoveredAt, string(metadataJSON))
 	if err != nil {
-		return fmt.Errorf("failed to create entity: %w", err)
+		log.Error().
+			Err(err).
+			Str("entity_id", e.ID).
+			Str("case_id", e.CaseID).
+			Str("type", e.Type).
+			Msg("failed to execute insert entity query")
+		return fmt.Errorf("failed to create entity %s in case %s: %w", e.ID, e.CaseID, err)
 	}
 
 	if OnEntityCreated != nil {
@@ -64,11 +72,13 @@ func GetEntity(id string) (*core.Entity, error) {
 		return nil, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("failed to get entity: %w", err)
+		log.Error().Err(err).Str("entity_id", id).Msg("failed to scan entity row")
+		return nil, fmt.Errorf("failed to get entity %s: %w", id, err)
 	}
 
 	if err := json.Unmarshal([]byte(metadataStr), &e.Metadata); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal metadata: %w", err)
+		log.Error().Err(err).Str("entity_id", id).Msg("failed to unmarshal entity metadata")
+		return nil, fmt.Errorf("failed to unmarshal metadata for entity %s: %w", id, err)
 	}
 
 	return &e, nil
@@ -82,13 +92,15 @@ func UpdateEntity(e *core.Entity) error {
 
 	metadataJSON, err := json.Marshal(e.Metadata)
 	if err != nil {
-		return fmt.Errorf("failed to marshal metadata: %w", err)
+		log.Error().Err(err).Str("entity_id", e.ID).Msg("failed to marshal entity metadata for update")
+		return fmt.Errorf("failed to marshal metadata for entity update %s: %w", e.ID, err)
 	}
 
 	query := `UPDATE entities SET metadata = ?, confidence = ? WHERE id = ?`
 	_, err = DB.Exec(query, string(metadataJSON), e.Confidence, e.ID)
 	if err != nil {
-		return fmt.Errorf("failed to update entity: %w", err)
+		log.Error().Err(err).Str("entity_id", e.ID).Msg("failed to execute update entity query")
+		return fmt.Errorf("failed to update entity %s: %w", e.ID, err)
 	}
 	return nil
 }
@@ -102,7 +114,8 @@ func ListEntitiesByCase(caseID string) ([]*core.Entity, error) {
 	query := `SELECT id, case_id, type, value, source, confidence, discovered_at, metadata FROM entities WHERE case_id = ?`
 	rows, err := DB.Query(query, caseID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list entities: %w", err)
+		log.Error().Err(err).Str("case_id", caseID).Msg("failed to query entities by case")
+		return nil, fmt.Errorf("failed to list entities for case %s: %w", caseID, err)
 	}
 	defer rows.Close()
 
@@ -111,10 +124,12 @@ func ListEntitiesByCase(caseID string) ([]*core.Entity, error) {
 		var e core.Entity
 		var metadataStr string
 		if err := rows.Scan(&e.ID, &e.CaseID, &e.Type, &e.Value, &e.Source, &e.Confidence, &e.DiscoveredAt, &metadataStr); err != nil {
-			return nil, fmt.Errorf("failed to scan entity: %w", err)
+			log.Error().Err(err).Str("case_id", caseID).Msg("failed to scan entity row from list")
+			return nil, fmt.Errorf("failed to scan entity for case %s: %w", caseID, err)
 		}
 		if err := json.Unmarshal([]byte(metadataStr), &e.Metadata); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal metadata: %w", err)
+			log.Error().Err(err).Str("entity_id", e.ID).Msg("failed to unmarshal entity metadata in list")
+			return nil, fmt.Errorf("failed to unmarshal metadata for entity %s in case %s: %w", e.ID, caseID, err)
 		}
 		entities = append(entities, &e)
 	}
@@ -139,11 +154,17 @@ func GetEntityByValue(caseID, value string) (*core.Entity, error) {
 		return nil, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("failed to get entity by value: %w", err)
+		log.Error().
+			Err(err).
+			Str("case_id", caseID).
+			Str("value", value).
+			Msg("failed to get entity by value")
+		return nil, fmt.Errorf("failed to get entity by value %s in case %s: %w", value, caseID, err)
 	}
 
 	if err := json.Unmarshal([]byte(metadataStr), &e.Metadata); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal metadata: %w", err)
+		log.Error().Err(err).Str("case_id", caseID).Str("value", value).Msg("failed to unmarshal metadata for entity by value")
+		return nil, fmt.Errorf("failed to unmarshal metadata for entity %s in case %s: %w", value, caseID, err)
 	}
 
 	return &e, nil

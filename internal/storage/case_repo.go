@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/rs/zerolog/log"
 	"github.com/spectre/spectre/internal/core"
 )
 
@@ -31,7 +32,12 @@ func CreateCase(c *core.Case) error {
 	query := `INSERT INTO cases (id, name, description, created_at, updated_at, status) VALUES (?, ?, ?, ?, ?, ?)`
 	_, err := DB.Exec(query, c.ID, c.Name, c.Description, c.CreatedAt, c.UpdatedAt, c.Status)
 	if err != nil {
-		return fmt.Errorf("failed to create case: %w", err)
+		log.Error().
+			Err(err).
+			Str("case_id", c.ID).
+			Str("name", c.Name).
+			Msg("failed to execute insert case query")
+		return fmt.Errorf("failed to create case %s: %w", c.ID, err)
 	}
 
 	return nil
@@ -52,7 +58,8 @@ func GetCase(id string) (*core.Case, error) {
 		return nil, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("failed to get case: %w", err)
+		log.Error().Err(err).Str("case_id", id).Msg("failed to scan case row")
+		return nil, fmt.Errorf("failed to get case %s: %w", id, err)
 	}
 
 	return &c, nil
@@ -67,6 +74,7 @@ func ListCases() ([]*core.Case, error) {
 	query := `SELECT id, name, description, created_at, updated_at, status FROM cases ORDER BY created_at DESC`
 	rows, err := DB.Query(query)
 	if err != nil {
+		log.Error().Err(err).Msg("failed to query all cases")
 		return nil, fmt.Errorf("failed to list cases: %w", err)
 	}
 	defer rows.Close()
@@ -75,6 +83,7 @@ func ListCases() ([]*core.Case, error) {
 	for rows.Next() {
 		var c core.Case
 		if err := rows.Scan(&c.ID, &c.Name, &c.Description, &c.CreatedAt, &c.UpdatedAt, &c.Status); err != nil {
+			log.Error().Err(err).Msg("failed to scan case row from list")
 			return nil, fmt.Errorf("failed to scan case: %w", err)
 		}
 		cases = append(cases, &c)

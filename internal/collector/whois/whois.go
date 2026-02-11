@@ -10,6 +10,7 @@ import (
 
 	"github.com/likexian/whois"
 	whoisparser "github.com/likexian/whois-parser"
+	"github.com/rs/zerolog/log"
 	"github.com/spectre/spectre/internal/collector"
 	"github.com/spectre/spectre/internal/core"
 )
@@ -33,27 +34,36 @@ func (w *WHOISCollector) IsActive() bool {
 }
 
 func (w *WHOISCollector) Collect(caseID string, target string) ([]core.Evidence, error) {
+	log.Info().
+		Str("collector", "whois").
+		Str("case_id", caseID).
+		Str("target", target).
+		Msg("collection_started")
+
 	raw, err := whois.Whois(target)
 	if err != nil {
-		return nil, fmt.Errorf("whois lookup failed: %w", err)
+		log.Error().Err(err).Str("target", target).Msg("whois lookup failed")
+		return nil, fmt.Errorf("whois lookup failed for %s: %w", target, err)
 	}
 
 	// Parse to verify it's valid and get metadata
 	result, err := whoisparser.Parse(raw)
 	if err != nil {
-		// Even if parsing fails, we keep the raw data as evidence
+		log.Debug().Err(err).Str("target", target).Msg("whois parsing failed, continuing with raw data")
 	}
 
 	// Store raw file
 	storageDir := filepath.Join("evidence_storage", caseID)
 	if err := os.MkdirAll(storageDir, 0755); err != nil {
-		return nil, err
+		log.Error().Err(err).Str("dir", storageDir).Msg("failed to create storage directory")
+		return nil, fmt.Errorf("failed to create storage directory %s: %w", storageDir, err)
 	}
 
 	fileName := fmt.Sprintf("whois_%s_%d.txt", target, time.Now().Unix())
 	filePath := filepath.Join(storageDir, fileName)
 	if err := os.WriteFile(filePath, []byte(raw), 0644); err != nil {
-		return nil, err
+		log.Error().Err(err).Str("path", filePath).Msg("failed to write WHOIS evidence file")
+		return nil, fmt.Errorf("failed to write WHOIS evidence file %s: %w", filePath, err)
 	}
 
 	// Hash
@@ -79,6 +89,12 @@ func (w *WHOISCollector) Collect(caseID string, target string) ([]core.Evidence,
 		CollectedAt: time.Now(),
 		Metadata:    metadata,
 	}
+
+	log.Info().
+		Str("collector", "whois").
+		Str("case_id", caseID).
+		Str("target", target).
+		Msg("collection_completed")
 
 	return []core.Evidence{evidence}, nil
 }

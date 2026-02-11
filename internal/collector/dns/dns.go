@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/rs/zerolog/log"
 	"github.com/spectre/spectre/internal/collector"
 	"github.com/spectre/spectre/internal/core"
 )
@@ -33,39 +34,57 @@ func (d *DNSCollector) IsActive() bool {
 }
 
 func (d *DNSCollector) Collect(caseID string, target string) ([]core.Evidence, error) {
+	log.Info().
+		Str("collector", "dns").
+		Str("case_id", caseID).
+		Str("target", target).
+		Msg("collection_started")
+
 	results := make(map[string][]string)
 
 	// A Records
-	ips, _ := net.LookupHost(target)
+	ips, err := net.LookupHost(target)
+	if err != nil {
+		log.Debug().Err(err).Str("target", target).Msg("failed to lookup A records")
+	}
 	results["A"] = ips
 
 	// MX Records
-	mxs, _ := net.LookupMX(target)
+	mxs, err := net.LookupMX(target)
+	if err != nil {
+		log.Debug().Err(err).Str("target", target).Msg("failed to lookup MX records")
+	}
 	for _, mx := range mxs {
 		results["MX"] = append(results["MX"], mx.Host)
 	}
 
 	// NS Records
-	nss, _ := net.LookupNS(target)
+	nss, err := net.LookupNS(target)
+	if err != nil {
+		log.Debug().Err(err).Str("target", target).Msg("failed to lookup NS records")
+	}
 	for _, ns := range nss {
 		results["NS"] = append(results["NS"], ns.Host)
 	}
 
 	data, err := json.MarshalIndent(results, "", "  ")
 	if err != nil {
-		return nil, err
+		log.Error().Err(err).Msg("failed to marshal DNS results")
+		return nil, fmt.Errorf("failed to marshal DNS results: %w", err)
 	}
 
 	// Store file
 	storageDir := filepath.Join("evidence_storage", caseID)
 	if err := os.MkdirAll(storageDir, 0755); err != nil {
-		return nil, err
+		log.Error().Err(err).Str("dir", storageDir).Msg("failed to create storage directory")
+		return nil, fmt.Errorf("failed to create storage directory %s: %w", storageDir, err)
 	}
 
 	fileName := fmt.Sprintf("dns_%s_%d.json", target, time.Now().Unix())
 	filePath := filepath.Join(storageDir, fileName)
 	if err := os.WriteFile(filePath, data, 0644); err != nil {
-		return nil, err
+		log.Error().Err(err).Str("path", filePath).Msg("failed to write DNS evidence file")
+		return nil, fmt.Errorf("failed to write DNS evidence file %s: %w", filePath, err)
 	}
 
 	// Hash
@@ -84,6 +103,13 @@ func (d *DNSCollector) Collect(caseID string, target string) ([]core.Evidence, e
 		},
 		RawData: results,
 	}
+
+	log.Info().
+		Str("collector", "dns").
+		Str("case_id", caseID).
+		Str("target", target).
+		Int("record_count", len(ips)+len(mxs)+len(nss)).
+		Msg("collection_completed")
 
 	return []core.Evidence{evidence}, nil
 }
