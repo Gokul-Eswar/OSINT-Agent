@@ -4,21 +4,84 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/rs/zerolog/log"
 	"github.com/spectre/spectre/internal/core"
 	"github.com/spectre/spectre/internal/ethics"
 	"github.com/spectre/spectre/internal/storage"
 )
 
-var (
-	registry = make(map[string]core.Collector)
-	mu       sync.RWMutex
-)
+// Registry defines the contract for managing collectors.
+type Registry interface {
+	Register(c core.Collector) error
+	Get(name string) (core.Collector, error)
+	List() []core.Collector
+}
+
+// DefaultRegistry is the concrete implementation of the Registry interface.
+type DefaultRegistry struct {
+	collectors map[string]core.Collector
+	mu         sync.RWMutex
+}
+
+// NewRegistry creates a new instance of DefaultRegistry.
+func NewRegistry() *DefaultRegistry {
+	return &DefaultRegistry{
+		collectors: make(map[string]core.Collector),
+	}
+}
+
+// Register adds a collector to the registry.
+func (r *DefaultRegistry) Register(c core.Collector) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if _, exists := r.collectors[c.Name()]; exists {
+		return fmt.Errorf("collector '%s' already registered", c.Name())
+	}
+	r.collectors[c.Name()] = c
+	log.Debug().Str("collector", c.Name()).Msg("collector registered")
+	return nil
+}
+
+// Get retrieves a collector by name.
+func (r *DefaultRegistry) Get(name string) (core.Collector, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	c, ok := r.collectors[name]
+	if !ok {
+		return nil, fmt.Errorf("collector '%s' not found", name)
+	}
+	return c, nil
+}
+
+// List returns all registered collectors.
+func (r *DefaultRegistry) List() []core.Collector {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	var collectors []core.Collector
+	for _, c := range r.collectors {
+		collectors = append(collectors, c)
+	}
+	return collectors
+}
+
+// Global instance for convenience
+var globalRegistry = NewRegistry()
 
 // Register adds a collector to the global registry.
 func Register(c core.Collector) {
-	mu.Lock()
-	defer mu.Unlock()
-	registry[c.Name()] = c
+	if err := globalRegistry.Register(c); err != nil {
+		log.Warn().Err(err).Msg("failed to register collector")
+	}
+}
+
+// Get retrieves a collector from the global registry.
+func Get(name string) (core.Collector, error) {
+	return globalRegistry.Get(name)
+}
+
+// List returns all collectors from the global registry.
+func List() []core.Collector {
+	return globalRegistry.List()
 }
 
 // Run executes a collector by name with ethics enforcement.
@@ -61,33 +124,12 @@ func RunAndSave(name string, caseID string, target string, activeAllowed bool) (
 		}
 		
 		if err := storage.IngestEvidence(ev); err != nil {
-			// We log ingestion errors but don't necessarily stop the whole process, 
-			// though for "rigorous" we might want to know.
-			fmt.Printf("Warning: Ingestion failed for %s: %v\n", ev.Collector, err)
+			log.Warn().
+				Err(err).
+				Str("collector", ev.Collector).
+				Msg("ingestion failed for evidence")
 		}
 	}
 
 	return evidenceList, nil
-}
-
-// Get retrieves a collector by name.
-func Get(name string) (core.Collector, error) {
-	mu.RLock()
-	defer mu.RUnlock()
-	c, ok := registry[name]
-	if !ok {
-		return nil, fmt.Errorf("collector '%s' not found", name)
-	}
-	return c, nil
-}
-
-// List returns all registered collectors.
-func List() []core.Collector {
-	mu.RLock()
-	defer mu.RUnlock()
-	var collectors []core.Collector
-	for _, c := range registry {
-		collectors = append(collectors, c)
-	}
-	return collectors
 }

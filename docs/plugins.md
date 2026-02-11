@@ -70,6 +70,43 @@ This means you can query it later or use it in AI analysis.
 If your plugin fails, exit with a non-zero status code. Print the error message to **Stderr**.
 Spectre will capture this log and report the failure in the CLI/TUI.
 
+## Go Plugin API
+
+For core functionality or high-performance collectors, you can implement a Go-native collector by satisfying the `Collector` interface.
+
+### The Collector Interface
+
+```go
+type Collector interface {
+    Name() string
+    Description() string
+    IsActive() bool
+    Collect(caseID string, target string) ([]Evidence, error)
+}
+```
+
+### Registration
+
+Internal collectors should register themselves in an `init()` function:
+
+```go
+func init() {
+    collector.Register(&MyCustomCollector{})
+}
+```
+
+### The Registry Interface
+
+If you are embedding Spectre as a library, you can provide your own registry implementation:
+
+```go
+type Registry interface {
+    Register(c core.Collector) error
+    Get(name string) (core.Collector, error)
+    List() []core.Collector
+}
+```
+
 ## Extension Store
 
 Spectre includes a built-in extension store to easily find and install community plugins.
