@@ -11,7 +11,7 @@ import (
 
 var DB *sql.DB
 
-// InitDB initializes the SQLite database connection.
+// InitDB initializes the SQLite database connection and applies migrations.
 func InitDB() error {
 	dbPath := viper.GetString("database.path")
 	if dbPath == "" {
@@ -30,7 +30,12 @@ func InitDB() error {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 
-	log.Info().Str("path", dbPath).Msg("SQLite database initialized")
+	// Run migrations
+	if err := Migrate(); err != nil {
+		return fmt.Errorf("database migration failed: %w", err)
+	}
+
+	log.Info().Str("path", dbPath).Msg("SQLite database initialized and migrated")
 	return nil
 }
 

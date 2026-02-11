@@ -1,12 +1,6 @@
-package storage
+-- Migration: 001_initial_schema
+-- Description: Create core tables for cases, entities, relationships, and evidence.
 
-import (
-	"fmt"
-
-	"github.com/rs/zerolog/log"
-)
-
-const schema = `
 CREATE TABLE IF NOT EXISTS cases (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
@@ -57,19 +51,6 @@ CREATE TABLE IF NOT EXISTS evidence (
     FOREIGN KEY (entity_id) REFERENCES entities(id)
 );
 
-CREATE TABLE IF NOT EXISTS analyses (
-    id TEXT PRIMARY KEY,
-    case_id TEXT NOT NULL,
-    context_hash TEXT,
-    findings JSON,
-    risks JSON,
-    connections JSON,
-    next_steps JSON,
-    confidence REAL,
-    analyzed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (case_id) REFERENCES cases(id)
-);
-
 -- Indices for Performance Optimization
 CREATE INDEX IF NOT EXISTS idx_entities_case_id ON entities(case_id);
 CREATE INDEX IF NOT EXISTS idx_entities_type ON entities(type);
@@ -77,19 +58,3 @@ CREATE INDEX IF NOT EXISTS idx_relationships_case_id ON relationships(case_id);
 CREATE INDEX IF NOT EXISTS idx_relationships_from ON relationships(from_entity);
 CREATE INDEX IF NOT EXISTS idx_relationships_to ON relationships(to_entity);
 CREATE INDEX IF NOT EXISTS idx_evidence_case_id ON evidence(case_id);
-`
-
-// InitSchema applies the initial database schema.
-func InitSchema() error {
-	if DB == nil {
-		return fmt.Errorf("database not initialized")
-	}
-
-	_, err := DB.Exec(schema)
-	if err != nil {
-		return fmt.Errorf("failed to apply schema: %w", err)
-	}
-
-	log.Info().Msg("Database schema initialized")
-	return nil
-}

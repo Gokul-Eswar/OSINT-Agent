@@ -22,7 +22,7 @@ func TestCreateAndGetCase(t *testing.T) {
 	defer func() { DB = oldDB }()
 
 	// Apply schema
-	if err := InitSchema(); err != nil {
+	if err := Migrate(); err != nil {
 		t.Fatal(err)
 	}
 

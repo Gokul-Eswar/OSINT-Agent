@@ -49,9 +49,13 @@ The `internal` directory contains the core logic of the application.
 *   **Rate Limiter:** Token Bucket algorithm (`golang.org/x/time/rate`) ensures collectors respect API limits.
 *   **Scope Control:** Validates targets against blacklists/whitelists before execution.
 
-### **Storage (`internal/storage`)**
+### **Storage Layer (`internal/storage`)**
 *   **SQLite:** Stores structured metadata (cases, entities, relationships).
+    *   **Migrations:** Managed via embedded SQL files in `internal/storage/migrations`. Versioning is tracked in the `schema_migrations` table.
+    *   **Concurrency:** Uses WAL (Write-Ahead Logging) mode and a busy timeout to handle multiple concurrent collector writes.
 *   **File System:** Stores raw evidence files (JSON, text) in `evidence_storage/`.
+    *   **Structure:** Organized by Case ID: `evidence_storage/<case_id>/<collector>_<target>_<timestamp>.<ext>`.
+    *   **Auditability:** Every record in the database links to a specific evidence file via `evidence_id`, providing a verifiable trail from raw data to the intelligence graph.
 
 ## 2. Intelligence Layer (Python)
 

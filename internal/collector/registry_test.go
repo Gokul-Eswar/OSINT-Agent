@@ -34,7 +34,7 @@ func TestRunAndSave(t *testing.T) {
 	}
 	defer db.Close()
 	storage.DB = db
-	storage.InitSchema()
+	storage.Migrate()
 
 	caseID := "test-case"
 	storage.CreateCase(&core.Case{ID: caseID, Name: "Test"})

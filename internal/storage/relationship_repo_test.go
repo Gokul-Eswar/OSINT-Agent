@@ -19,7 +19,7 @@ func TestCreateAndGetRelationship(t *testing.T) {
 	DB = db
 	defer func() { DB = oldDB }()
 
-	if err := InitSchema(); err != nil {
+	if err := Migrate(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -69,7 +69,7 @@ func TestListRelationshipsByCase(t *testing.T) {
 	DB = db
 	defer func() { DB = oldDB }()
 
-	if err := InitSchema(); err != nil {
+	if err := Migrate(); err != nil {
 		t.Fatal(err)
 	}
 
