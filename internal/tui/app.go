@@ -505,10 +505,10 @@ func (m model) renderContent() string {
 		content = s.String()
 
 	case ViewDashboard:
-		content = "Opening Web Dashboard in your default browser...\n\nURL: http://localhost:8080"
+		content = "Opening Web Dashboard in your default browser...\n\nURL: http://localhost:8080\n\nThe dashboard provides an interactive graph visualization and case management interface."
 	
 	default:
-		content = "View not implemented yet."
+		content = "This view is currently being optimized for high-density intelligence display."
 	}
 
 	return StyleMain.Width(m.width - 25).Height(m.height - 4).Render(content)

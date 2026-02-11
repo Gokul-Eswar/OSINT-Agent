@@ -14,7 +14,7 @@ import (
 	"github.com/spectre/spectre/internal/collector"
 	"github.com/spectre/spectre/internal/core"
 	"github.com/spectre/spectre/internal/ethics"
-	"github.com/spectre/spectre/internal/http" // Import path is directory, not package name
+	netclient "github.com/spectre/spectre/internal/http"
 )
 
 type SocialCollector struct {
