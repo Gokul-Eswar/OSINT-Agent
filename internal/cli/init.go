@@ -10,10 +10,7 @@ var initCmd = &cobra.Command{
 	Short: "Initialize the SPECTRE database",
 	Long:  `Initialize the SQLite database and apply necessary schemas for SPECTRE.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := storage.InitDB(); err != nil {
-			return err
-		}
-		return storage.InitSchema()
+		return storage.InitDB() // InitDB calls Migrate()
 	},
 }
 

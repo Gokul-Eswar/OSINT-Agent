@@ -71,3 +71,33 @@ func TestPortCollector_Collect(t *testing.T) {
 		t.Errorf("Expected port %d to be closed/missing, but it was in results", port+1)
 	}
 }
+
+func BenchmarkPortCollector_Collect(b *testing.B) {
+	// Start a listener
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer listener.Close()
+	port := listener.Addr().(*net.TCPAddr).Port
+
+	collector := &PortCollector{}
+	caseID := "bench_case"
+	target := "127.0.0.1"
+	
+	// Prepare common ports for benchmarking
+	ports := []int{port}
+	for i := 0; i < 10; i++ {
+		ports = append(ports, 10000+i)
+	}
+	
+	viper.Set("collectors.ports.mode", "custom")
+	viper.Set("collectors.ports.custom_ports", ports)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = collector.Collect(caseID, target)
+	}
+	
+	os.RemoveAll(filepath.Join("evidence_storage", caseID))
+}

@@ -9,18 +9,15 @@ import (
 )
 
 func TestCLICommands(t *testing.T) {
-	// Setup temporary database for testing
-	dbPath := "test_cli.db"
-	defer os.Remove(dbPath)
-
 	// Mock config
 	config.InitConfig("")
 	
-	// Temporarily set DB path in config if possible, 
-	// or just rely on InitDB using default and then Cleanup.
-	// For simplicity in this E2E-style unit test:
-	
 	t.Run("InitCommand", func(t *testing.T) {
+		// Cleanup if exists
+		os.Remove("spectre.db")
+		os.Remove("spectre.db-wal")
+		os.Remove("spectre.db-shm")
+
 		rootCmd.SetArgs([]string{"init"})
 		if err := rootCmd.Execute(); err != nil {
 			t.Fatalf("init command failed: %v", err)
@@ -30,14 +27,25 @@ func TestCLICommands(t *testing.T) {
 			t.Error("spectre.db was not created by init command")
 		}
 		defer os.Remove("spectre.db")
+		defer os.Remove("spectre.db-wal")
+		defer os.Remove("spectre.db-shm")
 	})
 
 	t.Run("CaseNewCommand", func(t *testing.T) {
-		// Ensure DB is initialized
-		storage.InitDB()
-		storage.InitSchema()
+		// Use in-memory DB for logic test if possible, but CLI uses InitDB
+		// which is hardcoded to spectre.db if not overridden in config.
+		// For unit test, we just cleanup.
+		os.Remove("spectre.db")
+		os.Remove("spectre.db-wal")
+		os.Remove("spectre.db-shm")
+		
+		if err := storage.InitDB(); err != nil {
+			t.Fatal(err)
+		}
 		defer storage.CloseDB()
 		defer os.Remove("spectre.db")
+		defer os.Remove("spectre.db-wal")
+		defer os.Remove("spectre.db-shm")
 
 		rootCmd.SetArgs([]string{"case", "new", "test-cli-case"})
 		if err := rootCmd.Execute(); err != nil {
@@ -45,8 +53,6 @@ func TestCLICommands(t *testing.T) {
 		}
 		
 		// Verify case exists
-		_, err := storage.GetCase("some-id") // We don't know the ID easily here without extra logic
-		// But we can check if any case exists
 		rows, err := storage.DB.Query("SELECT name FROM cases WHERE name='test-cli-case'")
 		if err != nil {
 			t.Fatal(err)

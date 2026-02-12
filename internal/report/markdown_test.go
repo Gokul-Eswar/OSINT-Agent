@@ -18,7 +18,7 @@ func TestGenerateMarkdownReport(t *testing.T) {
 	}
 	defer db.Close()
 	storage.DB = db
-	storage.InitSchema()
+	storage.Migrate()
 
 	caseID := "report-test-case"
 	storage.CreateCase(&core.Case{

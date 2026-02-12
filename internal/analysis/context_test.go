@@ -20,7 +20,7 @@ func TestBuildCaseContext(t *testing.T) {
 
 	// Temporarily set global DB
 	storage.DB = db
-	if err := storage.InitSchema(); err != nil {
+	if err := storage.Migrate(); err != nil {
 		t.Fatal(err)
 	}
 
