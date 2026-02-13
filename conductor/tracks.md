@@ -40,7 +40,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [x] **Track: Web Command Center (The Dashboard)**
   *Link: [./tracks/web_command_center_20260124/spec.md](./tracks/web_command_center_20260124/spec.md)*
 
-- [Chat Orchestrator](./tracks/chat_orchestrator_20260127/spec.md) - **Active**
+- [x] **Track: Chat Orchestrator (The Agent REPL)**
+  *Link: [./tracks/chat_orchestrator_20260127/spec.md](./tracks/chat_orchestrator_20260127/spec.md)*
 
 
 - [x] **Track: External Plugin System (The Ecosystem)**

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/spectre/spectre/internal/agent"
 	"github.com/spectre/spectre/internal/analysis"
 	"github.com/spectre/spectre/internal/core"
 	"github.com/spectre/spectre/internal/storage"
@@ -34,6 +35,7 @@ func Start(port int) error {
 	mux.HandleFunc("/api/cases/", handleCaseDetail) // /api/cases/{id} and /api/cases/{id}/graph
 	mux.HandleFunc("/api/events", handleEvents)
 	mux.HandleFunc("/api/settings", handleSettings)
+	mux.HandleFunc("/api/chat", handleChat)
 
 	// Static Assets
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -217,4 +219,50 @@ func handleSettings(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+}
+
+var (
+	engines   = make(map[string]*agent.Engine)
+	enginesMu sync.Mutex
+)
+
+func handleChat(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var payload struct {
+		CaseID  string `json:"case_id"`
+		Message string `json:"message"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if payload.CaseID == "" {
+		http.Error(w, "case_id is required", http.StatusBadRequest)
+		return
+	}
+
+	enginesMu.Lock()
+	engine, ok := engines[payload.CaseID]
+	if !ok {
+		engine = agent.NewEngine(payload.CaseID)
+		engines[payload.CaseID] = engine
+	}
+	enginesMu.Unlock()
+
+	response, err := engine.Execute(payload.Message)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"response": response,
+	})
 }

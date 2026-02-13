@@ -25,12 +25,12 @@
 ## Phase 3: TUI Integration
 **Goal:** Visual chat within the dashboard.
 
-- [ ] **Bubble Tea Model:** Create `internal/tui/chat.go`.
-- [ ] **UI Components:**
+- [x] **Bubble Tea Model:** Create `internal/tui/chat.go`.
+- [x] **UI Components:**
     - `viewport` for history.
     - `textinput` for user messages.
     - `spinner` for "Agent is thinking...".
 
 ## Phase 4: Web Integration (Future)
-- [ ] Add `/api/chat` endpoint.
-- [ ] Add Chat Widget to React frontend.
+- [x] Add `/api/chat` endpoint.
+- [x] Add Chat Widget to React frontend.

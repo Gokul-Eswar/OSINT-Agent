@@ -25,6 +25,7 @@ const (
 	ViewGraph
 	ViewTimeline
 	ViewReports
+	ViewChat
 	ViewSettings
 	ViewDashboard
 )
@@ -65,6 +66,7 @@ type model struct {
 	entityTable table.Model
 	relTable    table.Model
 	runner      runnerModel
+	chat        chatModel
 }
 
 func InitialModel() model {
@@ -79,6 +81,7 @@ func InitialModel() model {
 		entityTable:    NewEntityTable(),
 		relTable:       NewRelationshipTable(),
 		runner:         NewRunnerModel(),
+		chat:           newChatModel(),
 		modelName:      "llama3:8b",
 		availableModels: []string{"llama3:8b", "mistral"},
 	}
@@ -108,6 +111,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.caseList.SetSize(w, h)
 		m.runner.caseList.SetSize(w, h)
 		m.runner.collList.SetSize(w, h)
+		m.chat.setSize(w, h)
 
 	case []list.Item:
 		m.caseList.SetItems(msg)
@@ -159,6 +163,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case AnalysisErrorMsg:
 		m.analysisStatus = AnalysisError
 		m.analysisError = string(msg)
+
+	case agentResponseMsg:
+		m.chat, cmd = m.chat.Update(msg)
+		return m, cmd
 
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -212,6 +220,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if msg.String() == "enter" {
 				if selected, ok := m.caseList.SelectedItem().(item); ok {
 					m.selectedCaseID = selected.id
+					m.chat.setCase(selected.id)
 					// Transition to Analysis or Evidence?
 					m.state = ViewEvidence
 					return m, func() tea.Msg {
@@ -232,6 +241,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd2
 		}
 
+		if m.state == ViewChat {
+			m.chat, cmd = m.chat.Update(msg)
+			return m, cmd
+		}
+
 		// Global navigation if not in a list
 		switch msg.String() {
 		case "1": m.state = ViewCases
@@ -247,6 +261,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "5": m.state = ViewTimeline
 		case "6": m.state = ViewReports
 		case "7": m.state = ViewSettings
+		case "8": m.state = ViewChat
 		}
 
 		// Specific View Keybindings
@@ -379,6 +394,7 @@ func (m model) renderNav() string {
 		{ViewGraph, "Graph"},
 		{ViewTimeline, "Timeline"},
 		{ViewReports, "Reports"},
+		{ViewChat, "Chat"},
 		{ViewSettings, "Settings"},
 		{ViewDashboard, "Web Dashboard"},
 	}
@@ -464,6 +480,14 @@ func (m model) renderContent() string {
 			status = "\n\n" + StyleMuted.Foreground(ColorSuccess).Render(m.analysisResult)
 		}
 		content = "REPORTS\n───────\n\n[1] Generate Markdown Report\n[p] Generate Professional PDF\n[2] View Latest Analysis" + status
+	
+	case ViewChat:
+		if m.selectedCaseID == "" {
+			content = "No case selected. Please select a case first (Press 1)."
+		} else {
+			content = m.chat.View()
+		}
+
 	case ViewSettings:
 		// Settings Menu
 		modelLabel := m.modelName
