@@ -18,6 +18,81 @@ def extract_json(text):
             pass
     return None
 
+def chat(data):
+    """
+    Handle an interactive chat session with tool use capabilities.
+    """
+    messages = data.get("messages", [])
+    tools = data.get("tools", [])
+    model = data.get("model", "llama3")
+    llm_config = data.get("llm_config", {})
+
+    api_url = llm_config.get("url", "http://localhost:11434/api/chat")
+    api_key = llm_config.get("api_key", "")
+    timeout = llm_config.get("timeout", 120)
+
+    headers = {"Content-Type": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+
+    # System prompt for agent behavior
+    system_msg = {
+        "role": "system",
+        "content": (
+            "You are SPECTRE Agent, an OSINT automation assistant. "
+            "You help users gather intelligence by using available tools. "
+            "When you need to use a tool, respond with ONLY a JSON object in this format:\n"
+            "{\"tool_use\": {\"name\": \"tool_name\", \"arguments\": { ... }}}\n"
+            "Available tools:\n" + json.dumps(tools, indent=2) + "\n"
+            "If you have enough information to answer the user, just provide a normal text response."
+        )
+    }
+
+    # Ensure system message is at the start
+    if not messages or messages[0].get("role") != "system":
+        messages.insert(0, system_msg)
+
+    # Payload for Chat API (Ollama style by default)
+    payload = {
+        "model": model,
+        "messages": messages,
+        "stream": False
+    }
+    
+    # If using OpenAI, we might want to use native tools if available
+    # but for simplicity and cross-compatibility with local LLMs, 
+    # we use the system prompt + regex extraction approach.
+
+    try:
+        resp = requests.post(
+            api_url,
+            json=payload,
+            headers=headers,
+            timeout=timeout
+        )
+        resp.raise_for_status()
+        
+        response_json = resp.json()
+        
+        # Handle different API response structures
+        content = ""
+        if "message" in response_json:
+            content = response_json["message"].get("content", "")
+        elif "choices" in response_json:
+            content = response_json["choices"][0]["message"].get("content", "")
+        elif "response" in response_json:
+            content = response_json["response"]
+
+        # Check for tool use in the content
+        tool_call = extract_json(content)
+        if tool_call and "tool_use" in tool_call:
+            return {"role": "assistant", "tool_use": tool_call["tool_use"]}
+        
+        return {"role": "assistant", "content": content}
+
+    except Exception as e:
+        return {"error": str(e)}
+
 def analyze_case(data):
     """
     Synthesize case data using an LLM. 

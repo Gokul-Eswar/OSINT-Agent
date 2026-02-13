@@ -1,12 +1,12 @@
 import json
 import sys
 import argparse
-from .llm import analyze_case
+from .llm import analyze_case, chat
 from .graph_viz import generate_visual_report
 
 def main():
     parser = argparse.ArgumentParser(description="SPECTRE Analyzer (Python)")
-    parser.add_argument("--task", choices=["synthesize", "visualize"], required=True)
+    parser.add_argument("--task", choices=["synthesize", "visualize", "chat"], required=True)
     parser.add_argument("--input", help="JSON input data", required=True)
     
     args = parser.parse_args()
@@ -16,6 +16,9 @@ def main():
         
         if args.task == "synthesize":
             result = analyze_case(input_data)
+            print(json.dumps(result))
+        elif args.task == "chat":
+            result = chat(input_data)
             print(json.dumps(result))
         elif args.task == "visualize":
             # Extract the actual graph data payload

@@ -21,6 +21,28 @@ type Request struct {
 	Model     string      `json:"model"`
 	Data      interface{} `json:"data"` // For track 5 graph data
 	LLMConfig LLMConfig   `json:"llm_config"`
+	Messages  []Message   `json:"messages,omitempty"`
+	Tools     []interface{} `json:"tools,omitempty"`
+}
+
+// Message represents a single turn in a chat.
+type Message struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+
+// Response represents a structured response from the Python analyzer.
+type Response struct {
+	Role    string   `json:"role"`
+	Content string   `json:"content"`
+	ToolUse *ToolUse `json:"tool_use,omitempty"`
+	Error   string   `json:"error,omitempty"`
+}
+
+// ToolUse represents an LLM's request to call a tool.
+type ToolUse struct {
+	Name      string                 `json:"name"`
+	Arguments map[string]interface{} `json:"arguments"`
 }
 
 // Validate checks if the request has all required fields.
