@@ -23,6 +23,11 @@ func TestRequestValidate(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name:    "valid chat request",
+			req:     Request{Task: "chat", CaseID: "123", Messages: []Message{{Role: "user", Content: "hi"}}},
+			wantErr: false,
+		},
+		{
 			name:    "missing task",
 			req:     Request{CaseID: "123"},
 			wantErr: true,
