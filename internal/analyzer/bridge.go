@@ -12,6 +12,9 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// PythonCommand allows overriding the command used to run python tasks (useful for testing)
+var PythonCommand = []string{"-m", "analyzer"}
+
 // Request defines the structure sent to the Python analyzer.
 type Request struct {
 	Task      string      `json:"task"`
@@ -95,8 +98,9 @@ func RunPythonTask(req Request) (string, error) {
 		pythonPath = ".venv/bin/python"
 	}
 
-	// Execute: <python> -m analyzer --task <task> --input <json>
-	cmd := exec.CommandContext(ctx, pythonPath, "-m", "analyzer", "--task", req.Task, "--input", string(inputJSON))
+	// Execute: <python> <PythonCommand...> --task <task> --input <json>
+	args := append(PythonCommand, "--task", req.Task, "--input", string(inputJSON))
+	cmd := exec.CommandContext(ctx, pythonPath, args...)
 	
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
