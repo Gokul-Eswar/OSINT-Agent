@@ -150,7 +150,7 @@ func (m collectModel) View() string {
 var collectCmd = &cobra.Command{
 	Use:   "collect [collector|all] [target]",
 	Short: "Run a passive collector (or all) against a target",
-	Args:  cobra.ExactArgs(2),
+	Args:  cobra.RangeArgs(1, 2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Try to load context if caseID is missing
 		if caseID == "" {
@@ -166,9 +166,24 @@ var collectCmd = &cobra.Command{
 		}
 
 		collectorName := args[0]
-		target := args[1]
+		var target string
+
+		if len(args) == 2 {
+			target = args[1]
+			// Save for next time
+			SaveTarget(target)
+		} else {
+			// Try to load from context
+			ctxTarget, err := LoadTarget()
+			if err != nil || ctxTarget == "" {
+				return fmt.Errorf("target is required (no active target in context)")
+			}
+			target = ctxTarget
+			fmt.Printf("Using current target: %s\n", target)
+		}
 
 		if !dryRun {
+
 			if err := storage.InitDB(); err != nil {
 				return err
 			}
