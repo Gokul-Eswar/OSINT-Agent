@@ -51,6 +51,8 @@ var extUiCmd = &cobra.Command{
 	},
 }
 
+var tagFilter string
+
 var extListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List installed extensions",
@@ -68,9 +70,16 @@ var extListCmd = &cobra.Command{
 		}
 
 		fmt.Println("Installed Extensions:")
-		for _, name := range installed {
-			fmt.Printf("- %s\n", name)
+		w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
+		fmt.Fprintln(w, "NAME\tDESCRIPTION\tTAGS")
+		for _, ext := range installed {
+			tags := strings.Join(ext.Tags, ", ")
+			if tags == "" {
+				tags = "-"
+			}
+			fmt.Fprintf(w, "%s\t%s\t%s\n", ext.Name, ext.Description, tags)
 		}
+		w.Flush()
 	},
 }
 
@@ -97,14 +106,39 @@ var extSearchCmd = &cobra.Command{
 			return
 		}
 
+		// Filter by tag if provided
+		if tagFilter != "" {
+			var filtered []extensions.Extension
+			for _, ext := range results {
+				match := false
+				for _, t := range ext.Tags {
+					if strings.EqualFold(t, tagFilter) {
+						match = true
+						break
+					}
+				}
+				if match {
+					filtered = append(filtered, ext)
+				}
+			}
+			results = filtered
+		}
+
+		if len(results) == 0 {
+			fmt.Printf("No extensions found with tag '%s'.\n", tagFilter)
+			return
+		}
+
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
-		fmt.Fprintln(w, "NAME\tDESCRIPTION\tAUTHOR\tVERSION")
+		fmt.Fprintln(w, "NAME\tDESCRIPTION\tTAGS\tVERSION")
 		for _, ext := range results {
-			fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", ext.Name, ext.Description, ext.Author, ext.Version)
+			tags := strings.Join(ext.Tags, ", ")
+			fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", ext.Name, ext.Description, tags, ext.Version)
 		}
 		w.Flush()
 	},
 }
+
 
 var extInstallCmd = &cobra.Command{
 	Use:   "install [name]",
@@ -185,7 +219,10 @@ var extInfoCmd = &cobra.Command{
 }
 
 func init() {
+	extSearchCmd.Flags().StringVarP(&tagFilter, "tag", "t", "", "Filter extensions by tag")
+
 	extCmd.AddCommand(extListCmd)
+
 	extCmd.AddCommand(extSearchCmd)
 	extCmd.AddCommand(extInstallCmd)
 	extCmd.AddCommand(extRemoveCmd)

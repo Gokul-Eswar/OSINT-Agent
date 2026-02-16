@@ -9,7 +9,10 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"gopkg.in/yaml.v3"
 )
+
 
 type Manager struct {
 	pluginsDir  string
@@ -98,7 +101,8 @@ func (m *Manager) ListRemote() ([]Extension, error) {
 	return m.cachedList, nil
 }
 
-func (m *Manager) ListInstalled() ([]string, error) {
+// ListInstalled returns all locally installed extensions with their metadata.
+func (m *Manager) ListInstalled() ([]Extension, error) {
 	entries, err := os.ReadDir(m.pluginsDir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -107,17 +111,34 @@ func (m *Manager) ListInstalled() ([]string, error) {
 		return nil, err
 	}
 
-	var installed []string
+	var installed []Extension
 	for _, e := range entries {
 		if e.IsDir() {
-			// Check for plugin.yaml
-			if _, err := os.Stat(filepath.Join(m.pluginsDir, e.Name(), "plugin.yaml")); err == nil {
-				installed = append(installed, e.Name())
+			pluginPath := filepath.Join(m.pluginsDir, e.Name())
+			yamlPath := filepath.Join(pluginPath, "plugin.yaml")
+			if _, err := os.Stat(yamlPath); err == nil {
+				// Try to read plugin.yaml for metadata
+				data, err := os.ReadFile(yamlPath)
+				if err == nil {
+					var ext Extension
+					// Extension and PluginMetadata share similar fields (name, description)
+					// We can unmarshal directly into Extension for the CLI list
+					if err := yaml.Unmarshal(data, &ext); err == nil {
+						if ext.Name == "" {
+							ext.Name = e.Name()
+						}
+						installed = append(installed, ext)
+						continue
+					}
+				}
+				// Fallback if YAML fails
+				installed = append(installed, Extension{Name: e.Name(), Description: "Plugin found but metadata unreadable"})
 			}
 		}
 	}
 	return installed, nil
 }
+
 
 func (m *Manager) Install(extName string) error {
 	if err := m.ensureRegistryFetched(); err != nil {
@@ -232,13 +253,14 @@ func (m *Manager) UpdateAll() error {
 		return err
 	}
 
-	for _, name := range installed {
-		if err := m.Update(name); err != nil {
-			fmt.Printf("Failed to update %s: %v\n", name, err)
+	for _, ext := range installed {
+		if err := m.Update(ext.Name); err != nil {
+			fmt.Printf("Failed to update %s: %v\n", ext.Name, err)
 		}
 	}
 	return nil
 }
+
 
 // GetInfo returns details about an extension (from registry or local).
 func (m *Manager) GetInfo(extName string) (*Extension, bool, error) {
