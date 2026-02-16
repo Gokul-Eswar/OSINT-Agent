@@ -173,7 +173,11 @@ func (m *Manager) Install(extName string) error {
         return fmt.Errorf("git clone failed: %w", err)
     }
 
-	// 4. Verification (Optional but recommended)
+	// 4. Install dependencies if any
+	m.InstallDependencies(target.Name)
+
+	// 5. Verification (Optional but recommended)
+
     // Check if plugin.yaml exists in the cloned repo
     if _, err := os.Stat(filepath.Join(destPath, "plugin.yaml")); err != nil {
         // Rollback
@@ -185,9 +189,111 @@ func (m *Manager) Install(extName string) error {
 }
 
 func (m *Manager) Remove(extName string) error {
-    destPath := filepath.Join(m.pluginsDir, extName)
-    if _, err := os.Stat(destPath); os.IsNotExist(err) {
-        return fmt.Errorf("extension '%s' is not installed", extName)
-    }
-    return os.RemoveAll(destPath)
+	destPath := filepath.Join(m.pluginsDir, extName)
+	if _, err := os.Stat(destPath); os.IsNotExist(err) {
+		return fmt.Errorf("extension '%s' is not installed", extName)
+	}
+	return os.RemoveAll(destPath)
+}
+
+// Update pulls the latest changes for an installed extension.
+func (m *Manager) Update(extName string) error {
+	destPath := filepath.Join(m.pluginsDir, extName)
+	if _, err := os.Stat(destPath); os.IsNotExist(err) {
+		return fmt.Errorf("extension '%s' is not installed", extName)
+	}
+
+	fmt.Printf("Updating %s...\n", extName)
+
+	// Check if it's a git repo
+	if _, err := os.Stat(filepath.Join(destPath, ".git")); err != nil {
+		return fmt.Errorf("extension '%s' was not installed via git, cannot update automatically", extName)
+	}
+
+	cmd := exec.Command("git", "pull")
+	cmd.Dir = destPath
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("git pull failed: %w", err)
+	}
+
+	// Try to install dependencies after update
+	m.InstallDependencies(extName)
+
+	return nil
+}
+
+// UpdateAll updates all installed extensions.
+func (m *Manager) UpdateAll() error {
+	installed, err := m.ListInstalled()
+	if err != nil {
+		return err
+	}
+
+	for _, name := range installed {
+		if err := m.Update(name); err != nil {
+			fmt.Printf("Failed to update %s: %v\n", name, err)
+		}
+	}
+	return nil
+}
+
+// GetInfo returns details about an extension (from registry or local).
+func (m *Manager) GetInfo(extName string) (*Extension, bool, error) {
+	// Try to find in registry first
+	if err := m.ensureRegistryFetched(); err == nil {
+		for i := range m.cachedList {
+			if m.cachedList[i].Name == extName {
+				installed := false
+				if _, err := os.Stat(filepath.Join(m.pluginsDir, extName)); err == nil {
+					installed = true
+				}
+				return &m.cachedList[i], installed, nil
+			}
+		}
+	}
+
+	// If not in registry, check if installed locally
+	destPath := filepath.Join(m.pluginsDir, extName)
+	if _, err := os.Stat(destPath); err == nil {
+		// It's installed but not in registry (maybe a custom plugin)
+		return &Extension{
+			Name:        extName,
+			Description: "Locally installed plugin (not found in registry)",
+			Type:        "collector",
+		}, true, nil
+	}
+
+	return nil, false, fmt.Errorf("extension '%s' not found", extName)
+}
+
+// InstallDependencies looks for requirements.txt and runs pip install.
+func (m *Manager) InstallDependencies(extName string) {
+	destPath := filepath.Join(m.pluginsDir, extName)
+	reqPath := filepath.Join(destPath, "requirements.txt")
+
+	if _, err := os.Stat(reqPath); err == nil {
+		fmt.Printf("Found requirements.txt for %s. Installing dependencies...\n", extName)
+		
+		// Try to use the project's venv if it exists, otherwise use system pip
+		pipCmd := "pip"
+		if _, err := os.Stat(".venv"); err == nil {
+			if strings.Contains(os.Getenv("OS"), "Windows") {
+				pipCmd = filepath.Join(".venv", "Scripts", "pip.exe")
+			} else {
+				pipCmd = filepath.Join(".venv", "bin", "pip")
+			}
+		}
+
+		cmd := exec.Command(pipCmd, "install", "-r", "requirements.txt")
+		cmd.Dir = destPath
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		
+		if err := cmd.Run(); err != nil {
+			fmt.Printf("Warning: Failed to install dependencies for %s: %v\n", extName, err)
+		}
+	}
 }

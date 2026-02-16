@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"os"
+	"strings"
 	"text/tabwriter"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -135,12 +136,63 @@ var extRemoveCmd = &cobra.Command{
 	},
 }
 
+var extUpdateCmd = &cobra.Command{
+	Use:   "update [name|all]",
+	Short: "Update one or all installed extensions",
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		mgr := getManager()
+		if args[0] == "all" {
+			err := mgr.UpdateAll()
+			if err != nil {
+				fmt.Printf("Error updating extensions: %v\n", err)
+			}
+		} else {
+			err := mgr.Update(args[0])
+			if err != nil {
+				fmt.Printf("Error updating extension: %v\n", err)
+			}
+		}
+	},
+}
+
+var extInfoCmd = &cobra.Command{
+	Use:   "info [name]",
+	Short: "Show detailed information about an extension",
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		mgr := getManager()
+		ext, installed, err := mgr.GetInfo(args[0])
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+			return
+		}
+
+		fmt.Printf("Name:        %s\n", ext.Name)
+		fmt.Printf("Description: %s\n", ext.Description)
+		fmt.Printf("Author:      %s\n", ext.Author)
+		fmt.Printf("Version:     %s\n", ext.Version)
+		fmt.Printf("Type:        %s\n", ext.Type)
+		fmt.Printf("Tags:        %s\n", strings.Join(ext.Tags, ", "))
+		fmt.Printf("URL:         %s\n", ext.URL)
+		
+		status := "Not installed"
+		if installed {
+			status = "Installed"
+		}
+		fmt.Printf("Status:      %s\n", status)
+	},
+}
+
 func init() {
 	extCmd.AddCommand(extListCmd)
 	extCmd.AddCommand(extSearchCmd)
 	extCmd.AddCommand(extInstallCmd)
 	extCmd.AddCommand(extRemoveCmd)
+	extCmd.AddCommand(extUpdateCmd)
+	extCmd.AddCommand(extInfoCmd)
 	extCmd.AddCommand(extUiCmd)
+
 	
 	// Register with root
 	rootCmd.AddCommand(extCmd)
