@@ -8,9 +8,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var caseID string
-
 var entityCmd = &cobra.Command{
+
 	Use:   "entity",
 	Short: "Manage entities within a case",
 }
@@ -81,9 +80,8 @@ var entityListCmd = &cobra.Command{
 }
 
 func init() {
-	entityCmd.PersistentFlags().StringVarP(&caseID, "case", "c", "", "Case ID (required)")
-	
 	entityCmd.AddCommand(entityAddCmd)
 	entityCmd.AddCommand(entityListCmd)
 	rootCmd.AddCommand(entityCmd)
 }
+

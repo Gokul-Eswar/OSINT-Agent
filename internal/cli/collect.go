@@ -2,8 +2,12 @@ package cli
 
 import (
 	"fmt"
-	"sync"
 
+	"github.com/charmbracelet/bubbles/progress"
+
+	"github.com/charmbracelet/bubbles/spinner"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/spectre/spectre/internal/collector"
 	_ "github.com/spectre/spectre/internal/collector/dns"    // Register DNS
 	_ "github.com/spectre/spectre/internal/collector/whois"  // Register WHOIS
@@ -13,6 +17,135 @@ import (
 	"github.com/spectre/spectre/internal/storage"
 	"github.com/spf13/cobra"
 )
+
+type collectMsg struct {
+
+	name string
+	err  error
+}
+
+type collectModel struct {
+	target        string
+	collectors    []string
+	completed     map[string]bool
+	failed        map[string]error
+	progress      progress.Model
+	spinner       spinner.Model
+	quitting      bool
+	err           error
+	activeAllowed bool
+	caseID        string
+	dryRun        bool
+	threads       int
+}
+
+func (m collectModel) Init() tea.Cmd {
+	var cmds []tea.Cmd
+	cmds = append(cmds, m.spinner.Tick)
+
+	// Concurrency control
+	sem := make(chan struct{}, m.threads)
+
+	for _, name := range m.collectors {
+		name := name
+		cmds = append(cmds, func() tea.Msg {
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			if m.dryRun {
+				return collectMsg{name: name}
+			}
+
+			_, err := collector.RunAndSave(name, m.caseID, m.target, m.activeAllowed)
+			return collectMsg{name: name, err: err}
+		})
+	}
+
+	return tea.Batch(cmds...)
+}
+
+func (m collectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		if msg.String() == "ctrl+c" || msg.String() == "q" {
+			m.quitting = true
+			return m, tea.Quit
+		}
+		return m, nil
+
+	case tea.WindowSizeMsg:
+		m.progress.Width = msg.Width - 4
+		if m.progress.Width > 80 {
+			m.progress.Width = 80
+		}
+		return m, nil
+
+	case spinner.TickMsg:
+		var cmd tea.Cmd
+		m.spinner, cmd = m.spinner.Update(msg)
+		return m, cmd
+
+	case collectMsg:
+		if msg.err != nil {
+			m.failed[msg.name] = msg.err
+		} else {
+			m.completed[msg.name] = true
+		}
+
+		if len(m.completed)+len(m.failed) == len(m.collectors) {
+			m.quitting = true
+			return m, tea.Quit
+		}
+
+		pct := float64(len(m.completed)+len(m.failed)) / float64(len(m.collectors))
+		return m, m.progress.SetPercent(pct)
+
+	case progress.FrameMsg:
+		progressModel, cmd := m.progress.Update(msg)
+		m.progress = progressModel.(progress.Model)
+		return m, cmd
+
+	default:
+		return m, nil
+	}
+}
+
+func (m collectModel) View() string {
+	if m.err != nil {
+		return lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Render(fmt.Sprintf("Error: %v", m.err))
+	}
+
+	header := lipgloss.NewStyle().Bold(true).Render(fmt.Sprintf("Target: %s", m.target))
+	if m.dryRun {
+		header += lipgloss.NewStyle().Foreground(lipgloss.Color("11")).Render(" [DRY-RUN]")
+	}
+	header += "\n"
+
+	s := header + "\n"
+	
+	for _, name := range m.collectors {
+		status := " "
+		if m.completed[name] {
+			status = lipgloss.NewStyle().Foreground(lipgloss.Color("10")).Render("✔")
+		} else if err, failed := m.failed[name]; failed {
+			status = lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Render("✘")
+			name = fmt.Sprintf("%s (%v)", name, err)
+		} else {
+			status = m.spinner.View()
+		}
+		s += fmt.Sprintf(" %s %s\n", status, name)
+	}
+
+	s += "\n" + m.progress.View() + "\n\n"
+	
+	if m.quitting {
+		s += "Done!\n"
+	} else {
+		s += lipgloss.NewStyle().Faint(true).Render("Press q or ctrl+c to quit") + "\n"
+	}
+
+	return s
+}
 
 var collectCmd = &cobra.Command{
 	Use:   "collect [collector|all] [target]",
@@ -35,8 +168,10 @@ var collectCmd = &cobra.Command{
 		collectorName := args[0]
 		target := args[1]
 
-		if err := storage.InitDB(); err != nil {
-			return err
+		if !dryRun {
+			if err := storage.InitDB(); err != nil {
+				return err
+			}
 		}
 
 		var collectorsToRun []string
@@ -52,38 +187,32 @@ var collectCmd = &cobra.Command{
 			collectorsToRun = []string{collectorName}
 		}
 
-		var wg sync.WaitGroup
-		var printMu sync.Mutex
-
-		fmt.Printf("Starting collection against '%s' with %d collectors...\n", target, len(collectorsToRun))
-
-		for _, name := range collectorsToRun {
-			wg.Add(1)
-			go func(cName string) {
-				defer wg.Done()
-
-				// Execute and Save
-				_, err := collector.RunAndSave(cName, caseID, target, activeAllowed)
-				
-				printMu.Lock()
-				defer printMu.Unlock()
-
-				if err != nil {
-					fmt.Printf("[X] %s: Failed - %v\n", cName, err)
-					return
-				}
-
-				fmt.Printf("[+] %s: Completed and Ingested\n", cName)
-			}(name)
+		m := collectModel{
+			target:        target,
+			collectors:    collectorsToRun,
+			completed:     make(map[string]bool),
+			failed:        make(map[string]error),
+			progress:      progress.New(progress.WithDefaultGradient()),
+			spinner:       spinner.New(spinner.WithSpinner(spinner.Dot)),
+			activeAllowed: activeAllowed,
+			caseID:        caseID,
+			dryRun:        dryRun,
+			threads:       threads,
 		}
 
-		wg.Wait()
-		fmt.Println("Collection complete.")
+		if _, err := tea.NewProgram(m).Run(); err != nil {
+			return err
+		}
+
 		return nil
 	},
 }
 
+
 func init() {
-	collectCmd.Flags().StringVarP(&caseID, "case", "c", "", "Case ID (required)")
+	collectCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Simulate collection without making network requests")
+	collectCmd.Flags().IntVar(&threads, "threads", 5, "Number of concurrent collectors to run")
 	rootCmd.AddCommand(collectCmd)
 }
+
+

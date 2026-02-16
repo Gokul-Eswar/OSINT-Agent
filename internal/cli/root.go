@@ -12,8 +12,12 @@ import (
 
 var cfgFile string
 var activeAllowed bool
+var caseID string
+var dryRun bool
+var threads int
 
 var rootCmd = &cobra.Command{
+
 	Use:   "spectre",
 	Short: "SPECTRE - Local-First OSINT Intelligence Platform",
 	Long: `SPECTRE turns raw internet noise into structured, verifiable intelligence — fast, repeatable, and local.
@@ -44,7 +48,9 @@ func init() {
 	// will be global for your application.
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.spectre.yaml)")
 	rootCmd.PersistentFlags().BoolVar(&activeAllowed, "active", false, "Allow active reconnaissance (port scans, etc.)")
+	rootCmd.PersistentFlags().StringVarP(&caseID, "case", "c", "", "Case ID")
 }
+
 
 func initConfig() {
 	config.InitConfig(cfgFile)
