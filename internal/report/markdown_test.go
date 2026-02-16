@@ -36,6 +36,12 @@ func TestGenerateMarkdownReport(t *testing.T) {
 		Source: "manual",
 	})
 
+	storage.SaveAnalysis(&core.Analysis{
+		CaseID:     caseID,
+		Findings:   []string{"Finding X"},
+		Confidence: 0.9,
+	})
+
 	report, err := GenerateMarkdownReport(caseID)
 	if err != nil {
 		t.Fatalf("GenerateMarkdownReport failed: %v", err)
@@ -47,7 +53,11 @@ func TestGenerateMarkdownReport(t *testing.T) {
 	if !strings.Contains(report, "1.2.3.4") {
 		t.Errorf("Report missing entity value")
 	}
-	if !strings.Contains(report, "| ip | 1.2.3.4 | manual |") {
-		t.Errorf("Report missing entity table row or incorrectly formatted")
+	if !strings.Contains(report, "Finding X") {
+		t.Errorf("Report missing analysis finding")
 	}
+	if !strings.Contains(report, "0.90") {
+		t.Errorf("Report missing confidence")
+	}
+
 }

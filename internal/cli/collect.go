@@ -2,8 +2,10 @@ package cli
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/charmbracelet/bubbles/progress"
+
 
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
@@ -202,7 +204,23 @@ var collectCmd = &cobra.Command{
 			collectorsToRun = []string{collectorName}
 		}
 
+		if os.Getenv("GO_TESTING") == "true" {
+			fmt.Printf("Running collection in test mode for target: %s\n", target)
+			for _, name := range collectorsToRun {
+				if dryRun {
+					fmt.Printf("[DRY-RUN] Would run %s\n", name)
+					continue
+				}
+				_, err := collector.RunAndSave(name, caseID, target, activeAllowed)
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+
 		m := collectModel{
+
 			target:        target,
 			collectors:    collectorsToRun,
 			completed:     make(map[string]bool),

@@ -8,7 +8,19 @@ import (
 	"github.com/spectre/spectre/internal/storage"
 )
 
+func TestMain(m *testing.M) {
+	tempDir, _ := os.MkdirTemp("", "spectre-cli-test-main")
+	os.Setenv("SPECTRE_HOME", tempDir)
+	os.Setenv("GO_TESTING", "true")
+	
+	code := m.Run()
+	
+	os.RemoveAll(tempDir)
+	os.Exit(code)
+}
+
 func TestCLICommands(t *testing.T) {
+
 	// Mock config
 	config.InitConfig("")
 	
