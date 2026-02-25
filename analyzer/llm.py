@@ -91,7 +91,20 @@ def chat(data):
         return {"role": "assistant", "content": content}
 
     except Exception as e:
-        return {"error": str(e)}
+        # Fallback for chat
+        last_user_msg = ""
+        for m in reversed(messages):
+            if m.get("role") == "user":
+                last_user_msg = m.get("content", "").lower()
+                break
+        
+        if "hello" in last_user_msg or "hi" in last_user_msg:
+            return {"role": "assistant", "content": "Hello! (Fallback Mode) I'm currently unable to reach my LLM backend, but I can still help with basic commands."}
+        
+        return {
+            "role": "assistant", 
+            "content": f"I'm sorry, I encountered an error and the LLM is unavailable: {str(e)}. Please check if Ollama is running."
+        }
 
 def analyze_case(data):
     """
@@ -159,12 +172,19 @@ def analyze_case(data):
                 return extracted
             
             last_error = "No valid JSON found in LLM response"
-            # print(f"Debug: raw response: {raw_response}", file=sys.stderr)
 
         except Exception as e:
             last_error = str(e)
             
         if attempt < retries - 1:
             time.sleep(1)
-        
-    return {"error": f"LLM Analysis failed after {retries} attempts. Last error: {last_error}"}
+                
+    # Final fallback for analyze_case
+    return {
+        "findings": ["LLM synthesis unavailable. Raw data review required."],
+        "risks": ["Unable to perform AI-assisted risk assessment."],
+        "connections": [],
+        "next_steps": ["Check LLM backend connectivity.", "Manually review collected evidence."],
+        "confidence": 0.0,
+        "error": last_error
+    }

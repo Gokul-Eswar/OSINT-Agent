@@ -4,3 +4,5 @@ pyvis
 networkx
 requests
 jinja2
+pytest
+responses
