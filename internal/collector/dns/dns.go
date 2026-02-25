@@ -15,10 +15,24 @@ import (
 	"github.com/spectre/spectre/internal/core"
 )
 
-type DNSCollector struct{}
+type Resolver interface {
+	LookupHost(host string) (addrs []string, err error)
+	LookupMX(name string) ([]*net.MX, error)
+	LookupNS(name string) ([]*net.NS, error)
+}
+
+type NetResolver struct{}
+
+func (r *NetResolver) LookupHost(host string) (addrs []string, err error) { return net.LookupHost(host) }
+func (r *NetResolver) LookupMX(name string) ([]*net.MX, error)          { return net.LookupMX(name) }
+func (r *NetResolver) LookupNS(name string) ([]*net.NS, error)          { return net.LookupNS(name) }
+
+type DNSCollector struct {
+	resolver Resolver
+}
 
 func init() {
-	collector.Register(&DNSCollector{})
+	collector.Register(&DNSCollector{resolver: &NetResolver{}})
 }
 
 func (d *DNSCollector) Name() string {
@@ -43,14 +57,14 @@ func (d *DNSCollector) Collect(caseID string, target string) ([]core.Evidence, e
 	results := make(map[string][]string)
 
 	// A Records
-	ips, err := net.LookupHost(target)
+	ips, err := d.resolver.LookupHost(target)
 	if err != nil {
 		log.Debug().Err(err).Str("target", target).Msg("failed to lookup A records")
 	}
 	results["A"] = ips
 
 	// MX Records
-	mxs, err := net.LookupMX(target)
+	mxs, err := d.resolver.LookupMX(target)
 	if err != nil {
 		log.Debug().Err(err).Str("target", target).Msg("failed to lookup MX records")
 	}
@@ -59,7 +73,7 @@ func (d *DNSCollector) Collect(caseID string, target string) ([]core.Evidence, e
 	}
 
 	// NS Records
-	nss, err := net.LookupNS(target)
+	nss, err := d.resolver.LookupNS(target)
 	if err != nil {
 		log.Debug().Err(err).Str("target", target).Msg("failed to lookup NS records")
 	}

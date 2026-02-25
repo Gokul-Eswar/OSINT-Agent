@@ -8,14 +8,25 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestWHOISCollector_Collect(t *testing.T) {
-	// Skip if no internet connection or if whois servers block CI
-	if os.Getenv("CI") != "" {
-		t.Skip("Skipping WHOIS test in CI environment")
-	}
+type MockWhoisClient struct {
+	Response string
+	Error    error
+}
 
-	c := &WHOISCollector{}
-	caseID := "test_case_whois"
+func (m *MockWhoisClient) Whois(domain string) (string, error) {
+	return m.Response, m.Error
+}
+
+func TestWHOISCollector_Collect_Mocked(t *testing.T) {
+	// Setup mock with sample WHOIS data
+	sampleData := `
+Domain Name: EXAMPLE.COM
+Registrar: SafeNames Ltd
+Registrant Email: admin@example.com
+`
+	mock := &MockWhoisClient{Response: sampleData}
+	c := &WHOISCollector{client: mock}
+	caseID := "test_case_mock_whois"
 	target := "example.com"
 
 	// Cleanup
@@ -29,13 +40,12 @@ func TestWHOISCollector_Collect(t *testing.T) {
 	require.Len(t, evidence, 1)
 
 	e := evidence[0]
-	assert.Equal(t, caseID, e.CaseID)
 	assert.Equal(t, "whois", e.Collector)
-	assert.NotEmpty(t, e.FilePath)
-	
-	// Verify file created
+	assert.Contains(t, e.Metadata["registrar"], "SafeNames")
+	assert.Equal(t, "admin@example.com", e.Metadata["registrant_email"])
+
+	// Verify file content
 	content, err := os.ReadFile(e.FilePath)
 	require.NoError(t, err)
-	assert.NotEmpty(t, content)
-	assert.Contains(t, string(content), "Domain Name") // Common in whois output
+	assert.Equal(t, sampleData, string(content))
 }

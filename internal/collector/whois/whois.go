@@ -15,10 +15,22 @@ import (
 	"github.com/spectre/spectre/internal/core"
 )
 
-type WHOISCollector struct{}
+type WhoisClient interface {
+	Whois(domain string) (string, error)
+}
+
+type DefaultWhoisClient struct{}
+
+func (c *DefaultWhoisClient) Whois(domain string) (string, error) {
+	return whois.Whois(domain)
+}
+
+type WHOISCollector struct {
+	client WhoisClient
+}
 
 func init() {
-	collector.Register(&WHOISCollector{})
+	collector.Register(&WHOISCollector{client: &DefaultWhoisClient{}})
 }
 
 func (w *WHOISCollector) Name() string {
@@ -40,7 +52,7 @@ func (w *WHOISCollector) Collect(caseID string, target string) ([]core.Evidence,
 		Str("target", target).
 		Msg("collection_started")
 
-	raw, err := whois.Whois(target)
+	raw, err := w.client.Whois(target)
 	if err != nil {
 		log.Error().Err(err).Str("target", target).Msg("whois lookup failed")
 		return nil, fmt.Errorf("whois lookup failed for %s: %w", target, err)
