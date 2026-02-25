@@ -61,6 +61,10 @@ type model struct {
 	analysisResult string
 	analysisError  string
 
+	// Cached Data for Views
+	graphData    string
+	timelineData string
+
 	// Sub-models
 	caseList    list.Model
 	entityTable table.Model
@@ -169,6 +173,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.analysisStatus = AnalysisError
 		m.analysisError = string(msg)
 
+	case GraphDataMsg:
+		m.graphData = string(msg)
+
+	case TimelineDataMsg:
+		m.timelineData = string(msg)
+
 	case agentResponseMsg:
 		m.chat, cmd = m.chat.Update(msg)
 		return m, cmd
@@ -211,6 +221,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				if m.state == ViewDashboard {
 					openBrowser("http://localhost:8080")
+				}
+				// Auto-refresh data when entering view via sidebar
+				if m.state == ViewGraph && m.selectedCaseID != "" {
+					return m, fetchGraphDataCmd(m.selectedCaseID)
+				}
+				if m.state == ViewTimeline && m.selectedCaseID != "" {
+					return m, fetchTimelineDataCmd(m.selectedCaseID)
 				}
 			}
 			return m, nil
@@ -262,8 +279,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, StartAnalysis(m.selectedCaseID, m.modelName)
 			}
 		case "3": m.state = ViewEvidence
-		case "4": m.state = ViewGraph
-		case "5": m.state = ViewTimeline
+		case "4":
+			m.state = ViewGraph
+			if m.selectedCaseID != "" {
+				return m, fetchGraphDataCmd(m.selectedCaseID)
+			}
+		case "5":
+			m.state = ViewTimeline
+			if m.selectedCaseID != "" {
+				return m, fetchTimelineDataCmd(m.selectedCaseID)
+			}
 		case "6": m.state = ViewReports
 		case "7": m.state = ViewSettings
 		case "8": m.state = ViewChat
@@ -476,9 +501,17 @@ func (m model) renderContent() string {
 			}
 		}
 	case ViewGraph:
-		content = RenderASCIIGraph(m.selectedCaseID)
+		if m.graphData == "" {
+			content = "Loading graph data..."
+		} else {
+			content = m.graphData
+		}
 	case ViewTimeline:
-		content = RenderTimeline(m.selectedCaseID)
+		if m.timelineData == "" {
+			content = "Loading timeline data..."
+		} else {
+			content = m.timelineData
+		}
 	case ViewReports:
 		status := ""
 		if m.analysisStatus == AnalysisComplete {
@@ -573,6 +606,8 @@ func formatBool(b bool) string {
 }
 
 type ModelsFoundMsg []string
+type GraphDataMsg string
+type TimelineDataMsg string
 
 func fetchModelsCmd() tea.Msg {
 	models, err := analysis.FetchAvailableModels()
@@ -580,4 +615,16 @@ func fetchModelsCmd() tea.Msg {
 		return AnalysisErrorMsg("Scan failed: " + err.Error())
 	}
 	return ModelsFoundMsg(models)
+}
+
+func fetchGraphDataCmd(caseID string) tea.Cmd {
+	return func() tea.Msg {
+		return GraphDataMsg(RenderASCIIGraph(caseID))
+	}
+}
+
+func fetchTimelineDataCmd(caseID string) tea.Cmd {
+	return func() tea.Msg {
+		return TimelineDataMsg(RenderTimeline(caseID))
+	}
 }

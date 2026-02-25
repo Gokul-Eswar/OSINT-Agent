@@ -35,6 +35,12 @@ func InitDB() error {
 		return fmt.Errorf("database migration failed: %w", err)
 	}
 
+	// Optimize connection pooling for SQLite
+	// SQLite supports multiple readers but only one writer at a time.
+	// WAL mode and busy_timeout handle most cases, but we can also limit connections.
+	DB.SetMaxOpenConns(25) // Allow some concurrency for readers
+	DB.SetMaxIdleConns(5)
+
 	log.Info().Str("path", dbPath).Msg("SQLite database initialized and migrated")
 	return nil
 }

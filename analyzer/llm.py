@@ -4,6 +4,9 @@ import re
 import time
 import sys
 
+# Global session for connection pooling and latency reduction
+session = requests.Session()
+
 def extract_json(text):
     """Robustly extract JSON from text using regex."""
     if not text:
@@ -58,13 +61,9 @@ def chat(data):
         "messages": messages,
         "stream": False
     }
-    
-    # If using OpenAI, we might want to use native tools if available
-    # but for simplicity and cross-compatibility with local LLMs, 
-    # we use the system prompt + regex extraction approach.
 
     try:
-        resp = requests.post(
+        resp = session.post(
             api_url,
             json=payload,
             headers=headers,
@@ -141,7 +140,6 @@ def analyze_case(data):
     full_prompt = f"{system_prompt}\n\nCASE DATA:\n{context}"
     
     # Payload adaptation could be improved for OpenAI vs Ollama
-    # For now, sticking to Ollama default but flexible URL
     payload = {
         "model": model,
         "prompt": full_prompt,
@@ -153,7 +151,7 @@ def analyze_case(data):
 
     for attempt in range(retries):
         try:
-            resp = requests.post(
+            resp = session.post(
                 api_url,
                 json=payload,
                 headers=headers,
