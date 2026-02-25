@@ -73,17 +73,22 @@ func InitialModel() model {
 	l := list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0)
 	l.Title = "CASES"
 
+	defaultModel := viper.GetString("llm.model")
+	if defaultModel == "" {
+		defaultModel = "llama3"
+	}
+
 	return model{
-		state:          ViewCases,
-		navCursor:      0,
-		settingsCursor: 0,
-		caseList:       l,
-		entityTable:    NewEntityTable(),
-		relTable:       NewRelationshipTable(),
-		runner:         NewRunnerModel(),
-		chat:           newChatModel(),
-		modelName:      "llama3:8b",
-		availableModels: []string{"llama3:8b", "mistral"},
+		state:           ViewCases,
+		navCursor:       0,
+		settingsCursor:  0,
+		caseList:        l,
+		entityTable:     NewEntityTable(),
+		relTable:        NewRelationshipTable(),
+		runner:          NewRunnerModel(),
+		chat:            newChatModel(),
+		modelName:       defaultModel,
+		availableModels: []string{defaultModel},
 	}
 }
 
