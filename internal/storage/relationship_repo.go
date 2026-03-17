@@ -25,8 +25,8 @@ func CreateRelationship(r *core.Relationship) error {
 		r.Confidence = 0.5
 	}
 
-	query := `INSERT INTO relationships (id, case_id, from_entity, to_entity, rel_type, confidence, evidence_id, discovered_at) 
-	          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+	query := TranslatePlaceholder(`INSERT INTO relationships (id, case_id, from_entity, to_entity, rel_type, confidence, evidence_id, discovered_at) 
+	          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
 	_, err := DB.Exec(query, r.ID, r.CaseID, r.FromEntityID, r.ToEntityID, r.Type, r.Confidence, r.EvidenceID, r.DiscoveredAt)
 	if err != nil {
 		return fmt.Errorf("failed to create relationship: %w", err)
@@ -41,7 +41,7 @@ func GetRelationship(id string) (*core.Relationship, error) {
 		return nil, fmt.Errorf("database not initialized")
 	}
 
-	query := `SELECT id, case_id, from_entity, to_entity, rel_type, confidence, evidence_id, discovered_at FROM relationships WHERE id = ?`
+	query := TranslatePlaceholder(`SELECT id, case_id, from_entity, to_entity, rel_type, confidence, evidence_id, discovered_at FROM relationships WHERE id = ?`)
 	row := DB.QueryRow(query, id)
 
 	var r core.Relationship
@@ -62,7 +62,7 @@ func ListRelationshipsByCase(caseID string) ([]*core.Relationship, error) {
 		return nil, fmt.Errorf("database not initialized")
 	}
 
-	query := `SELECT id, case_id, from_entity, to_entity, rel_type, confidence, evidence_id, discovered_at FROM relationships WHERE case_id = ?`
+	query := TranslatePlaceholder(`SELECT id, case_id, from_entity, to_entity, rel_type, confidence, evidence_id, discovered_at FROM relationships WHERE case_id = ?`)
 	rows, err := DB.Query(query, caseID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list relationships: %w", err)

@@ -29,7 +29,7 @@ func CreateCase(c *core.Case) error {
 		c.Status = "active"
 	}
 
-	query := `INSERT INTO cases (id, name, description, created_at, updated_at, status) VALUES (?, ?, ?, ?, ?, ?)`
+	query := TranslatePlaceholder(`INSERT INTO cases (id, name, description, created_at, updated_at, status) VALUES (?, ?, ?, ?, ?, ?)`)
 	_, err := DB.Exec(query, c.ID, c.Name, c.Description, c.CreatedAt, c.UpdatedAt, c.Status)
 	if err != nil {
 		log.Error().
@@ -49,7 +49,7 @@ func GetCase(id string) (*core.Case, error) {
 		return nil, fmt.Errorf("database not initialized")
 	}
 
-	query := `SELECT id, name, description, created_at, updated_at, status FROM cases WHERE id = ?`
+	query := TranslatePlaceholder(`SELECT id, name, description, created_at, updated_at, status FROM cases WHERE id = ?`)
 	row := DB.QueryRow(query, id)
 
 	var c core.Case
@@ -71,7 +71,7 @@ func ListCases() ([]*core.Case, error) {
 		return nil, fmt.Errorf("database not initialized")
 	}
 
-	query := `SELECT id, name, description, created_at, updated_at, status FROM cases ORDER BY created_at DESC`
+	query := TranslatePlaceholder(`SELECT id, name, description, created_at, updated_at, status FROM cases ORDER BY created_at DESC`)
 	rows, err := DB.Query(query)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to query all cases")

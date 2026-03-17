@@ -2,7 +2,11 @@
 
 # Database configuration
 database:
-  path: "spectre.db"
+  type: "sqlite" # or "postgres"
+  path: "spectre.db" # for sqlite
+  dsn: "host=localhost port=5432 user=spectre password=spectre dbname=spectre sslmode=disable" # for postgres
+  max_open_conns: 25
+  max_idle_conns: 5
 
 # Extension Store
 extension_registry_url: "file://registry_sample.json"

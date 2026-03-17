@@ -28,8 +28,8 @@ func CreateEvidence(ev *core.Evidence) error {
 		return fmt.Errorf("failed to marshal metadata: %w", err)
 	}
 
-	query := `INSERT INTO evidence (id, case_id, entity_id, collector, file_path, file_hash, collected_at, metadata) 
-	          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+	query := TranslatePlaceholder(`INSERT INTO evidence (id, case_id, entity_id, collector, file_path, file_hash, collected_at, metadata) 
+	          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
 	_, err = DB.Exec(query, ev.ID, ev.CaseID, ev.EntityID, ev.Collector, ev.FilePath, ev.FileHash, ev.CollectedAt, string(metadataJSON))
 	if err != nil {
 		return fmt.Errorf("failed to create evidence: %w", err)
@@ -44,7 +44,7 @@ func ListEvidenceByCase(caseID string) ([]*core.Evidence, error) {
 		return nil, fmt.Errorf("database not initialized")
 	}
 
-	query := `SELECT id, case_id, entity_id, collector, file_path, file_hash, collected_at, metadata FROM evidence WHERE case_id = ?`
+	query := TranslatePlaceholder(`SELECT id, case_id, entity_id, collector, file_path, file_hash, collected_at, metadata FROM evidence WHERE case_id = ?`)
 	rows, err := DB.Query(query, caseID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list evidence: %w", err)

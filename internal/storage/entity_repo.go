@@ -36,8 +36,8 @@ func CreateEntity(e *core.Entity) error {
 		return fmt.Errorf("failed to marshal metadata for entity %s: %w", e.ID, err)
 	}
 
-	query := `INSERT INTO entities (id, case_id, type, value, source, confidence, discovered_at, metadata) 
-	          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+	query := TranslatePlaceholder(`INSERT INTO entities (id, case_id, type, value, source, confidence, discovered_at, metadata) 
+	          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
 	_, err = DB.Exec(query, e.ID, e.CaseID, e.Type, e.Value, e.Source, e.Confidence, e.DiscoveredAt, string(metadataJSON))
 	if err != nil {
 		log.Error().
@@ -62,7 +62,7 @@ func GetEntity(id string) (*core.Entity, error) {
 		return nil, fmt.Errorf("database not initialized")
 	}
 
-	query := `SELECT id, case_id, type, value, source, confidence, discovered_at, metadata FROM entities WHERE id = ?`
+	query := TranslatePlaceholder(`SELECT id, case_id, type, value, source, confidence, discovered_at, metadata FROM entities WHERE id = ?`)
 	row := DB.QueryRow(query, id)
 
 	var e core.Entity
@@ -96,7 +96,7 @@ func UpdateEntity(e *core.Entity) error {
 		return fmt.Errorf("failed to marshal metadata for entity update %s: %w", e.ID, err)
 	}
 
-	query := `UPDATE entities SET metadata = ?, confidence = ? WHERE id = ?`
+	query := TranslatePlaceholder(`UPDATE entities SET metadata = ?, confidence = ? WHERE id = ?`)
 	_, err = DB.Exec(query, string(metadataJSON), e.Confidence, e.ID)
 	if err != nil {
 		log.Error().Err(err).Str("entity_id", e.ID).Msg("failed to execute update entity query")
@@ -111,7 +111,7 @@ func ListEntitiesByCase(caseID string) ([]*core.Entity, error) {
 		return nil, fmt.Errorf("database not initialized")
 	}
 
-	query := `SELECT id, case_id, type, value, source, confidence, discovered_at, metadata FROM entities WHERE case_id = ?`
+	query := TranslatePlaceholder(`SELECT id, case_id, type, value, source, confidence, discovered_at, metadata FROM entities WHERE case_id = ?`)
 	rows, err := DB.Query(query, caseID)
 	if err != nil {
 		log.Error().Err(err).Str("case_id", caseID).Msg("failed to query entities by case")
@@ -143,8 +143,8 @@ func GetEntityByValue(caseID, value string) (*core.Entity, error) {
 		return nil, fmt.Errorf("database not initialized")
 	}
 
-	query := `SELECT id, case_id, type, value, source, confidence, discovered_at, metadata 
-	          FROM entities WHERE case_id = ? AND value = ?`
+	query := TranslatePlaceholder(`SELECT id, case_id, type, value, source, confidence, discovered_at, metadata 
+	          FROM entities WHERE case_id = ? AND value = ?`)
 	row := DB.QueryRow(query, caseID, value)
 
 	var e core.Entity

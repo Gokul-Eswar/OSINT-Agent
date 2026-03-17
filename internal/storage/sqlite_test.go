@@ -11,6 +11,7 @@ import (
 
 func TestInitDB_Integration(t *testing.T) {
 	// Setup temporary config
+	viper.Set("database.type", "sqlite")
 	viper.Set("database.path", "test_spectre.db")
 	defer os.Remove("test_spectre.db")
 	
@@ -34,6 +35,7 @@ func TestInitDB_Integration(t *testing.T) {
 }
 
 func TestCloseDB(t *testing.T) {
+	viper.Set("database.type", "sqlite")
 	viper.Set("database.path", ":memory:")
 	InitDB()
 	

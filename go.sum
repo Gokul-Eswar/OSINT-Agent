@@ -68,6 +68,8 @@ github.com/kylelemons/godebug v1.1.0 h1:RPNrshWIDI6G2gRW9EHilWtl7Z6Sb1BR0xunSBf0
 github.com/kylelemons/godebug v1.1.0/go.mod h1:9/0rRGxNHcop5bhtWyNeEfOS8JIWk580+fNqagV/RAw=
 github.com/ledongthuc/pdf v0.0.0-20220302134840-0c2507a12d80 h1:6Yzfa6GP0rIo/kULo2bwGEkFvCePZ3qHDDTC3/J9Swo=
 github.com/ledongthuc/pdf v0.0.0-20220302134840-0c2507a12d80/go.mod h1:imJHygn/1yfhB7XSJJKlFZKl/J+dCPAknuiaGOshXAs=
+github.com/lib/pq v1.11.2 h1:x6gxUeu39V0BHZiugWe8LXZYZ+Utk7hSJGThs8sdzfs=
+github.com/lib/pq v1.11.2/go.mod h1:/p+8NSbOcwzAEI7wiMXFlgydTwcgTr3OSKMsD2BitpA=
 github.com/likexian/gokit v0.25.16 h1:wwBeUIN/OdoPp6t00xTnZE8Di/+s969Bl5N2Kw6bzP8=
 github.com/likexian/gokit v0.25.16/go.mod h1:Wqd4f+iifV0qxA1N3MqePJTUsmRy/lpst9/yXriDx/4=
 github.com/likexian/whois v1.15.7 h1:sajjDhi2bVD71AHJhjV7jLYxN92H4AWhTwxM8hmj7c0=
