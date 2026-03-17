@@ -86,7 +86,11 @@ func (c *SocialCollector) Collect(caseID string, target string) ([]core.Evidence
 	var wg sync.WaitGroup
 	semaphore := make(chan struct{}, 5) // Limit concurrency
 
-	client := netclient.NewClient()
+	client, err := netclient.NewClient()
+	if err != nil {
+		log.Error().Err(err).Msg("failed to create http client")
+		return nil, fmt.Errorf("failed to create http client: %w", err)
+	}
 
 	for site, urlTmpl := range c.Sites {
 		wg.Add(1)

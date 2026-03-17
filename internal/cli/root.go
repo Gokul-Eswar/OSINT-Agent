@@ -8,10 +8,12 @@ import (
 	"github.com/spectre/spectre/internal/collector"
 	"github.com/spectre/spectre/internal/logger"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var cfgFile string
 var activeAllowed bool
+var strictProxy bool
 var caseID string
 var dryRun bool
 var threads int
@@ -48,12 +50,18 @@ func init() {
 	// will be global for your application.
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.spectre.yaml)")
 	rootCmd.PersistentFlags().BoolVar(&activeAllowed, "active", false, "Allow active reconnaissance (port scans, etc.)")
+	rootCmd.PersistentFlags().BoolVar(&strictProxy, "strict", false, "Fail-closed if proxy is unreachable (Ghost Mode hardening)")
 	rootCmd.PersistentFlags().StringVarP(&caseID, "case", "c", "", "Case ID")
 }
 
 
 func initConfig() {
 	config.InitConfig(cfgFile)
+	
+	if strictProxy {
+		viper.Set("http.strict", true)
+	}
+
 	logger.InitLogger()
 
 	// Discover and register external plugins

@@ -41,7 +41,10 @@ func (c *HTTPCollector) Collect(caseID string, target string) ([]core.Evidence, 
 		url = "https://" + target
 	}
 
-	client := netclient.NewClient()
+	client, err := netclient.NewClient()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create http client: %w", err)
+	}
 
 	resp, err := client.Get(url)
 	if err != nil {

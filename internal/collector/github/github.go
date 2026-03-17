@@ -45,7 +45,11 @@ func (g *GitHubCollector) Collect(caseID string, target string) ([]core.Evidence
 		Msg("collection_started")
 
 	apiKey := config.GetAPIKey("github")
-	client := netclient.NewClient()
+	client, err := netclient.NewClient()
+	if err != nil {
+		log.Error().Err(err).Msg("failed to create http client")
+		return nil, fmt.Errorf("failed to create http client: %w", err)
+	}
 	
 	// Search repositories
 	url := fmt.Sprintf("https://api.github.com/search/repositories?q=%s", target)

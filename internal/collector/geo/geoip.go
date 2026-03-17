@@ -39,7 +39,10 @@ func (c *GeoIPCollector) IsActive() bool {
 }
 
 func (c *GeoIPCollector) Collect(caseID string, target string) ([]core.Evidence, error) {
-	client := netclient.NewClient()
+	client, err := netclient.NewClient()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create http client: %w", err)
+	}
 
 	// API Request
 	url := c.BaseURL + target
