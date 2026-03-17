@@ -238,3 +238,46 @@ def query_case(data):
 
     except Exception as e:
         return {"answer": f"Error querying LLM: {str(e)}"}
+
+def analyze_image(data):
+    """
+    Perform visual analysis on an image using a vision-capable LLM (e.g., llava).
+    """
+    model = data.get("model", "llava") # Default to llava for vision
+    prompt = data.get("data", "Describe this image in detail. Focus on text, logos, or identifying features.")
+    image_base64 = data.get("context", "") # We use context field to pass base64
+    llm_config = data.get("llm_config", {})
+
+    api_url = llm_config.get("url", "http://localhost:11434/api/generate")
+    api_key = llm_config.get("api_key", "")
+    timeout = llm_config.get("timeout", 120)
+    
+    headers = {"Content-Type": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    
+    payload = {
+        "model": model,
+        "prompt": prompt,
+        "images": [image_base64],
+        "stream": False
+    }
+
+    try:
+        resp = session.post(
+            api_url,
+            json=payload,
+            headers=headers,
+            timeout=timeout
+        )
+        resp.raise_for_status()
+        
+        response_json = resp.json()
+        raw_response = response_json.get("response", "")
+        if not raw_response and "choices" in response_json:
+             raw_response = response_json["choices"][0]["message"]["content"]
+        
+        return {"answer": raw_response}
+
+    except Exception as e:
+        return {"answer": f"Error performing visual analysis: {str(e)}"}

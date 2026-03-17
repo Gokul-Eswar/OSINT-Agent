@@ -34,10 +34,36 @@ var queryCmd = &cobra.Command{
 	},
 }
 
+var visionCmd = &cobra.Command{
+	Use:   "vision [image_path] [prompt]",
+	Short: "Perform visual analysis on an image using a vision LLM",
+	Args:  cobra.MinimumNArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		imagePath := args[0]
+		prompt := "Describe this image in detail. Focus on text, logos, or identifying features."
+		if len(args) > 1 {
+			prompt = args[1]
+		}
+
+		fmt.Printf("Analyzing image %s with prompt: %s\n", imagePath, prompt)
+
+		answer, err := analysis.AnalyzeImage(imagePath, prompt, modelName)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("\n--- VISUAL ANALYSIS ---\n%s\n-----------------------\n", answer)
+		return nil
+	},
+}
+
 func init() {
 	queryCmd.Flags().StringVarP(&caseID, "case", "c", "", "Case ID (required)")
 	queryCmd.Flags().StringVarP(&modelName, "model", "m", "llama3", "Model to use")
 	
+	visionCmd.Flags().StringVarP(&modelName, "model", "m", "llava", "Vision model to use (default: llava)")
+
 	llmCmd.AddCommand(queryCmd)
+	llmCmd.AddCommand(visionCmd)
 	rootCmd.AddCommand(llmCmd)
 }

@@ -2,9 +2,11 @@ package analysis
 
 import (
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/rs/zerolog/log"
 	"github.com/spectre/spectre/internal/analyzer"
@@ -62,6 +64,49 @@ func QueryCase(caseID string, model string, question string) (string, error) {
 	if err := json.Unmarshal([]byte(responseJSON), &resp); err != nil {
 		// If it's not JSON, return as is (fallback)
 		return responseJSON, nil
+	}
+
+	return resp.Answer, nil
+}
+
+// AnalyzeImage runs visual analysis on a local image file using a vision model.
+func AnalyzeImage(imagePath string, prompt string, model string) (string, error) {
+	log.Info().
+		Str("image", imagePath).
+		Str("model", model).
+		Msg("visual_analysis_started")
+
+	// Read and base64 encode image
+	imgData, err := os.ReadFile(imagePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read image file: %w", err)
+	}
+	base64Str := base64.StdEncoding.EncodeToString(imgData)
+
+	req := analyzer.Request{
+		Task:    "vision",
+		CaseID:  "visual_analysis", // Optional/dummy case ID for vision
+		Context: base64Str,         // Pass base64 image here
+		Model:   model,
+		Data:    prompt,            // Pass prompt here
+		LLMConfig: analyzer.LLMConfig{
+			Provider: viper.GetString("llm.provider"),
+			URL:      viper.GetString("llm.url"),
+			APIKey:   viper.GetString("llm.api_key"),
+			Timeout:  viper.GetInt("llm.timeout"),
+		},
+	}
+
+	responseJSON, err := analyzer.RunPythonTask(req)
+	if err != nil {
+		return "", fmt.Errorf("visual analysis failed: %w", err)
+	}
+
+	var resp struct {
+		Answer string `json:"answer"`
+	}
+	if err := json.Unmarshal([]byte(responseJSON), &resp); err != nil {
+		return responseJSON, nil // Fallback
 	}
 
 	return resp.Answer, nil
