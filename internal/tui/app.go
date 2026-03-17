@@ -3,6 +3,7 @@ package tui
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
@@ -359,12 +360,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			if msg.String() == "p" && m.selectedCaseID != "" {
 				return m, func() tea.Msg {
-					filename, err := report.GeneratePDFReport(m.selectedCaseID)
+					outputDir := filepath.Join("evidence_storage", m.selectedCaseID)
+					os.MkdirAll(outputDir, 0755)
+					outputPath := filepath.Join(outputDir, "investigation_report.pdf")
+					err := report.GeneratePDFReport(m.selectedCaseID, outputPath)
 					if err != nil {
 						return AnalysisErrorMsg(err.Error())
 					}
 					return AnalysisFinishedMsg{&core.Analysis{
-						Findings: []string{fmt.Sprintf("PDF Report generated: %s", filename)},
+						Findings: []string{fmt.Sprintf("PDF Report generated: %s", outputPath)},
 					}}
 				}
 			}

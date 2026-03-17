@@ -9,14 +9,14 @@ import (
 	"github.com/spectre/spectre/internal/storage"
 )
 
-// GeneratePDFReport creates a professional PDF report for the case.
-func GeneratePDFReport(caseID string) (string, error) {
+// GeneratePDFReport creates a professional PDF report for the case and saves it to outputPath.
+func GeneratePDFReport(caseID string, outputPath string) error {
 	c, err := storage.GetCase(caseID)
 	if err != nil {
-		return "", err
+		return err
 	}
 	if c == nil {
-		return "", fmt.Errorf("case not found")
+		return fmt.Errorf("case not found")
 	}
 
 	entities, _ := storage.ListEntitiesByCase(caseID)
@@ -184,11 +184,10 @@ func GeneratePDFReport(caseID string) (string, error) {
 		pdf.Ln(4)
 	}
 
-	outfile := fmt.Sprintf("report_%s.pdf", caseID)
-	err = pdf.OutputFileAndClose(outfile)
+	err = pdf.OutputFileAndClose(outputPath)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	return outfile, nil
+	return nil
 }

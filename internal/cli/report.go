@@ -10,9 +10,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var format string
+
 var reportCmd = &cobra.Command{
 	Use:   "report",
-	Short: "Generate a comprehensive Markdown report",
+	Short: "Generate a comprehensive report (Markdown or PDF)",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if caseID == "" {
 			return fmt.Errorf("case ID is required (use --case)")
@@ -22,36 +24,44 @@ var reportCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Printf("Generating report for case %s...\n", caseID)
-		md, err := report.GenerateMarkdownReport(caseID)
-		if err != nil {
-			return err
-		}
-
 		outputDir := filepath.Join("evidence_storage", caseID)
 		os.MkdirAll(outputDir, 0755)
-		outputPath := filepath.Join(outputDir, "investigation_report.md")
 
-		err = os.WriteFile(outputPath, []byte(md), 0644)
-		if err != nil {
-			return fmt.Errorf("failed to save report: %w", err)
+		switch format {
+		case "pdf":
+			fmt.Printf("Generating PDF report for case %s...\n", caseID)
+			outputPath := filepath.Join(outputDir, "investigation_report.pdf")
+			err := report.GeneratePDFReport(caseID, outputPath)
+			if err != nil {
+				return err
+			}
+			fmt.Printf("PDF Report successfully generated: %s\n", outputPath)
+		default:
+			fmt.Printf("Generating Markdown report for case %s...\n", caseID)
+			md, err := report.GenerateMarkdownReport(caseID)
+			if err != nil {
+				return err
+			}
+			outputPath := filepath.Join(outputDir, "investigation_report.md")
+			err = os.WriteFile(outputPath, []byte(md), 0644)
+			if err != nil {
+				return fmt.Errorf("failed to save report: %w", err)
+			}
+			fmt.Printf("Markdown Report successfully generated: %s\n", outputPath)
+			fmt.Println("\n--- PREVIEW ---")
+			if len(md) > 200 {
+				fmt.Println(md[:200] + "...")
+			} else {
+				fmt.Println(md)
+			}
 		}
 
-		fmt.Printf("Report successfully generated: %s\n", outputPath)
-		fmt.Println("\n--- PREVIEW ---")
-		
-		// Let's just print a short header instead of complex logic
-		if len(md) > 200 {
-			fmt.Println(md[:200] + "...")
-		} else {
-			fmt.Println(md)
-		}
-		
 		return nil
 	},
 }
 
 func init() {
 	reportCmd.Flags().StringVarP(&caseID, "case", "c", "", "Case ID (required)")
+	reportCmd.Flags().StringVarP(&format, "format", "f", "markdown", "Report format (markdown, pdf)")
 	rootCmd.AddCommand(reportCmd)
 }
