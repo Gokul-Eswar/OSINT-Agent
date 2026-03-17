@@ -60,3 +60,9 @@ http:
   tor_proxy: "socks5://127.0.0.1:9050" # Default Tor SOCKS5 proxy
   strict: false # If true, fail-closed if proxy is unreachable
   insecure_skip_verify: false
+
+# API Server Configuration
+server:
+  port: 8080
+  api_key: "" # Leave empty for no authentication (not recommended for collaborative use)
+  cors_allowed_origins: ["*"]

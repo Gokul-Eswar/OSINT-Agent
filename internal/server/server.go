@@ -30,14 +30,33 @@ func SetAssets(assets embed.FS) {
 func Start(port int) error {
 	mux := http.NewServeMux()
 
-	// API Routes
-	mux.HandleFunc("/api/cases", handleCases)
-	mux.HandleFunc("/api/cases/", handleCaseDetail) // /api/cases/{id} and /api/cases/{id}/graph
-	mux.HandleFunc("/api/events", handleEvents)
-	mux.HandleFunc("/api/settings", handleSettings)
-	mux.HandleFunc("/api/chat", handleChat)
+	// Auth Middleware
+	withAuth := func(h http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			apiKey := viper.GetString("server.api_key")
+			if apiKey != "" {
+				providedKey := r.Header.Get("X-API-Key")
+				if providedKey == "" {
+					providedKey = r.URL.Query().Get("api_key")
+				}
 
-	// Static Assets
+				if providedKey != apiKey {
+					http.Error(w, "Unauthorized: Invalid API Key", http.StatusUnauthorized)
+					return
+				}
+			}
+			h(w, r)
+		}
+	}
+
+	// API Routes (Protected)
+	mux.HandleFunc("/api/cases", withAuth(handleCases))
+	mux.HandleFunc("/api/cases/", withAuth(handleCaseDetail))
+	mux.HandleFunc("/api/events", withAuth(handleEvents))
+	mux.HandleFunc("/api/settings", withAuth(handleSettings))
+	mux.HandleFunc("/api/chat", withAuth(handleChat))
+
+	// Static Assets (Public)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if !strings.HasPrefix(r.URL.Path, "/api") && !strings.HasPrefix(r.URL.Path, "/evidence") {
 			data, err := webAssets.ReadFile("web/index.html")
@@ -54,9 +73,11 @@ func Start(port int) error {
 		}
 	})
 
-	// Serve Evidence Files
+	// Serve Evidence Files (Protected)
 	fs := http.FileServer(http.Dir("evidence_storage"))
-	mux.Handle("/evidence/", http.StripPrefix("/evidence/", fs))
+	mux.Handle("/evidence/", withAuth(func(w http.ResponseWriter, r *http.Request) {
+		http.StripPrefix("/evidence/", fs).ServeHTTP(w, r)
+	}))
 
 	// Hook into storage events
 	storage.OnEntityCreated = func(e *core.Entity) {
