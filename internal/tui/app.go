@@ -303,7 +303,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			switch msg.String() {
 			case "j", "down":
-				if m.settingsCursor < 6 {
+				if m.settingsCursor < 8 {
 					m.settingsCursor++
 				}
 			case "k", "up":
@@ -337,6 +337,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					viper.Set("collectors.geo.enabled", !viper.GetBool("collectors.geo.enabled"))
 				case 6: // Ports
 					viper.Set("collectors.ports.enabled", !viper.GetBool("collectors.ports.enabled"))
+				case 7: // Social
+					viper.Set("collectors.social.enabled", !viper.GetBool("collectors.social.enabled"))
+				case 8: // Screenshot
+					viper.Set("collectors.screenshot.enabled", !viper.GetBool("collectors.screenshot.enabled"))
 				}
 				// Save config
 				config.ApplyEthicsConfig() // Re-apply ethics if needed
@@ -548,6 +552,8 @@ func (m model) renderContent() string {
 			{"GitHub Collector", formatBool(viper.GetBool("collectors.github.enabled"))},
 			{"Geo Collector", formatBool(viper.GetBool("collectors.geo.enabled"))},
 			{"Ports Collector", formatBool(viper.GetBool("collectors.ports.enabled"))},
+			{"Social Collector", formatBool(viper.GetBool("collectors.social.enabled"))},
+			{"Screenshot Collector", formatBool(viper.GetBool("collectors.screenshot.enabled"))},
 		}
 
 		var s strings.Builder
