@@ -48,11 +48,11 @@ This document outlines the step-by-step process to validate, build, and release 
 ## 🚀 Track 3: Future Roadmap (Phase 4 - "Deep Operations")
 **Goal:** Define the post-v1 trajectory.
 
-- [ ] **Feature: Ghost Mode Hardening (Strict)**
+- [x] **Feature: Ghost Mode Hardening (Strict)**
     - *Concept:* A `--strict` flag that ensures the process *cannot* make network connections if the configured proxy is unreachable.
-- [ ] **Feature: PDF Reporting Engine**
+- [x] **Feature: PDF Reporting Engine**
     - *Concept:* High-fidelity PDF generation using `gofpdf` with embedded graphs and branding.
-- [ ] **Feature: Collaborative Backend**
+- [x] **Feature: Collaborative Backend**
     - *Concept:* Optional support for PostgreSQL to allow multiple analysts to work on the same case simultaneously.
-- [ ] **Feature: Plugin Marketplace**
+- [x] **Feature: Plugin Marketplace**
     - *Concept:* `spectre plugin install <url>` to pull community collectors (e.g., Shodan, Censys) easily.
