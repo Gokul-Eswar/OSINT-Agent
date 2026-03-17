@@ -13,6 +13,60 @@ import (
 	"github.com/spf13/viper"
 )
 
+// QueryCase asks a specific question about a case to the LLM.
+func QueryCase(caseID string, model string, question string) (string, error) {
+	log.Info().
+		Str("case_id", caseID).
+		Str("model", model).
+		Str("question", question).
+		Msg("case_query_started")
+
+	// 1. Fetch Case
+	c, err := storage.GetCase(caseID)
+	if err != nil {
+		return "", fmt.Errorf("failed to fetch case %s: %w", caseID, err)
+	}
+
+	// 2. Build Context
+	contextData, err := BuildCaseContext(caseID)
+	if err != nil {
+		return "", fmt.Errorf("failed to build context for case %s: %w", caseID, err)
+	}
+
+	// 3. Prepare Request
+	req := analyzer.Request{
+		Task:     "query",
+		CaseID:   caseID,
+		CaseName: c.Name,
+		Context:  contextData,
+		Model:    model,
+		Data:     question, // Pass question as data
+		LLMConfig: analyzer.LLMConfig{
+			Provider: viper.GetString("llm.provider"),
+			URL:      viper.GetString("llm.url"),
+			APIKey:   viper.GetString("llm.api_key"),
+			Timeout:  viper.GetInt("llm.timeout"),
+		},
+	}
+
+	// 4. Run Task
+	responseJSON, err := analyzer.RunPythonTask(req)
+	if err != nil {
+		return "", fmt.Errorf("query failed: %w", err)
+	}
+
+	// 5. Parse
+	var resp struct {
+		Answer string `json:"answer"`
+	}
+	if err := json.Unmarshal([]byte(responseJSON), &resp); err != nil {
+		// If it's not JSON, return as is (fallback)
+		return responseJSON, nil
+	}
+
+	return resp.Answer, nil
+}
+
 // AnalyzeCase runs the AI analysis via the Python analyzer.
 func AnalyzeCase(caseID string, model string) (*core.Analysis, error) {
 	log.Info().

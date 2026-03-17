@@ -186,3 +186,55 @@ def analyze_case(data):
         "confidence": 0.0,
         "error": last_error
     }
+
+def query_case(data):
+    """
+    Answer a specific question about a case using the LLM.
+    """
+    case_name = data.get("case_name", "Unknown")
+    context = data.get("context", "")
+    question = data.get("data", "")
+    model = data.get("model", "llama3")
+    llm_config = data.get("llm_config", {})
+
+    api_url = llm_config.get("url", "http://localhost:11434/api/generate")
+    api_key = llm_config.get("api_key", "")
+    timeout = llm_config.get("timeout", 120)
+    
+    headers = {"Content-Type": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    
+    system_prompt = (
+        "You are SPECTRE, an expert intelligence analyst. "
+        "Use the provided case context to answer the user's specific question. "
+        "Be concise, professional, and focus on the evidence. "
+        "If the information is not in the context, state that clearly."
+    )
+    
+    full_prompt = f"{system_prompt}\n\nCASE CONTEXT:\n{context}\n\nQUESTION: {question}"
+    
+    payload = {
+        "model": model,
+        "prompt": full_prompt,
+        "stream": False
+    }
+
+    try:
+        resp = session.post(
+            api_url,
+            json=payload,
+            headers=headers,
+            timeout=timeout
+        )
+        resp.raise_for_status()
+        
+        response_json = resp.json()
+        raw_response = response_json.get("response", "")
+        if not raw_response and "choices" in response_json:
+             raw_response = response_json["choices"][0]["message"]["content"]
+        
+        return {"answer": raw_response}
+
+    except Exception as e:
+        return {"answer": f"Error querying LLM: {str(e)}"}
