@@ -20,6 +20,8 @@ type Extension struct {
 	URL         string   `json:"url"`
 	Version     string   `json:"version"`
 	Author      string   `json:"author"`
+	Type        string   `json:"type"`
+	Tags        []string `json:"tags"`
 }
 
 type Registry struct {
@@ -28,7 +30,7 @@ type Registry struct {
 
 var pluginCmd = &cobra.Command{
 	Use:   "plugin",
-	Short: "Manage external plugins",
+	Short: "Manage external plugins and extensions",
 }
 
 var installPluginCmd = &cobra.Command{
@@ -41,7 +43,7 @@ var installPluginCmd = &cobra.Command{
 		// 1. Resolve target (is it a URL or a name?)
 		url := target
 		if !strings.HasPrefix(target, "http") {
-			fmt.Printf("Searching registry for plugin '%s'...\n", target)
+			fmt.Printf("🔍 Searching registry for plugin '%s'...\n", target)
 			reg, err := fetchRegistry()
 			if err != nil {
 				return err
@@ -66,7 +68,7 @@ var installPluginCmd = &cobra.Command{
 			url = strings.TrimSuffix(url, "/") + "/archive/refs/heads/main.zip"
 		}
 
-		fmt.Printf("Installing plugin from %s...\n", url)
+		fmt.Printf("📥 Installing plugin from %s...\n", url)
 		return downloadAndExtract(url)
 	},
 }
@@ -86,15 +88,56 @@ var searchPluginCmd = &cobra.Command{
 		}
 
 		fmt.Println("AVAILABLE PLUGINS:")
-		fmt.Printf("%-20s %-10s %-40s\n", "NAME", "VERSION", "DESCRIPTION")
-		fmt.Println(strings.Repeat("─", 75))
+		fmt.Printf("%-20s %-10s %-15s %-40s\n", "NAME", "VERSION", "TYPE", "DESCRIPTION")
+		fmt.Println(strings.Repeat("─", 85))
 
 		for _, ext := range reg.Extensions {
-			if query == "" || strings.Contains(strings.ToLower(ext.Name), query) || strings.Contains(strings.ToLower(ext.Description), query) {
-				fmt.Printf("%-20s %-10s %-40s\n", ext.Name, ext.Version, ext.Description)
+			match := query == "" || 
+					strings.Contains(strings.ToLower(ext.Name), query) || 
+					strings.Contains(strings.ToLower(ext.Description), query)
+			
+			if !match {
+				for _, tag := range ext.Tags {
+					if strings.Contains(strings.ToLower(tag), query) {
+						match = true
+						break
+					}
+				}
+			}
+
+			if match {
+				fmt.Printf("%-20s %-10s %-15s %-40s\n", ext.Name, ext.Version, ext.Type, ext.Description)
 			}
 		}
 		return nil
+	},
+}
+
+var infoPluginCmd = &cobra.Command{
+	Use:   "info [name]",
+	Short: "Show detailed information about a plugin",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		name := args[0]
+		reg, err := fetchRegistry()
+		if err != nil {
+			return err
+		}
+
+		for _, ext := range reg.Extensions {
+			if ext.Name == name {
+				fmt.Printf("Plugin:      %s\n", ext.Name)
+				fmt.Printf("Version:     %s\n", ext.Version)
+				fmt.Printf("Author:      %s\n", ext.Author)
+				fmt.Printf("Type:        %s\n", ext.Type)
+				fmt.Printf("Tags:        %s\n", strings.Join(ext.Tags, ", "))
+				fmt.Printf("Description: %s\n", ext.Description)
+				fmt.Printf("URL:         %s\n", ext.URL)
+				return nil
+			}
+		}
+
+		return fmt.Errorf("plugin '%s' not found", name)
 	},
 }
 
@@ -231,6 +274,7 @@ func downloadAndExtract(url string) error {
 func init() {
 	pluginCmd.AddCommand(installPluginCmd)
 	pluginCmd.AddCommand(searchPluginCmd)
+	pluginCmd.AddCommand(infoPluginCmd)
 	pluginCmd.AddCommand(listPluginsCmd)
 	rootCmd.AddCommand(pluginCmd)
 }

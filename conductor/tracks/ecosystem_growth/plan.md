@@ -3,8 +3,8 @@
 This track focuses on expanding SPECTRE's capabilities for high-volume collection, community growth, and advanced AI investigation guidance.
 
 ## Phase 1: Interactive Marketplace
-- [ ] Implement `spectre plugin search` command to browse the extension store.
-- [ ] Implement `spectre plugin install <name>` for one-command installation.
+- [x] Implement `spectre plugin search` command to browse the extension store.
+- [x] Implement `spectre plugin install <name>` for one-command installation.
 - [ ] Add plugin versioning and update checks.
 
 ## Phase 2: Massive Collection Expansion
