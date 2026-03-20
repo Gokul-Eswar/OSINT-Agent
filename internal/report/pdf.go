@@ -7,6 +7,7 @@ import (
 	"github.com/jung-kurt/gofpdf"
 	"github.com/spectre/spectre/internal/core"
 	"github.com/spectre/spectre/internal/storage"
+	"github.com/spf13/viper"
 )
 
 // GeneratePDFReport creates a professional PDF report for the case and saves it to outputPath.
@@ -25,23 +26,37 @@ func GeneratePDFReport(caseID string, outputPath string) error {
 	analysis, _ := storage.GetLatestAnalysis(caseID)
 	evidence, _ := storage.ListEvidenceByCase(caseID)
 
+	// Branding settings
+	companyName := viper.GetString("report.branding.company")
+	if companyName == "" {
+		companyName = "SPECTRE"
+	}
+	footerText := viper.GetString("report.branding.footer")
+	if footerText == "" {
+		footerText = "CONFIDENTIAL // INTERNAL USE ONLY"
+	}
+	headerTitle := viper.GetString("report.branding.header")
+	if headerTitle == "" {
+		headerTitle = "Intelligence Report"
+	}
+
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	pdf.SetHeaderFunc(func() {
 		pdf.SetFont("Arial", "I", 8)
-		pdf.CellFormat(0, 10, fmt.Sprintf("SPECTRE Intelligence Report - Case %s", caseID), "", 0, "R", false, 0, "")
+		pdf.CellFormat(0, 10, fmt.Sprintf("%s %s - Case %s", companyName, headerTitle, caseID), "", 0, "R", false, 0, "")
 		pdf.Ln(10)
 	})
 	pdf.SetFooterFunc(func() {
 		pdf.SetY(-15)
 		pdf.SetFont("Arial", "I", 8)
-		pdf.CellFormat(0, 10, fmt.Sprintf("Page %d", pdf.PageNo()), "", 0, "C", false, 0, "")
+		pdf.CellFormat(0, 10, fmt.Sprintf("Page %d | %s", pdf.PageNo(), footerText), "", 0, "C", false, 0, "")
 	})
 
 	// --- Cover Page ---
 	pdf.AddPage()
 	pdf.SetFont("Arial", "B", 24)
 	pdf.CellFormat(0, 60, "", "", 1, "", false, 0, "") // Spacer
-	pdf.CellFormat(0, 10, "INTELLIGENCE REPORT", "", 1, "C", false, 0, "")
+	pdf.CellFormat(0, 10, headerTitle, "", 1, "C", false, 0, "")
 	
 	pdf.SetFont("Arial", "", 16)
 	pdf.CellFormat(0, 10, fmt.Sprintf("Case: %s", c.Name), "", 1, "C", false, 0, "")
@@ -52,7 +67,7 @@ func GeneratePDFReport(caseID string, outputPath string) error {
 	
 	pdf.Ln(50)
 	pdf.SetFont("Courier", "", 10)
-	pdf.MultiCell(0, 5, "CONFIDENTIAL // INTERNAL USE ONLY", "", "C", false)
+	pdf.MultiCell(0, 5, footerText, "", "C", false)
 
 	// --- Executive Summary ---
 	pdf.AddPage()

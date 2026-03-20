@@ -62,6 +62,20 @@ func FormatAnalysis(res *core.Analysis) string {
 		s.WriteString(fmt.Sprintf(" → %s\n", n))
 	}
 
+	if len(res.MissingData) > 0 {
+		s.WriteString("\n" + StyleHeader.Render("MISSING DATA") + "\n")
+		for _, m := range res.MissingData {
+			s.WriteString(fmt.Sprintf(" ? %s\n", m))
+		}
+	}
+
+	if len(res.SuggestedCollectors) > 0 {
+		s.WriteString("\n" + StyleHeader.Render("SUGGESTED COLLECTORS") + "\n")
+		for _, sc := range res.SuggestedCollectors {
+			s.WriteString(fmt.Sprintf(" + %s\n", sc))
+		}
+	}
+
 	s.WriteString(fmt.Sprintf("\nConfidence Level: %.2f", res.Confidence))
 	return s.String()
 }

@@ -12,6 +12,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 	"github.com/spectre/spectre/internal/core"
+	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
 )
 
@@ -49,6 +50,23 @@ func (e *ExternalCollector) Collect(caseID string, target string, options map[st
 	args := append(e.metadata.Args, target)
 	cmd := exec.Command(e.metadata.Command, args...)
 	cmd.Dir = e.path
+
+	// Pass standard and Ghost Mode environment variables
+	cmd.Env = os.Environ()
+	if viper.GetBool("ghost_mode") {
+		cmd.Env = append(cmd.Env, "SPECTRE_GHOST_MODE=1")
+		proxy := viper.GetString("http.tor_proxy")
+		if proxy == "" {
+			proxy = "socks5://127.0.0.1:9050"
+		}
+		cmd.Env = append(cmd.Env, fmt.Sprintf("SPECTRE_PROXY=%s", proxy))
+	} else {
+		cmd.Env = append(cmd.Env, "SPECTRE_GHOST_MODE=0")
+		proxy := viper.GetString("http.proxy")
+		if proxy != "" {
+			cmd.Env = append(cmd.Env, fmt.Sprintf("SPECTRE_PROXY=%s", proxy))
+		}
+	}
 
 	// Run and capture output
 	output, err := cmd.Output()

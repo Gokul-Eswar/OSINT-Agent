@@ -13,11 +13,11 @@ This track focuses on expanding SPECTRE's capabilities for high-volume collectio
 - [x] Add "Custom Probe" capability to the TUI (on-the-fly port/service definitions).
 
 ## Phase 3: AI Investigation Guidance
-- [ ] Implement "Next Step Suggestions" in the analysis layer.
-- [ ] Create a "Case Context Prompt Builder" for more accurate LLM synthesis.
-- [ ] Implement "AI Feedback Loop" (AI identifies missing data and suggests collectors).
+- [x] Implement "Next Step Suggestions" in the analysis layer.
+- [x] Create a "Case Context Prompt Builder" for more accurate LLM synthesis.
+- [x] Implement "AI Feedback Loop" (AI identifies missing data and suggests collectors).
 
 ## Phase 4: Enterprise Hardening
-- [ ] Standardize "Ghost Mode" interfaces for all third-party plugins.
-- [ ] Implement PDF report branding/templates.
-- [ ] Add a performance benchmarking suite for high-concurrency collection.
+- [x] Standardize "Ghost Mode" interfaces for all third-party plugins.
+- [x] Implement PDF report branding/templates.
+- [x] Add a performance benchmarking suite for high-concurrency collection.

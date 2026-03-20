@@ -133,6 +133,8 @@ def analyze_case(data):
         "  \"risks\": [\"string\"],\n"
         "  \"connections\": [\"string\"],\n"
         "  \"next_steps\": [\"string\"],\n"
+        "  \"missing_data\": [\"string\"],\n"
+        "  \"suggested_collectors\": [\"string\"],\n"
         "  \"confidence\": 0.85\n"
         "}"
     )

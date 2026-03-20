@@ -69,6 +69,24 @@ func printAnalysis(a *core.Analysis) {
 	for _, n := range a.NextSteps {
 		fmt.Printf("- %s\n", n)
 	}
+	fmt.Println()
+	
+	if len(a.MissingData) > 0 {
+		fmt.Println("MISSING DATA:")
+		for _, m := range a.MissingData {
+			fmt.Printf("- %s\n", m)
+		}
+		fmt.Println()
+	}
+
+	if len(a.SuggestedCollectors) > 0 {
+		fmt.Println("SUGGESTED COLLECTORS:")
+		for _, c := range a.SuggestedCollectors {
+			fmt.Printf("- %s\n", c)
+		}
+		fmt.Println()
+	}
+
 	fmt.Println("---------------------------")
 }
 
