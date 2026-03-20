@@ -4,6 +4,6 @@ package core
 type Collector interface {
 	Name() string
 	Description() string
-	Collect(caseID string, target string) ([]Evidence, error)
+	Collect(caseID string, target string, options map[string]interface{}) ([]Evidence, error)
 	IsActive() bool
 }
