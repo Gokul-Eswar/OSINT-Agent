@@ -19,6 +19,7 @@ import (
 type PluginMetadata struct {
 	Name        string   `yaml:"name"`
 	Description string   `yaml:"description"`
+	Version     string   `yaml:"version"`
 	Command     string   `yaml:"command"`
 	Args        []string `yaml:"args"`
 	IsActive    bool     `yaml:"is_active"`

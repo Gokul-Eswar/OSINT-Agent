@@ -5,7 +5,7 @@ This track focuses on expanding SPECTRE's capabilities for high-volume collectio
 ## Phase 1: Interactive Marketplace
 - [x] Implement `spectre plugin search` command to browse the extension store.
 - [x] Implement `spectre plugin install <name>` for one-command installation.
-- [ ] Add plugin versioning and update checks.
+- [x] Add plugin versioning and update checks.
 
 ## Phase 2: Massive Collection Expansion
 - [x] Expand `social` collector to 50+ platforms.

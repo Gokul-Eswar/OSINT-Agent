@@ -52,9 +52,7 @@ var installPluginCmd = &cobra.Command{
 			found := false
 			for _, ext := range reg.Extensions {
 				if ext.Name == target {
-					url = ext.URL
-					found = true
-					break
+					return installExtension(ext)
 				}
 			}
 			
@@ -63,6 +61,7 @@ var installPluginCmd = &cobra.Command{
 			}
 		}
 
+		// Direct URL install
 		// Handle GitHub URLs (convert to zip)
 		if strings.Contains(url, "github.com") && !strings.HasSuffix(url, ".zip") {
 			url = strings.TrimSuffix(url, "/") + "/archive/refs/heads/main.zip"
@@ -71,6 +70,64 @@ var installPluginCmd = &cobra.Command{
 		fmt.Printf("📥 Installing plugin from %s...\n", url)
 		return downloadAndExtract(url)
 	},
+}
+
+var updatePluginCmd = &cobra.Command{
+	Use:   "update [name|all]",
+	Short: "Update installed plugins to the latest version",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		target := args[0]
+		
+		entries, err := os.ReadDir("plugins")
+		if err != nil {
+			return err
+		}
+
+		reg, err := fetchRegistry()
+		if err != nil {
+			return err
+		}
+
+		for _, entry := range entries {
+			if entry.IsDir() {
+				if target != "all" && entry.Name() != target {
+					continue
+				}
+
+				metadata, err := readPluginMetadata(entry.Name())
+				if err != nil {
+					continue
+				}
+
+				for _, ext := range reg.Extensions {
+					if ext.Name == metadata.Name {
+						if ext.Version != metadata.Version {
+							fmt.Printf("🆙 Updating %s from %s to %s...\n", ext.Name, metadata.Version, ext.Version)
+							if err := installExtension(ext); err != nil {
+								fmt.Printf("❌ Failed to update %s: %v\n", ext.Name, err)
+							}
+						} else if target != "all" {
+							fmt.Printf("✅ %s is already up to date (%s).\n", ext.Name, metadata.Version)
+						}
+						break
+					}
+				}
+			}
+		}
+		return nil
+	},
+}
+
+func installExtension(ext Extension) error {
+	url := ext.URL
+	// Handle GitHub URLs (convert to zip)
+	if strings.Contains(url, "github.com") && !strings.HasSuffix(url, ".zip") {
+		url = strings.TrimSuffix(url, "/") + "/archive/refs/heads/main.zip"
+	}
+
+	fmt.Printf("📥 Downloading %s (%s)...\n", ext.Name, ext.Version)
+	return downloadAndExtract(url)
 }
 
 var searchPluginCmd = &cobra.Command{
@@ -141,6 +198,55 @@ var infoPluginCmd = &cobra.Command{
 	},
 }
 
+var checkUpdatesPluginCmd = &cobra.Command{
+	Use:   "check-updates",
+	Short: "Check for updates to installed plugins",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		entries, err := os.ReadDir("plugins")
+		if err != nil {
+			if os.IsNotExist(err) {
+				fmt.Println("No external plugins installed.")
+				return nil
+			}
+			return err
+		}
+
+		reg, err := fetchRegistry()
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("CHECKING FOR UPDATES:")
+		fmt.Printf("%-20s %-15s %-15s %-10s\n", "NAME", "INSTALLED", "LATEST", "STATUS")
+		fmt.Println(strings.Repeat("─", 65))
+
+		for _, entry := range entries {
+			if entry.IsDir() {
+				metadata, err := readPluginMetadata(entry.Name())
+				if err != nil {
+					continue
+				}
+
+				latestVersion := "unknown"
+				status := "up to date"
+				
+				for _, ext := range reg.Extensions {
+					if ext.Name == metadata.Name {
+						latestVersion = ext.Version
+						if latestVersion != metadata.Version {
+							status = "UPDATE AVAILABLE"
+						}
+						break
+					}
+				}
+
+				fmt.Printf("%-20s %-15s %-15s %-10s\n", metadata.Name, metadata.Version, latestVersion, status)
+			}
+		}
+		return nil
+	},
+}
+
 var listPluginsCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all installed external plugins",
@@ -155,11 +261,18 @@ var listPluginsCmd = &cobra.Command{
 		}
 
 		fmt.Println("INSTALLED EXTERNAL PLUGINS:")
-		fmt.Println("────────────────────────────")
+		fmt.Printf("%-20s %-10s %-40s\n", "NAME", "VERSION", "DESCRIPTION")
+		fmt.Println(strings.Repeat("─", 75))
+		
 		found := false
 		for _, entry := range entries {
 			if entry.IsDir() {
-				fmt.Printf("- %s\n", entry.Name())
+				metadata, err := readPluginMetadata(entry.Name())
+				if err != nil {
+					fmt.Printf("- %s (error reading metadata)\n", entry.Name())
+					continue
+				}
+				fmt.Printf("%-20s %-10s %-40s\n", metadata.Name, metadata.Version, metadata.Description)
 				found = true
 			}
 		}
@@ -168,6 +281,21 @@ var listPluginsCmd = &cobra.Command{
 		}
 		return nil
 	},
+}
+
+func readPluginMetadata(pluginName string) (*collector.PluginMetadata, error) {
+	path := filepath.Join("plugins", pluginName, "plugin.yaml")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	var meta collector.PluginMetadata
+	if err := yaml.Unmarshal(data, &meta); err != nil {
+		return nil, err
+	}
+
+	return &meta, nil
 }
 
 func fetchRegistry() (*Registry, error) {
@@ -275,6 +403,8 @@ func init() {
 	pluginCmd.AddCommand(installPluginCmd)
 	pluginCmd.AddCommand(searchPluginCmd)
 	pluginCmd.AddCommand(infoPluginCmd)
+	pluginCmd.AddCommand(checkUpdatesPluginCmd)
+	pluginCmd.AddCommand(updatePluginCmd)
 	pluginCmd.AddCommand(listPluginsCmd)
 	rootCmd.AddCommand(pluginCmd)
 }
