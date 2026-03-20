@@ -35,24 +35,43 @@ func (c *PortCollector) IsActive() bool {
 	return true
 }
 
-func (c *PortCollector) Collect(caseID string, target string) ([]core.Evidence, error) {
+func (c *PortCollector) Collect(caseID string, target string, options map[string]interface{}) ([]core.Evidence, error) {
 	log.Info().
 		Str("collector", "ports").
 		Str("case_id", caseID).
 		Str("target", target).
 		Msg("collection_started")
 
-	mode := viper.GetString("collectors.ports.mode")
 	var ports []int
+	mode := "default"
 
-	switch mode {
-	case "top-100":
-		ports = getTop100Ports()
-	case "custom":
-		ports = viper.GetIntSlice("collectors.ports.custom_ports")
-	default:
-		// Default list (common ports)
-		ports = []int{20, 21, 22, 23, 25, 53, 80, 110, 111, 135, 139, 143, 443, 445, 993, 995, 1723, 3306, 3389, 5432, 5900, 8080, 8443}
+	if p, ok := options["ports"]; ok {
+		if plist, ok := p.([]int); ok {
+			ports = plist
+			mode = "custom-override"
+		} else if plist, ok := p.([]interface{}); ok {
+			for _, item := range plist {
+				if i, ok := item.(int); ok {
+					ports = append(ports, i)
+				} else if f, ok := item.(float64); ok {
+					ports = append(ports, int(f))
+				}
+			}
+			mode = "custom-override"
+		}
+	}
+
+	if len(ports) == 0 {
+		mode = viper.GetString("collectors.ports.mode")
+		switch mode {
+		case "top-100":
+			ports = getTop100Ports()
+		case "custom":
+			ports = viper.GetIntSlice("collectors.ports.custom_ports")
+		default:
+			// Default list (common ports)
+			ports = []int{20, 21, 22, 23, 25, 53, 80, 110, 111, 135, 139, 143, 443, 445, 993, 995, 1723, 3306, 3389, 5432, 5900, 8080, 8443}
+		}
 	}
 
 	results := make(map[int]string)

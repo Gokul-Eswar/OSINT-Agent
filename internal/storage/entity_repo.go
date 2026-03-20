@@ -84,6 +84,35 @@ func GetEntity(id string) (*core.Entity, error) {
 	return &e, nil
 }
 
+// GetEntityByValue retrieves an entity by its case ID and value.
+func GetEntityByValue(caseID, value string) (*core.Entity, error) {
+	if DB == nil {
+		return nil, fmt.Errorf("database not initialized")
+	}
+
+	query := TranslatePlaceholder(`SELECT id, case_id, type, value, source, confidence, discovered_at, metadata 
+	          FROM entities WHERE case_id = ? AND value = ?`)
+	row := DB.QueryRow(query, caseID, value)
+
+	var e core.Entity
+	var metadataStr string
+	err := row.Scan(&e.ID, &e.CaseID, &e.Type, &e.Value, &e.Source, &e.Confidence, &e.DiscoveredAt, &metadataStr)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		log.Error().Err(err).Str("case_id", caseID).Str("value", value).Msg("failed to scan entity row by value")
+		return nil, fmt.Errorf("failed to get entity by value %s in case %s: %w", value, caseID, err)
+	}
+
+	if err := json.Unmarshal([]byte(metadataStr), &e.Metadata); err != nil {
+		log.Error().Err(err).Str("entity_id", e.ID).Msg("failed to unmarshal entity metadata by value")
+		return nil, fmt.Errorf("failed to unmarshal metadata for entity %s: %w", e.ID, err)
+	}
+
+	return &e, nil
+}
+
 // UpdateEntity updates an existing entity's fields (metadata, confidence).
 func UpdateEntity(e *core.Entity) error {
 	if DB == nil {

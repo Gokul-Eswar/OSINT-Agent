@@ -45,7 +45,7 @@ func (w *WHOISCollector) IsActive() bool {
 	return false
 }
 
-func (w *WHOISCollector) Collect(caseID string, target string) ([]core.Evidence, error) {
+func (w *WHOISCollector) Collect(caseID string, target string, options map[string]interface{}) ([]core.Evidence, error) {
 	log.Info().
 		Str("collector", "whois").
 		Str("case_id", caseID).

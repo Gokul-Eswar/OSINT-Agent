@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -15,6 +16,7 @@ const (
 	selectCase runnerState = iota
 	selectCollector
 	inputTarget
+	inputOptions
 	executing
 	result
 )
@@ -24,6 +26,7 @@ type runnerModel struct {
 	caseList       list.Model
 	collList       list.Model
 	textInput      textinput.Model
+	optionsInput   textinput.Model
 	selectedCaseID string
 	selectedColl   string
 	activeAllowed  bool
@@ -35,6 +38,9 @@ func NewRunnerModel() runnerModel {
 	ti := textinput.New()
 	ti.Placeholder = "example.com"
 	ti.Focus()
+
+	oi := textinput.New()
+	oi.Placeholder = "80, 443, 8080 (optional)"
 
 	// Dynamic Collector list
 	var collectors []list.Item
@@ -55,10 +61,11 @@ func NewRunnerModel() runnerModel {
 	l.SetShowHelp(false)
 
 	return runnerModel{
-		state:     selectCase,
-		caseList:  l,
-		collList:  cl,
-		textInput: ti,
+		state:        selectCase,
+		caseList:     l,
+		collList:     cl,
+		textInput:    ti,
+		optionsInput: oi,
 	}
 }
 
@@ -105,9 +112,16 @@ func (m runnerModel) Update(msg tea.Msg) (runnerModel, tea.Cmd) {
 			if target == "" {
 				return m, nil
 			}
+
+			if m.selectedColl == "ports" {
+				m.state = inputOptions
+				m.optionsInput.Focus()
+				return m, nil
+			}
+
 			m.state = executing
 			return m, func() tea.Msg {
-				_, err := collector.RunAndSave(m.selectedColl, m.selectedCaseID, target, m.activeAllowed)
+				_, err := collector.RunAndSave(m.selectedColl, m.selectedCaseID, target, m.activeAllowed, nil)
 				if err != nil {
 					return err
 				}
@@ -115,6 +129,41 @@ func (m runnerModel) Update(msg tea.Msg) (runnerModel, tea.Cmd) {
 			}
 		}
 		m.textInput, cmd = m.textInput.Update(msg)
+		return m, cmd
+
+	case inputOptions:
+		if km, ok := msg.(tea.KeyMsg); ok && km.String() == "enter" {
+			target := m.textInput.Value()
+			optionsStr := m.optionsInput.Value()
+
+			var options map[string]interface{}
+			if optionsStr != "" {
+				// Parse ports
+				parts := strings.Split(optionsStr, ",")
+				var ports []int
+				for _, p := range parts {
+					p = strings.TrimSpace(p)
+					var port int
+					fmt.Sscanf(p, "%d", &port)
+					if port > 0 {
+						ports = append(ports, port)
+					}
+				}
+				if len(ports) > 0 {
+					options = map[string]interface{}{"ports": ports}
+				}
+			}
+
+			m.state = executing
+			return m, func() tea.Msg {
+				_, err := collector.RunAndSave(m.selectedColl, m.selectedCaseID, target, m.activeAllowed, options)
+				if err != nil {
+					return err
+				}
+				return "Collection complete!"
+			}
+		}
+		m.optionsInput, cmd = m.optionsInput.Update(msg)
 		return m, cmd
 
 	case result, executing:
@@ -150,8 +199,13 @@ func (m runnerModel) View() string {
 			status = "ACTIVE/DANGEROUS"
 		}
 		return fmt.Sprintf(
-			"Running %s for case %s\nMode: %s\n\nEnter target:\n\n%s\n\n(enter: run • esc: cancel)",
+			"Running %s for case %s\nMode: %s\n\nEnter target:\n\n%s\n\n(enter: next • esc: cancel)",
 			m.selectedColl, m.selectedCaseID, status, m.textInput.View(),
+		)
+	case inputOptions:
+		return fmt.Sprintf(
+			"Custom Probes for %s\nTarget: %s\n\nEnter custom ports (comma separated):\n\n%s\n\n(leave empty for defaults • enter: run • esc: cancel)",
+			m.selectedColl, m.textInput.Value(), m.optionsInput.View(),
 		)
 	case executing:
 		return fmt.Sprintf("Running %s against %s... Please wait.", m.selectedColl, m.textInput.Value())

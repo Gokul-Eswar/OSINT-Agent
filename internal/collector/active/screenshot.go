@@ -35,7 +35,7 @@ func (c *ScreenshotCollector) IsActive() bool {
 	return true
 }
 
-func (c *ScreenshotCollector) Collect(caseID string, target string) ([]core.Evidence, error) {
+func (c *ScreenshotCollector) Collect(caseID string, target string, options map[string]interface{}) ([]core.Evidence, error) {
 	if err := ethics.Wait("screenshot"); err != nil {
 		return nil, err
 	}

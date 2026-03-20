@@ -38,7 +38,7 @@ func (c *GeoIPCollector) IsActive() bool {
 	return false
 }
 
-func (c *GeoIPCollector) Collect(caseID string, target string) ([]core.Evidence, error) {
+func (c *GeoIPCollector) Collect(caseID string, target string, options map[string]interface{}) ([]core.Evidence, error) {
 	client, err := netclient.NewClient()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create http client: %w", err)

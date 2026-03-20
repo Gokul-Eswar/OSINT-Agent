@@ -10,7 +10,7 @@ This track focuses on expanding SPECTRE's capabilities for high-volume collectio
 ## Phase 2: Massive Collection Expansion
 - [x] Expand `social` collector to 50+ platforms.
 - [x] Implement "Persona Mapping" (correlating results across multiple platforms).
-- [ ] Add "Custom Probe" capability to the TUI (on-the-fly port/service definitions).
+- [x] Add "Custom Probe" capability to the TUI (on-the-fly port/service definitions).
 
 ## Phase 3: AI Investigation Guidance
 - [ ] Implement "Next Step Suggestions" in the analysis layer.

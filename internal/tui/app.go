@@ -29,6 +29,7 @@ const (
 	ViewChat
 	ViewSettings
 	ViewDashboard
+	ViewCollection
 )
 
 type analysisStatus int
@@ -293,6 +294,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "6": m.state = ViewReports
 		case "7": m.state = ViewSettings
 		case "8": m.state = ViewChat
+		case "9": m.state = ViewCollection
+		}
+
+		if m.state == ViewCollection {
+			var cmd2 tea.Cmd
+			m.runner, cmd2 = m.runner.Update(msg)
+			return m, cmd2
 		}
 
 		// Specific View Keybindings
@@ -435,6 +443,7 @@ func (m model) renderNav() string {
 		{ViewChat, "Chat"},
 		{ViewSettings, "Settings"},
 		{ViewDashboard, "Web Dashboard"},
+		{ViewCollection, "Collection"},
 	}
 
 	var s strings.Builder
@@ -579,6 +588,9 @@ func (m model) renderContent() string {
 	case ViewDashboard:
 		content = "Opening Web Dashboard in your default browser...\n\nURL: http://localhost:8080\n\nThe dashboard provides an interactive graph visualization and case management interface."
 	
+	case ViewCollection:
+		content = m.runner.View()
+
 	default:
 		content = "This view is currently being optimized for high-density intelligence display."
 	}

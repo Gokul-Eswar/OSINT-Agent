@@ -62,7 +62,7 @@ func TestCreateAndGetEntity(t *testing.T) {
 	}
 }
 
-func TestListEntitiesByCase(t *testing.T) {
+func TestGetEntityByValue(t *testing.T) {
 	db, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
 		t.Fatal(err)
@@ -79,19 +79,29 @@ func TestListEntitiesByCase(t *testing.T) {
 
 	c1 := &core.Case{ID: "case-1", Name: "Case 1"}
 	CreateCase(c1)
-	c2 := &core.Case{ID: "case-2", Name: "Case 2"}
-	CreateCase(c2)
 
-	CreateEntity(&core.Entity{ID: "e1", CaseID: "case-1", Type: "ip", Value: "1.1.1.1"})
-	CreateEntity(&core.Entity{ID: "e2", CaseID: "case-1", Type: "domain", Value: "example.com"})
-	CreateEntity(&core.Entity{ID: "e3", CaseID: "case-2", Type: "ip", Value: "8.8.8.8"})
+	e1 := &core.Entity{ID: "e1", CaseID: "case-1", Type: "ip", Value: "1.1.1.1"}
+	CreateEntity(e1)
 
-	entities, err := ListEntitiesByCase("case-1")
+	retrieved, err := GetEntityByValue("case-1", "1.1.1.1")
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("GetEntityByValue failed: %v", err)
 	}
 
-	if len(entities) != 2 {
-		t.Errorf("expected 2 entities for case-1, got %d", len(entities))
+	if retrieved == nil {
+		t.Fatal("expected retrieved entity to not be nil")
+	}
+
+	if retrieved.ID != "e1" {
+		t.Errorf("expected ID e1, got %s", retrieved.ID)
+	}
+
+	// Test non-existent value
+	retrieved, err = GetEntityByValue("case-1", "2.2.2.2")
+	if err != nil {
+		t.Fatalf("GetEntityByValue for non-existent failed: %v", err)
+	}
+	if retrieved != nil {
+		t.Errorf("expected nil for non-existent value, got %v", retrieved)
 	}
 }

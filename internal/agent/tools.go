@@ -46,7 +46,7 @@ var Registry = map[string]Tool{
 			}
 
 			// By default, we don't allow active recon via chat unless we add an 'active' parameter
-			evidence, err := collector.RunAndSave(name, caseID, target, false)
+			evidence, err := collector.RunAndSave(name, caseID, target, false, nil)
 			if err != nil {
 				return "", err
 			}

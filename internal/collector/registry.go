@@ -85,7 +85,7 @@ func List() []core.Collector {
 }
 
 // Run executes a collector by name with ethics enforcement.
-func Run(name string, caseID string, target string, activeAllowed bool) ([]core.Evidence, error) {
+func Run(name string, caseID string, target string, activeAllowed bool, options map[string]interface{}) ([]core.Evidence, error) {
 	c, err := Get(name)
 	if err != nil {
 		return nil, err
@@ -107,12 +107,12 @@ func Run(name string, caseID string, target string, activeAllowed bool) ([]core.
 		return nil, fmt.Errorf("rate limit error: %w", err)
 	}
 
-	return c.Collect(caseID, target)
+	return c.Collect(caseID, target, options)
 }
 
 // RunAndSave executes a collector and automatically persists evidence and ingests it.
-func RunAndSave(name string, caseID string, target string, activeAllowed bool) ([]core.Evidence, error) {
-	evidenceList, err := Run(name, caseID, target, activeAllowed)
+func RunAndSave(name string, caseID string, target string, activeAllowed bool, options map[string]interface{}) ([]core.Evidence, error) {
+	evidenceList, err := Run(name, caseID, target, activeAllowed, options)
 	if err != nil {
 		return nil, err
 	}

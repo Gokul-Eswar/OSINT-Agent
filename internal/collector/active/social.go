@@ -103,7 +103,7 @@ type SiteResult struct {
 	Status string `json:"status"` // "found", "not_found", "error"
 }
 
-func (c *SocialCollector) Collect(caseID string, target string) ([]core.Evidence, error) {
+func (c *SocialCollector) Collect(caseID string, target string, options map[string]interface{}) ([]core.Evidence, error) {
 	log.Info().
 		Str("collector", "social").
 		Str("case_id", caseID).

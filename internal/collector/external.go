@@ -44,7 +44,7 @@ func (e *ExternalCollector) IsActive() bool {
 }
 
 // Collect executes the external plugin and captures its output.
-func (e *ExternalCollector) Collect(caseID string, target string) ([]core.Evidence, error) {
+func (e *ExternalCollector) Collect(caseID string, target string, options map[string]interface{}) ([]core.Evidence, error) {
 	// Prepare command
 	args := append(e.metadata.Args, target)
 	cmd := exec.Command(e.metadata.Command, args...)

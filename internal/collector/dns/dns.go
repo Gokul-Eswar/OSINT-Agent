@@ -47,7 +47,7 @@ func (d *DNSCollector) IsActive() bool {
 	return false
 }
 
-func (d *DNSCollector) Collect(caseID string, target string) ([]core.Evidence, error) {
+func (d *DNSCollector) Collect(caseID string, target string, options map[string]interface{}) ([]core.Evidence, error) {
 	log.Info().
 		Str("collector", "dns").
 		Str("case_id", caseID).

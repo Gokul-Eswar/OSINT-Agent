@@ -14,7 +14,7 @@ type mockCollector struct{}
 func (m *mockCollector) Name() string        { return "mock" }
 func (m *mockCollector) Description() string { return "Mock Collector" }
 func (m *mockCollector) IsActive() bool      { return false }
-func (m *mockCollector) Collect(caseID string, target string) ([]core.Evidence, error) {
+func (m *mockCollector) Collect(caseID string, target string, options map[string]interface{}) ([]core.Evidence, error) {
 	return []core.Evidence{
 		{
 			CaseID:    caseID,
@@ -43,7 +43,7 @@ func TestRunAndSave(t *testing.T) {
 	Register(&mockCollector{})
 
 	// Run
-	evList, err := RunAndSave("mock", caseID, "example.com", false)
+	evList, err := RunAndSave("mock", caseID, "example.com", false, nil)
 	if err != nil {
 		t.Fatalf("RunAndSave failed: %v", err)
 	}

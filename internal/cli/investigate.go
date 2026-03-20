@@ -44,7 +44,7 @@ var investigateCmd = &cobra.Command{
 		fmt.Printf("[*] Running collectors: %v\n", collectors)
 		
 		for _, name := range collectors {
-			ev, err := collector.Run(name, caseID, target, true)
+			ev, err := collector.Run(name, caseID, target, true, nil)
 			if err != nil {
 				fmt.Printf("    [!] %s failed: %v\n", name, err)
 				continue

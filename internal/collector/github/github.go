@@ -37,7 +37,7 @@ func (g *GitHubCollector) IsActive() bool {
 	return false
 }
 
-func (g *GitHubCollector) Collect(caseID string, target string) ([]core.Evidence, error) {
+func (g *GitHubCollector) Collect(caseID string, target string, options map[string]interface{}) ([]core.Evidence, error) {
 	log.Info().
 		Str("collector", "github").
 		Str("case_id", caseID).

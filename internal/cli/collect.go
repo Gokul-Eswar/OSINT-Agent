@@ -58,7 +58,7 @@ func (m collectModel) Init() tea.Cmd {
 				return collectMsg{name: name}
 			}
 
-			_, err := collector.RunAndSave(name, m.caseID, m.target, m.activeAllowed)
+			_, err := collector.RunAndSave(name, m.caseID, m.target, m.activeAllowed, nil)
 			return collectMsg{name: name, err: err}
 		})
 	}
@@ -211,7 +211,7 @@ var collectCmd = &cobra.Command{
 					fmt.Printf("[DRY-RUN] Would run %s\n", name)
 					continue
 				}
-				_, err := collector.RunAndSave(name, caseID, target, activeAllowed)
+				_, err := collector.RunAndSave(name, caseID, target, activeAllowed, nil)
 				if err != nil {
 					return err
 				}

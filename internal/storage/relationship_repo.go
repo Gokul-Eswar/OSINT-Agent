@@ -107,3 +107,29 @@ func ListRelationshipsByType(caseID, relType string) ([]*core.Relationship, erro
 
 	return relationships, nil
 }
+
+// ListRelationshipsByCase retrieves all relationships associated with a specific case.
+func ListRelationshipsByCase(caseID string) ([]*core.Relationship, error) {
+	if DB == nil {
+		return nil, fmt.Errorf("database not initialized")
+	}
+
+	query := TranslatePlaceholder(`SELECT id, case_id, from_entity, to_entity, rel_type, confidence, evidence_id, discovered_at 
+	          FROM relationships WHERE case_id = ?`)
+	rows, err := DB.Query(query, caseID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query relationships by case: %w", err)
+	}
+	defer rows.Close()
+
+	var relationships []*core.Relationship
+	for rows.Next() {
+		var r core.Relationship
+		if err := rows.Scan(&r.ID, &r.CaseID, &r.FromEntityID, &r.ToEntityID, &r.Type, &r.Confidence, &r.EvidenceID, &r.DiscoveredAt); err != nil {
+			return nil, err
+		}
+		relationships = append(relationships, &r)
+	}
+
+	return relationships, nil
+}

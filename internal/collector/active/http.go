@@ -34,7 +34,7 @@ func (c *HTTPCollector) IsActive() bool {
 	return true
 }
 
-func (c *HTTPCollector) Collect(caseID string, target string) ([]core.Evidence, error) {
+func (c *HTTPCollector) Collect(caseID string, target string, options map[string]interface{}) ([]core.Evidence, error) {
 	// Try HTTPS first
 	url := target
 	if !strings.HasPrefix(url, "http") {
