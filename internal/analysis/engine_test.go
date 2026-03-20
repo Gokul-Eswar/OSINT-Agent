@@ -55,7 +55,7 @@ print(json.dumps(result))
 	// 2. Second run (Cache Hit)
 	// Even if we change the mock script, it should return the cached result
 	os.WriteFile(mockScript, []byte(`print(json.dumps({"confidence": 0.1}))`), 0644)
-	
+
 	res2, err := AnalyzeCase(caseID, "mock-model")
 	require.NoError(t, err)
 	assert.Equal(t, 0.95, res2.Confidence, "Should have returned cached result")

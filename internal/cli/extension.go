@@ -7,16 +7,16 @@ import (
 	"text/tabwriter"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"github.com/spectre/spectre/internal/extensions"
 	"github.com/spectre/spectre/internal/tui/store"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var extCmd = &cobra.Command{
-	Use:   "extension",
-	Short: "Manage extensions (search, install, list)",
-	Long:  `Search for and install extensions from the official Spectre registry.`,
+	Use:     "extension",
+	Short:   "Manage extensions (search, install, list)",
+	Long:    `Search for and install extensions from the official Spectre registry.`,
 	Aliases: []string{"ext"},
 	Run: func(cmd *cobra.Command, args []string) {
 		// Default to UI
@@ -63,7 +63,7 @@ var extListCmd = &cobra.Command{
 			fmt.Printf("Error listing extensions: %v\n", err)
 			return
 		}
-		
+
 		if len(installed) == 0 {
 			fmt.Println("No extensions installed.")
 			return
@@ -89,7 +89,7 @@ var extSearchCmd = &cobra.Command{
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		mgr := getManager()
-		
+
 		query := ""
 		if len(args) > 0 {
 			query = args[0]
@@ -138,7 +138,6 @@ var extSearchCmd = &cobra.Command{
 		w.Flush()
 	},
 }
-
 
 var extInstallCmd = &cobra.Command{
 	Use:   "install [name]",
@@ -209,7 +208,7 @@ var extInfoCmd = &cobra.Command{
 		fmt.Printf("Type:        %s\n", ext.Type)
 		fmt.Printf("Tags:        %s\n", strings.Join(ext.Tags, ", "))
 		fmt.Printf("URL:         %s\n", ext.URL)
-		
+
 		status := "Not installed"
 		if installed {
 			status = "Installed"
@@ -230,7 +229,6 @@ func init() {
 	extCmd.AddCommand(extInfoCmd)
 	extCmd.AddCommand(extUiCmd)
 
-	
 	// Register with root
 	rootCmd.AddCommand(extCmd)
 }

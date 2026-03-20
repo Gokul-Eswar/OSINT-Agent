@@ -70,7 +70,7 @@ func GetLatestAnalysis(caseID string) (*core.Analysis, error) {
 	json.Unmarshal([]byte(risksStr), &a.Risks)
 	json.Unmarshal([]byte(connStr), &a.Connections)
 	json.Unmarshal([]byte(nextStepsStr), &a.NextSteps)
-	
+
 	if missingDataStr != "" {
 		json.Unmarshal([]byte(missingDataStr), &a.MissingData)
 	}
@@ -111,7 +111,7 @@ func GetAnalysisByHash(caseID string, hash string) (*core.Analysis, error) {
 	json.Unmarshal([]byte(risksStr), &a.Risks)
 	json.Unmarshal([]byte(connStr), &a.Connections)
 	json.Unmarshal([]byte(nextStepsStr), &a.NextSteps)
-	
+
 	if missingDataStr != "" {
 		json.Unmarshal([]byte(missingDataStr), &a.MissingData)
 	}

@@ -14,7 +14,7 @@ func TestInitLogger(t *testing.T) {
 
 	// Initialize logger (should not panic)
 	InitLogger()
-	
+
 	// Clean up logs directory if created
 	defer os.RemoveAll("logs")
 }

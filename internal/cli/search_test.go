@@ -60,14 +60,14 @@ func TestSearchCommand(t *testing.T) {
 
 	// 5. Run search command
 	rootCmd.SetArgs([]string{"search", "api.example.com"})
-	
+
 	// Capture output
 	old := os.Stdout
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
 	err = rootCmd.Execute()
-	
+
 	w.Close()
 	os.Stdout = old
 

@@ -22,7 +22,7 @@ type OllamaTagsResponse struct {
 // and retrieves the list of installed models.
 func FetchAvailableModels() ([]string, error) {
 	provider := viper.GetString("llm.provider")
-	
+
 	// If not Ollama, we can't auto-detect easily (OpenAI models are fixed/remote)
 	if provider != "ollama" {
 		return []string{viper.GetString("llm.model")}, nil
@@ -32,7 +32,7 @@ func FetchAvailableModels() ([]string, error) {
 	// Config typically: http://localhost:11434/api/generate
 	// Goal: http://localhost:11434/api/tags
 	genURL := viper.GetString("llm.url")
-	
+
 	var tagsURL string
 	if strings.Contains(genURL, "/api/generate") {
 		tagsURL = strings.Replace(genURL, "/api/generate", "/api/tags", 1)

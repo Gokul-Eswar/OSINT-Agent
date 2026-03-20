@@ -32,7 +32,7 @@ var analyzeCmd = &cobra.Command{
 		}
 
 		fmt.Printf("Analyzing case %s with model %s (via Python)...\n", caseID, modelName)
-		
+
 		result, err := analysis.AnalyzeCase(caseID, modelName)
 		if err != nil {
 			return fmt.Errorf("analysis failed: %w", err)
@@ -70,7 +70,7 @@ func printAnalysis(a *core.Analysis) {
 		fmt.Printf("- %s\n", n)
 	}
 	fmt.Println()
-	
+
 	if len(a.MissingData) > 0 {
 		fmt.Println("MISSING DATA:")
 		for _, m := range a.MissingData {

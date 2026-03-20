@@ -31,7 +31,7 @@ func TestHTTPCollector_Collect(t *testing.T) {
 	defer os.RemoveAll(filepath.Join("evidence_storage", caseID))
 	os.RemoveAll(filepath.Join("evidence_storage", caseID))
 
-	evidence, err := collector.Collect(caseID, target)
+	evidence, err := collector.Collect(caseID, target, nil)
 	if err != nil {
 		t.Fatalf("Collect failed: %v", err)
 	}

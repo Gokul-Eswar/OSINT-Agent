@@ -18,7 +18,7 @@ var investigateCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		target := args[0]
-		
+
 		if err := storage.InitDB(); err != nil {
 			return err
 		}
@@ -33,7 +33,7 @@ var investigateCmd = &cobra.Command{
 			CreatedAt:   time.Now(),
 			UpdatedAt:   time.Now(),
 		}
-		
+
 		if err := storage.CreateCase(&newCase); err != nil {
 			return fmt.Errorf("failed to create case: %w", err)
 		}
@@ -42,7 +42,7 @@ var investigateCmd = &cobra.Command{
 		// 2. Run Collectors (Default set)
 		collectors := []string{"dns", "whois", "geo", "ports"}
 		fmt.Printf("[*] Running collectors: %v\n", collectors)
-		
+
 		for _, name := range collectors {
 			ev, err := collector.Run(name, caseID, target, true, nil)
 			if err != nil {
@@ -66,7 +66,7 @@ var investigateCmd = &cobra.Command{
 		// 4. Report
 		fmt.Println("\n--- INVESTIGATION SUMMARY ---")
 		fmt.Printf("Confidence: %.2f\n", res.Confidence)
-		
+
 		fmt.Println("\n[ Findings ]")
 		for _, f := range res.Findings {
 			fmt.Printf("- %s\n", f)

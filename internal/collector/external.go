@@ -93,19 +93,19 @@ func (e *ExternalCollector) Collect(caseID string, target string, options map[st
 	hash := sha256.Sum256(output)
 	hashStr := hex.EncodeToString(hash[:])
 
-    // Parse output for metadata enrichment
-    metadata := map[string]interface{}{
-        "target": target,
-        "source": "external_plugin",
-    }
-    
-    var jsonOutput map[string]interface{}
-    if err := json.Unmarshal(output, &jsonOutput); err == nil {
-        for k, v := range jsonOutput {
-            // Don't overwrite core fields if they exist (optional)
-            metadata[k] = v
-        }
-    }
+	// Parse output for metadata enrichment
+	metadata := map[string]interface{}{
+		"target": target,
+		"source": "external_plugin",
+	}
+
+	var jsonOutput map[string]interface{}
+	if err := json.Unmarshal(output, &jsonOutput); err == nil {
+		for k, v := range jsonOutput {
+			// Don't overwrite core fields if they exist (optional)
+			metadata[k] = v
+		}
+	}
 
 	evidence := core.Evidence{
 		CaseID:      caseID,

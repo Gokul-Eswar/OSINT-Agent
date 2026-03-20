@@ -24,7 +24,7 @@ func TestGetCaseTimeline(t *testing.T) {
 	require.NoError(t, err)
 
 	caseID := "test-case-timeline"
-	
+
 	// Create an entity
 	err = CreateEntity(&core.Entity{
 		CaseID:       caseID,

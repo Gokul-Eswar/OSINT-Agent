@@ -55,7 +55,7 @@ var searchCmd = &cobra.Command{
 			if bytes.Contains(data, []byte(query)) {
 				foundCount++
 				fmt.Printf("[+] Found in: %s (%s)\n", ev.FilePath, ev.Collector)
-				
+
 				// Show a snippet of the context
 				lines := strings.Split(string(data), "\n")
 				for _, line := range lines {

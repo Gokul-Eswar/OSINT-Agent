@@ -66,7 +66,7 @@ func ingestSocial(ev *core.Evidence) error {
 				"platform": res.Site,
 			},
 		}
-		
+
 		existing, _ := GetEntityByValue(ev.CaseID, res.URL)
 		if existing == nil {
 			CreateEntity(siteEnt)
@@ -103,7 +103,7 @@ func ingestScreenshot(ev *core.Evidence) error {
 	}
 
 	// Link target to the screenshot evidence
-	// We don't create a new entity for the screenshot itself, 
+	// We don't create a new entity for the screenshot itself,
 	// but the relationship record stores the EvidenceID.
 	rel := &core.Relationship{
 		CaseID:       ev.CaseID,
@@ -118,7 +118,7 @@ func ingestScreenshot(ev *core.Evidence) error {
 
 func ingestPorts(ev *core.Evidence) error {
 	targetIP := ev.Metadata["target"].(string)
-	
+
 	data, err := os.ReadFile(ev.FilePath)
 	if err != nil {
 		return err
@@ -145,7 +145,7 @@ func ingestPorts(ev *core.Evidence) error {
 				Value:  svcName,
 				Source: "ports",
 			}
-			
+
 			existing, _ := GetEntityByValue(ev.CaseID, svcName)
 			if existing == nil {
 				CreateEntity(svcEnt)
@@ -188,7 +188,7 @@ func ingestHTTP(ev *core.Evidence) error {
 			Value:  server,
 			Source: "http",
 		}
-		
+
 		existing, _ := GetEntityByValue(ev.CaseID, server)
 		if existing == nil {
 			CreateEntity(svcEnt)
@@ -211,7 +211,7 @@ func ingestHTTP(ev *core.Evidence) error {
 
 func ingestGeo(ev *core.Evidence) error {
 	targetIP := ev.Metadata["target"].(string)
-	
+
 	// Ensure IP entity exists
 	ipEnt, err := GetEntityByValue(ev.CaseID, targetIP)
 	if err != nil {
@@ -220,10 +220,10 @@ func ingestGeo(ev *core.Evidence) error {
 	if ipEnt == nil {
 		// Create it if it doesn't exist (though rare if we collected on it)
 		ipEnt = &core.Entity{
-			CaseID: ev.CaseID,
-			Type:   "ip",
-			Value:  targetIP,
-			Source: "geo",
+			CaseID:   ev.CaseID,
+			Type:     "ip",
+			Value:    targetIP,
+			Source:   "geo",
 			Metadata: make(map[string]interface{}),
 		}
 		if err := CreateEntity(ipEnt); err != nil {
@@ -235,7 +235,7 @@ func ingestGeo(ev *core.Evidence) error {
 	if ipEnt.Metadata == nil {
 		ipEnt.Metadata = make(map[string]interface{})
 	}
-	
+
 	// Copy relevant fields from evidence metadata
 	fields := []string{"country", "city", "isp", "lat", "lon"}
 	for _, f := range fields {
@@ -243,7 +243,7 @@ func ingestGeo(ev *core.Evidence) error {
 			ipEnt.Metadata[f] = v
 		}
 	}
-	
+
 	return UpdateEntity(ipEnt)
 }
 
@@ -295,7 +295,7 @@ func ingestGitHub(ev *core.Evidence) error {
 			Value:  item.Owner.Login,
 			Source: "github",
 		}
-		
+
 		existingUser, _ := GetEntityByValue(ev.CaseID, item.Owner.Login)
 		if existingUser == nil {
 			CreateEntity(userEnt)
@@ -320,7 +320,7 @@ func ingestGitHub(ev *core.Evidence) error {
 
 func ingestWHOIS(ev *core.Evidence) error {
 	targetDomain := ev.Metadata["target"].(string)
-	
+
 	// Ensure domain entity exists
 	domainEnt, _ := GetEntityByValue(ev.CaseID, targetDomain)
 	if domainEnt == nil {
@@ -343,7 +343,7 @@ func ingestWHOIS(ev *core.Evidence) error {
 			Value:  email,
 			Source: "whois",
 		}
-		
+
 		existingEmail, _ := GetEntityByValue(ev.CaseID, email)
 		if existingEmail == nil {
 			if err := CreateEntity(emailEnt); err != nil {
@@ -399,7 +399,7 @@ func ingestDNS(ev *core.Evidence) error {
 		Value:  targetDomain,
 		Source: "dns",
 	}
-	
+
 	// Check if already exists to avoid errors (or use GetEntityByValue)
 	existing, _ := GetEntityByValue(ev.CaseID, targetDomain)
 	if existing == nil {
@@ -418,7 +418,7 @@ func ingestDNS(ev *core.Evidence) error {
 			Value:  ip,
 			Source: "dns",
 		}
-		
+
 		existingIP, _ := GetEntityByValue(ev.CaseID, ip)
 		if existingIP == nil {
 			if err := CreateEntity(ipEnt); err != nil {

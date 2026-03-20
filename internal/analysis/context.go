@@ -4,16 +4,16 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/spectre/spectre/internal/storage"
 	"github.com/spectre/spectre/internal/core"
+	"github.com/spectre/spectre/internal/storage"
 )
 
 // PromptBuilder helps in constructing complex, accurate LLM prompts
 type PromptBuilder struct {
 	Case          *core.Case
-	Entities      []core.Entity
-	Relationships []core.Relationship
-	Evidence      []core.Evidence
+	Entities      []*core.Entity
+	Relationships []*core.Relationship
+	Evidence      []*core.Evidence
 }
 
 // NewPromptBuilder creates a new PromptBuilder for a case
@@ -61,9 +61,6 @@ func (pb *PromptBuilder) Build() string {
 	entityMap := make(map[string]string)
 	for _, e := range pb.Entities {
 		sb.WriteString(fmt.Sprintf("- [%s] %s (Source: %s)\n", e.Type, e.Value, e.Source))
-		if e.Notes != "" {
-			sb.WriteString(fmt.Sprintf("  Notes: %s\n", e.Notes))
-		}
 		entityMap[e.ID] = fmt.Sprintf("%s (%s)", e.Value, e.Type)
 	}
 	sb.WriteString("\n")
@@ -86,7 +83,7 @@ func (pb *PromptBuilder) Build() string {
 	for _, ev := range pb.Evidence {
 		sb.WriteString(fmt.Sprintf("- %s (Collector: %s)\n", ev.FilePath, ev.Collector))
 	}
-	
+
 	sb.WriteString("\nANALYSIS INSTRUCTIONS: Please identify missing intelligence gaps and suggest additional collectors in the missing_data and suggested_collectors fields.")
 
 	return sb.String()

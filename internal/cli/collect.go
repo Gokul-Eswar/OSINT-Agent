@@ -6,22 +6,20 @@ import (
 
 	"github.com/charmbracelet/bubbles/progress"
 
-
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spectre/spectre/internal/collector"
-	_ "github.com/spectre/spectre/internal/collector/dns"    // Register DNS
-	_ "github.com/spectre/spectre/internal/collector/whois"  // Register WHOIS
-	_ "github.com/spectre/spectre/internal/collector/github" // Register GitHub
-	_ "github.com/spectre/spectre/internal/collector/geo"    // Register GeoIP
 	_ "github.com/spectre/spectre/internal/collector/active" // Register Active Probes
+	_ "github.com/spectre/spectre/internal/collector/dns"    // Register DNS
+	_ "github.com/spectre/spectre/internal/collector/geo"    // Register GeoIP
+	_ "github.com/spectre/spectre/internal/collector/github" // Register GitHub
+	_ "github.com/spectre/spectre/internal/collector/whois"  // Register WHOIS
 	"github.com/spectre/spectre/internal/storage"
 	"github.com/spf13/cobra"
 )
 
 type collectMsg struct {
-
 	name string
 	err  error
 }
@@ -124,7 +122,7 @@ func (m collectModel) View() string {
 	header += "\n"
 
 	s := header + "\n"
-	
+
 	for _, name := range m.collectors {
 		status := " "
 		if m.completed[name] {
@@ -139,7 +137,7 @@ func (m collectModel) View() string {
 	}
 
 	s += "\n" + m.progress.View() + "\n\n"
-	
+
 	if m.quitting {
 		s += "Done!\n"
 	} else {
@@ -241,11 +239,8 @@ var collectCmd = &cobra.Command{
 	},
 }
 
-
 func init() {
 	collectCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Simulate collection without making network requests")
 	collectCmd.Flags().IntVar(&threads, "threads", 5, "Number of concurrent collectors to run")
 	rootCmd.AddCommand(collectCmd)
 }
-
-

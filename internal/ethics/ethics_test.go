@@ -67,7 +67,7 @@ func TestRateLimiter(t *testing.T) {
 	// Strict limit
 	SetLimit(collector, 1.0) // 1 req/s
 	Wait(collector)          // First one is instant (burst 1)
-	
+
 	start = time.Now()
 	Wait(collector) // Should wait ~1s
 	duration = time.Since(start)

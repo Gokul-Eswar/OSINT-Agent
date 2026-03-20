@@ -24,13 +24,13 @@ func setupTestDB(t *testing.T) {
 func TestAgentToolIntegration(t *testing.T) {
 	setupTestDB(t)
 	caseID := "test-case-agent"
-	
+
 	// Seed database
 	storage.CreateCase(&core.Case{
 		ID:   caseID,
 		Name: "Agent Test Case",
 	})
-	
+
 	storage.CreateEntity(&core.Entity{
 		CaseID: caseID,
 		Type:   "domain",

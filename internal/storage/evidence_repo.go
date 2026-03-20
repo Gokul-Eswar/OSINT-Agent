@@ -59,7 +59,7 @@ func ListEvidenceByCase(caseID string) ([]*core.Evidence, error) {
 		if err := rows.Scan(&ev.ID, &ev.CaseID, &entityID, &ev.Collector, &ev.FilePath, &ev.FileHash, &ev.CollectedAt, &metadataStr); err != nil {
 			return nil, fmt.Errorf("failed to scan evidence: %w", err)
 		}
-		
+
 		if entityID.Valid {
 			ev.EntityID = entityID.String
 		}

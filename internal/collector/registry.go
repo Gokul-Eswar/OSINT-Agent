@@ -122,7 +122,7 @@ func RunAndSave(name string, caseID string, target string, activeAllowed bool, o
 		if err := storage.CreateEvidence(ev); err != nil {
 			return evidenceList, fmt.Errorf("failed to save evidence: %w", err)
 		}
-		
+
 		if err := storage.IngestEvidence(ev); err != nil {
 			log.Warn().
 				Err(err).

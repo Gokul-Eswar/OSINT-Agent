@@ -92,5 +92,6 @@ def test_llm_failure_fallback():
     }
     
     result = chat(data)
-    # Currently it returns an error, we will implement fallback soon
-    assert "error" in result
+    # Check that fallback mode responds to greetings
+    assert "content" in result
+    assert "Fallback" in result["content"]

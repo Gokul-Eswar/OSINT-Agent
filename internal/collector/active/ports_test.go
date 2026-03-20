@@ -36,7 +36,7 @@ func TestPortCollector_Collect(t *testing.T) {
 	os.RemoveAll(filepath.Join("evidence_storage", caseID))
 
 	// Run Collect
-	evidence, err := collector.Collect(caseID, target)
+	evidence, err := collector.Collect(caseID, target, nil)
 	if err != nil {
 		t.Fatalf("Collect failed: %v", err)
 	}
@@ -84,20 +84,20 @@ func BenchmarkPortCollector_Collect(b *testing.B) {
 	collector := &PortCollector{}
 	caseID := "bench_case"
 	target := "127.0.0.1"
-	
+
 	// Prepare common ports for benchmarking
 	ports := []int{port}
 	for i := 0; i < 10; i++ {
 		ports = append(ports, 10000+i)
 	}
-	
+
 	viper.Set("collectors.ports.mode", "custom")
 	viper.Set("collectors.ports.custom_ports", ports)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, _ = collector.Collect(caseID, target)
+		_, _ = collector.Collect(caseID, target, nil)
 	}
-	
+
 	os.RemoveAll(filepath.Join("evidence_storage", caseID))
 }

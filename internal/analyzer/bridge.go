@@ -17,14 +17,14 @@ var PythonCommand = []string{"-m", "analyzer"}
 
 // Request defines the structure sent to the Python analyzer.
 type Request struct {
-	Task      string      `json:"task"`
-	CaseID    string      `json:"case_id"`
-	CaseName  string      `json:"case_name"`
-	Context   string      `json:"context"`
-	Model     string      `json:"model"`
-	Data      interface{} `json:"data"` // For track 5 graph data
-	LLMConfig LLMConfig   `json:"llm_config"`
-	Messages  []Message   `json:"messages,omitempty"`
+	Task      string        `json:"task"`
+	CaseID    string        `json:"case_id"`
+	CaseName  string        `json:"case_name"`
+	Context   string        `json:"context"`
+	Model     string        `json:"model"`
+	Data      interface{}   `json:"data"` // For track 5 graph data
+	LLMConfig LLMConfig     `json:"llm_config"`
+	Messages  []Message     `json:"messages,omitempty"`
 	Tools     []interface{} `json:"tools,omitempty"`
 }
 
@@ -89,7 +89,7 @@ func RunPythonTask(req Request) (string, error) {
 
 	// Determine Python executable
 	pythonPath := "python" // Default to system path
-	
+
 	// Check for local venv (Windows)
 	if _, err := os.Stat(".venv/Scripts/python.exe"); err == nil {
 		pythonPath = ".venv/Scripts/python.exe"
@@ -101,7 +101,7 @@ func RunPythonTask(req Request) (string, error) {
 	// Execute: <python> <PythonCommand...> --task <task> --input <json>
 	args := append(PythonCommand, "--task", req.Task, "--input", string(inputJSON))
 	cmd := exec.CommandContext(ctx, pythonPath, args...)
-	
+
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
@@ -112,7 +112,7 @@ func RunPythonTask(req Request) (string, error) {
 			log.Error().Err(err).Str("task", req.Task).Msg("python_task_timeout")
 			return "", fmt.Errorf("python analysis timed out after 3 minutes")
 		}
-		
+
 		// Try to parse error from stdout if stderr is empty (some python errors might go there)
 		var errResp struct {
 			Error string `json:"error"`

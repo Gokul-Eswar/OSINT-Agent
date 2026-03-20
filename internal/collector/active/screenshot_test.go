@@ -32,13 +32,13 @@ func TestScreenshotCollector_Collect(t *testing.T) {
 	defer os.RemoveAll(filepath.Join("evidence_storage", caseID))
 	os.RemoveAll(filepath.Join("evidence_storage", caseID))
 
-	evidence, err := collector.Collect(caseID, target)
+	evidence, err := collector.Collect(caseID, target, nil)
 	if err != nil {
 		// If chrome is missing, this might fail.
 		// Check error message to decide if we should fail or skip?
 		// For now, let's fail to be explicit, but log it clearly.
-		if strings.Contains(err.Error(), "exec: \"google-chrome\": executable file not found") || 
-		   strings.Contains(err.Error(), "executable file not found") {
+		if strings.Contains(err.Error(), "exec: \"google-chrome\": executable file not found") ||
+			strings.Contains(err.Error(), "executable file not found") {
 			t.Skipf("Skipping screenshot test: Chrome not found: %v", err)
 		}
 		t.Fatalf("Collect failed: %v", err)

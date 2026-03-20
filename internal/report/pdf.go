@@ -57,14 +57,14 @@ func GeneratePDFReport(caseID string, outputPath string) error {
 	pdf.SetFont("Arial", "B", 24)
 	pdf.CellFormat(0, 60, "", "", 1, "", false, 0, "") // Spacer
 	pdf.CellFormat(0, 10, headerTitle, "", 1, "C", false, 0, "")
-	
+
 	pdf.SetFont("Arial", "", 16)
 	pdf.CellFormat(0, 10, fmt.Sprintf("Case: %s", c.Name), "", 1, "C", false, 0, "")
-	
+
 	pdf.SetFont("Arial", "", 12)
 	pdf.CellFormat(0, 10, fmt.Sprintf("ID: %s", c.ID), "", 1, "C", false, 0, "")
 	pdf.CellFormat(0, 10, fmt.Sprintf("Date: %s", time.Now().Format("2006-01-02")), "", 1, "C", false, 0, "")
-	
+
 	pdf.Ln(50)
 	pdf.SetFont("Courier", "", 10)
 	pdf.MultiCell(0, 5, footerText, "", "C", false)
@@ -79,7 +79,7 @@ func GeneratePDFReport(caseID string, outputPath string) error {
 	if analysis != nil {
 		pdf.MultiCell(0, 6, "AI Analysis provided the following insights based on collected evidence:", "", "L", false)
 		pdf.Ln(5)
-		
+
 		pdf.SetFont("Arial", "B", 12)
 		pdf.Cell(0, 10, "Key Findings")
 		pdf.Ln(8)
@@ -148,7 +148,7 @@ func GeneratePDFReport(caseID string, outputPath string) error {
 				ReadDpi:   true,
 			}
 			pdf.ImageOptions(s.FilePath, 10, 35, 190, 0, false, opt, 0, "")
-			
+
 			pdf.SetY(260)
 			pdf.SetFont("Arial", "I", 8)
 			pdf.Cell(0, 10, fmt.Sprintf("Collected At: %s", s.CollectedAt.Format("2006-01-02 15:04:05")))
@@ -172,7 +172,7 @@ func GeneratePDFReport(caseID string, outputPath string) error {
 	pdf.SetFont("Arial", "", 9)
 	for _, e := range entities {
 		pdf.CellFormat(30, 8, e.Type, "1", 0, "", false, 0, "")
-		
+
 		// Truncate value if too long
 		val := e.Value
 		if len(val) > 60 {

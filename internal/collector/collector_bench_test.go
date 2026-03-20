@@ -15,9 +15,9 @@ type MockDelayCollector struct {
 	Delay time.Duration
 }
 
-func (m *MockDelayCollector) Name() string { return "mock_delay" }
+func (m *MockDelayCollector) Name() string        { return "mock_delay" }
 func (m *MockDelayCollector) Description() string { return "Mock collector for benchmarking" }
-func (m *MockDelayCollector) IsActive() bool { return true }
+func (m *MockDelayCollector) IsActive() bool      { return true }
 func (m *MockDelayCollector) Collect(caseID string, target string, options map[string]interface{}) ([]core.Evidence, error) {
 	time.Sleep(m.Delay)
 	return []core.Evidence{{
@@ -39,23 +39,23 @@ func BenchmarkCollectorConcurrency(b *testing.B) {
 	for _, limit := range concurrencyLevels {
 		b.Run(fmt.Sprintf("Concurrency-%d", limit), func(b *testing.B) {
 			collector := &MockDelayCollector{Delay: 10 * time.Millisecond}
-			
+
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				var wg sync.WaitGroup
 				sem := make(chan struct{}, limit)
-				
+
 				// Simulate 100 target collections per iteration
 				targets := 100
-				
+
 				for j := 0; j < targets; j++ {
 					wg.Add(1)
 					go func(targetIdx int) {
 						defer wg.Done()
 						sem <- struct{}{} // Acquire
-						
+
 						_, _ = collector.Collect("test_case", fmt.Sprintf("target-%d", targetIdx), nil)
-						
+
 						<-sem // Release
 					}(j)
 				}
@@ -67,7 +67,7 @@ func BenchmarkCollectorConcurrency(b *testing.B) {
 
 // BenchmarkHTTPCollector tests real-world HTTP concurrency
 func BenchmarkHTTPCollector(b *testing.B) {
-	collector := active.NewHTTPCollector()
+	collector := &active.HTTPCollector{}
 	concurrencyLevels := []int{5, 20} // HTTP limit test
 
 	for _, limit := range concurrencyLevels {
@@ -76,7 +76,7 @@ func BenchmarkHTTPCollector(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				var wg sync.WaitGroup
 				sem := make(chan struct{}, limit)
-				
+
 				targets := 20
 				for j := 0; j < targets; j++ {
 					wg.Add(1)

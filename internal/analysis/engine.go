@@ -88,7 +88,7 @@ func AnalyzeImage(imagePath string, prompt string, model string) (string, error)
 		CaseID:  "visual_analysis", // Optional/dummy case ID for vision
 		Context: base64Str,         // Pass base64 image here
 		Model:   model,
-		Data:    prompt,            // Pass prompt here
+		Data:    prompt, // Pass prompt here
 		LLMConfig: analyzer.LLMConfig{
 			Provider: viper.GetString("llm.provider"),
 			URL:      viper.GetString("llm.url"),
@@ -140,7 +140,7 @@ func AnalyzeCase(caseID string, model string) (*core.Analysis, error) {
 	// Optimization: Check Cache
 	hash := sha256.Sum256([]byte(contextData))
 	hashStr := hex.EncodeToString(hash[:])
-	
+
 	cached, err := storage.GetAnalysisByHash(caseID, hashStr)
 	if err == nil && cached != nil {
 		log.Info().Str("case_id", caseID).Msg("analysis_cache_hit")

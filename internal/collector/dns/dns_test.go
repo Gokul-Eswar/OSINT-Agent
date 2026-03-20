@@ -27,7 +27,7 @@ func TestDNSCollector_Collect_Mocked(t *testing.T) {
 		MXs:   []*net.MX{{Host: "mail.example.com", Pref: 10}},
 		NSs:   []*net.NS{{Host: "ns1.example.com"}},
 	}
-	
+
 	c := &DNSCollector{resolver: mock}
 	caseID := "test_case_mock_dns"
 	target := "example.com"
@@ -36,7 +36,7 @@ func TestDNSCollector_Collect_Mocked(t *testing.T) {
 	defer os.RemoveAll("evidence_storage")
 
 	// Execute
-	evidence, err := c.Collect(caseID, target)
+	evidence, err := c.Collect(caseID, target, nil)
 
 	// Verify
 	require.NoError(t, err)
@@ -44,11 +44,11 @@ func TestDNSCollector_Collect_Mocked(t *testing.T) {
 
 	e := evidence[0]
 	assert.Equal(t, caseID, e.CaseID)
-	
+
 	// Check content
 	content, err := os.ReadFile(e.FilePath)
 	require.NoError(t, err)
-	
+
 	var results map[string][]string
 	err = json.Unmarshal(content, &results)
 	require.NoError(t, err)

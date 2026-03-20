@@ -11,14 +11,14 @@ import (
 )
 
 var (
-	appStyle = lipgloss.NewStyle().Padding(1, 2)
+	appStyle   = lipgloss.NewStyle().Padding(1, 2)
 	titleStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FFFDF5")).
 			Background(lipgloss.Color("#25A065")).
 			Padding(0, 1)
 	statusMessageStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.AdaptiveColor{Light: "#04B575", Dark: "#04B575"}).
-			Render
+				Foreground(lipgloss.AdaptiveColor{Light: "#04B575", Dark: "#04B575"}).
+				Render
 )
 
 type item struct {
@@ -120,7 +120,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.installing = ""
 		return m, nil
-	
+
 	case spinner.TickMsg:
 		var cmd tea.Cmd
 		m.spinner, cmd = m.spinner.Update(msg)

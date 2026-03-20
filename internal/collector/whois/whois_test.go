@@ -33,7 +33,7 @@ Registrant Email: admin@example.com
 	defer os.RemoveAll("evidence_storage")
 
 	// Execute
-	evidence, err := c.Collect(caseID, target)
+	evidence, err := c.Collect(caseID, target, nil)
 
 	// Verify
 	require.NoError(t, err)

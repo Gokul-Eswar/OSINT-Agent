@@ -51,7 +51,7 @@ func Migrate() error {
 
 	// Dialect translation
 	dbType := viper.GetString("database.type")
-	
+
 	createTableSQL := "CREATE TABLE IF NOT EXISTS schema_migrations (version TEXT PRIMARY KEY)"
 	if dbType == "postgres" {
 		createTableSQL = "CREATE TABLE IF NOT EXISTS schema_migrations (version TEXT PRIMARY KEY)"

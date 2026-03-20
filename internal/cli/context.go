@@ -50,5 +50,3 @@ func LoadTarget() (string, error) {
 
 	return strings.TrimSpace(string(data)), nil
 }
-
-

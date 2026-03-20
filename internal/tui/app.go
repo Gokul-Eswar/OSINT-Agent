@@ -114,11 +114,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
-		
+
 		// Update sub-models sizes
 		h := msg.Height - 6 // Space for header and footer
 		w := msg.Width - 25 // Space for nav
-		
+
 		m.caseList.SetSize(w, h)
 		m.runner.caseList.SetSize(w, h)
 		m.runner.collList.SetSize(w, h)
@@ -141,7 +141,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			// If steps are done but analysis isn't, keep spinning on the last step?
 			// Or just stop ticking and wait for the result.
-			return m, nil 
+			return m, nil
 		}
 
 	case AnalysisFinishedMsg:
@@ -240,7 +240,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// In Cases view, we might want to navigate the list
 			var cmd2 tea.Cmd
 			m.caseList, cmd2 = m.caseList.Update(msg)
-			
+
 			if msg.String() == "enter" {
 				if selected, ok := m.caseList.SelectedItem().(item); ok {
 					m.selectedCaseID = selected.id
@@ -272,7 +272,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Global navigation if not in a list
 		switch msg.String() {
-		case "1": m.state = ViewCases
+		case "1":
+			m.state = ViewCases
 		case "2":
 			m.state = ViewAnalysis
 			if m.selectedCaseID != "" && m.analysisStatus == AnalysisIdle {
@@ -280,7 +281,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.analysisStep = 0
 				return m, StartAnalysis(m.selectedCaseID, m.modelName)
 			}
-		case "3": m.state = ViewEvidence
+		case "3":
+			m.state = ViewEvidence
 		case "4":
 			m.state = ViewGraph
 			if m.selectedCaseID != "" {
@@ -291,10 +293,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.selectedCaseID != "" {
 				return m, fetchTimelineDataCmd(m.selectedCaseID)
 			}
-		case "6": m.state = ViewReports
-		case "7": m.state = ViewSettings
-		case "8": m.state = ViewChat
-		case "9": m.state = ViewCollection
+		case "6":
+			m.state = ViewReports
+		case "7":
+			m.state = ViewSettings
+		case "8":
+			m.state = ViewChat
+		case "9":
+			m.state = ViewCollection
 		}
 
 		if m.state == ViewCollection {
@@ -406,7 +412,7 @@ func (m model) View() string {
 	// Footer
 
 	mainArea := lipgloss.JoinHorizontal(lipgloss.Top, nav, content)
-	
+
 	appView := lipgloss.JoinVertical(lipgloss.Left, header, mainArea, footer)
 	return lipgloss.NewStyle().Background(ColorBG).Render(appView)
 }
@@ -419,12 +425,12 @@ func (m model) renderHeader() string {
 
 	title := StyleTitle.Render("SPECTRE v1.0")
 	info := StyleMuted.Render(fmt.Sprintf("%s  |  Model: %s", caseInfo, m.modelName))
-	
+
 	gapSize := m.width - lipgloss.Width(title) - lipgloss.Width(info) - 4
 	if gapSize < 0 {
 		gapSize = 0
 	}
-	
+
 	header := lipgloss.JoinHorizontal(lipgloss.Center, title, strings.Repeat(" ", gapSize), info)
 	return StyleHeader.Width(m.width).Render(header)
 }
@@ -450,7 +456,7 @@ func (m model) renderNav() string {
 	s.WriteString("\n")
 	for i, v := range views {
 		line := v.label
-		
+
 		// Prefix: Active indicator
 		prefix := "  "
 		if m.state == v.state {
@@ -535,7 +541,7 @@ func (m model) renderContent() string {
 			status = "\n\n" + StyleMuted.Foreground(ColorSuccess).Render(m.analysisResult)
 		}
 		content = "REPORTS\n───────\n\n[1] Generate Markdown Report\n[p] Generate Professional PDF\n[2] View Latest Analysis" + status
-	
+
 	case ViewChat:
 		if m.selectedCaseID == "" {
 			content = "No case selected. Please select a case first (Press 1)."
@@ -581,13 +587,13 @@ func (m model) renderContent() string {
 
 			s.WriteString(fmt.Sprintf("%s%s: %s\n", cursor, style.Render(opt.label), opt.val))
 		}
-		
+
 		s.WriteString("\n(Press 'Enter' or 'Space' to toggle/change)\n")
 		content = s.String()
 
 	case ViewDashboard:
 		content = "Opening Web Dashboard in your default browser...\n\nURL: http://localhost:8080\n\nThe dashboard provides an interactive graph visualization and case management interface."
-	
+
 	case ViewCollection:
 		content = m.runner.View()
 

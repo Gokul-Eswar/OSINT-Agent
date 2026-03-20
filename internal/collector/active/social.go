@@ -61,7 +61,7 @@ func NewSocialCollector() *SocialCollector {
 			"Goodreads":      "https://www.goodreads.com/user/show/%s",
 			"Gumroad":        "https://gumroad.com/%s",
 			"HackerOne":      "https://hackerone.com/%s",
-			"IfThisThenThat":  "https://ifttt.com/p/%s",
+			"IfThisThenThat": "https://ifttt.com/p/%s",
 			"Issuu":          "https://issuu.com/%s",
 			"Kaggle":         "https://www.kaggle.com/%s",
 			"Last.fm":        "https://www.last.fm/user/%s",
@@ -112,7 +112,7 @@ func (c *SocialCollector) Collect(caseID string, target string, options map[stri
 
 	// Target is assumed to be the username
 	username := target
-	
+
 	var results []SiteResult
 	var mu sync.Mutex
 	var wg sync.WaitGroup
@@ -152,8 +152,8 @@ func (c *SocialCollector) Collect(caseID string, target string, options map[stri
 						status = fmt.Sprintf("http_%d", resp.StatusCode)
 					}
 				} else {
-                    status = "connection_error"
-                }
+					status = "connection_error"
+				}
 			}
 
 			if status == "found" {

@@ -23,9 +23,11 @@ type Resolver interface {
 
 type NetResolver struct{}
 
-func (r *NetResolver) LookupHost(host string) (addrs []string, err error) { return net.LookupHost(host) }
-func (r *NetResolver) LookupMX(name string) ([]*net.MX, error)          { return net.LookupMX(name) }
-func (r *NetResolver) LookupNS(name string) ([]*net.NS, error)          { return net.LookupNS(name) }
+func (r *NetResolver) LookupHost(host string) (addrs []string, err error) {
+	return net.LookupHost(host)
+}
+func (r *NetResolver) LookupMX(name string) ([]*net.MX, error) { return net.LookupMX(name) }
+func (r *NetResolver) LookupNS(name string) ([]*net.NS, error) { return net.LookupNS(name) }
 
 type DNSCollector struct {
 	resolver Resolver

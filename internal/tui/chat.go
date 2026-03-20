@@ -116,7 +116,7 @@ func (m chatModel) Update(msg tea.Msg) (chatModel, tea.Cmd) {
 
 func (m *chatModel) appendMessage(role, content string) {
 	m.messages = append(m.messages, analyzer.Message{Role: role, Content: content})
-	
+
 	var sb strings.Builder
 	for _, msg := range m.messages {
 		roleStyle := lipgloss.NewStyle().Bold(true)

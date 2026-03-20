@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -83,7 +84,7 @@ func (c *PortCollector) Collect(caseID string, target string, options map[string
 			return nil, err
 		}
 
-		address := fmt.Sprintf("%s:%d", target, port)
+		address := net.JoinHostPort(target, strconv.Itoa(port))
 		conn, err := net.DialTimeout("tcp", address, 1*time.Second)
 		if err == nil {
 			results[port] = "open"

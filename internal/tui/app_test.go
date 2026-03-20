@@ -16,7 +16,7 @@ func TestInitialModel(t *testing.T) {
 
 func TestModelTransitions(t *testing.T) {
 	m := InitialModel()
-	
+
 	// Switch to sidebar focus
 	m2, _ := m.Update(tea.KeyMsg{Type: tea.KeyTab})
 	assert.True(t, m2.(model).focusNav)
@@ -33,7 +33,7 @@ func TestModelTransitions(t *testing.T) {
 func TestQuit(t *testing.T) {
 	m := InitialModel()
 	m2, cmd := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("q")})
-	
+
 	assert.True(t, m2.(model).quitting)
 	assert.NotNil(t, cmd)
 }
@@ -41,11 +41,11 @@ func TestQuit(t *testing.T) {
 func TestNavFocus(t *testing.T) {
 	m := InitialModel()
 	assert.False(t, m.focusNav) // Default: sidebar not focused for arrows
-	
+
 	// Tab toggles focus
 	m2, _ := m.Update(tea.KeyMsg{Type: tea.KeyTab})
 	assert.True(t, m2.(model).focusNav)
-	
+
 	m3, _ := m2.(model).Update(tea.KeyMsg{Type: tea.KeyTab})
 	assert.False(t, m3.(model).focusNav)
 }

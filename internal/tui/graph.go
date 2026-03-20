@@ -47,9 +47,13 @@ func RenderASCIIGraph(caseID string) string {
 		for _, r := range relationships {
 			from := entityMap[r.FromEntityID]
 			to := entityMap[r.ToEntityID]
-			if from == "" { from = r.FromEntityID }
-			if to == "" { to = r.ToEntityID }
-			
+			if from == "" {
+				from = r.FromEntityID
+			}
+			if to == "" {
+				to = r.ToEntityID
+			}
+
 			s.WriteString(fmt.Sprintf("[%s] ──(%s)──> [%s]\n", from, r.Type, to))
 		}
 	}

@@ -21,7 +21,7 @@ var configSetCmd = &cobra.Command{
 		value := args[1]
 
 		viper.Set(key, value)
-		
+
 		err := viper.WriteConfig()
 		if err != nil {
 			// If config file not found, try to create it

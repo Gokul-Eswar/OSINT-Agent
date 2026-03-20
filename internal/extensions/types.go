@@ -6,8 +6,8 @@ type Extension struct {
 	Description string   `json:"description" yaml:"description"`
 	Author      string   `json:"author" yaml:"author"`
 	Version     string   `json:"version" yaml:"version"`
-	URL         string   `json:"url" yaml:"url"`       // Git URL or Download URL
-	Type        string   `json:"type" yaml:"type"`     // e.g., "collector", "reporter"
+	URL         string   `json:"url" yaml:"url"`   // Git URL or Download URL
+	Type        string   `json:"type" yaml:"type"` // e.g., "collector", "reporter"
 	Tags        []string `json:"tags" yaml:"tags"`
 }
 

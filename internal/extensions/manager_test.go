@@ -52,7 +52,7 @@ func TestManager_Search(t *testing.T) {
 	defer os.Remove(tempReg)
 
 	mgr := NewManager("", tempReg)
-	
+
 	// Test search by name
 	results, err := mgr.Search("shodan")
 	require.NoError(t, err)

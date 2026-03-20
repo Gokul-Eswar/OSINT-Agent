@@ -84,4 +84,3 @@ func init() {
 	entityCmd.AddCommand(entityListCmd)
 	rootCmd.AddCommand(entityCmd)
 }
-

@@ -48,7 +48,7 @@ func TestRequestValidate(t *testing.T) {
 	}
 }
 
-// TestRunPythonTaskMocked is a conceptual test. 
+// TestRunPythonTaskMocked is a conceptual test.
 // In a real environment, we'd mock the exec.Command.
 // Here we just test the logic around the command execution.
 func TestRunPythonTaskBinaryCheck(t *testing.T) {
@@ -72,10 +72,10 @@ func TestRunPythonTaskBinaryCheck(t *testing.T) {
 
 func TestPythonErrorParsing(t *testing.T) {
 	// This tests the logic added in the previous turn where we parse error JSON from stdout
-	
+
 	// Create a dummy stdout with error JSON
 	dummyStdout := `{"error": "API key invalid"}`
-	
+
 	var errResp struct {
 		Error string `json:"error"`
 	}
@@ -83,7 +83,7 @@ func TestPythonErrorParsing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to unmarshal dummy stdout: %v", err)
 	}
-	
+
 	if errResp.Error != "API key invalid" {
 		t.Errorf("Expected error 'API key invalid', got %s", errResp.Error)
 	}

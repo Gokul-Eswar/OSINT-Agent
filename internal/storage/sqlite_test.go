@@ -14,7 +14,7 @@ func TestInitDB_Integration(t *testing.T) {
 	viper.Set("database.type", "sqlite")
 	viper.Set("database.path", "test_spectre.db")
 	defer os.Remove("test_spectre.db")
-	
+
 	// Ensure we close and reset
 	defer CloseDB()
 
@@ -38,7 +38,7 @@ func TestCloseDB(t *testing.T) {
 	viper.Set("database.type", "sqlite")
 	viper.Set("database.path", ":memory:")
 	InitDB()
-	
+
 	err := CloseDB()
 	assert.NoError(t, err)
 }

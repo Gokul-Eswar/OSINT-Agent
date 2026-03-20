@@ -26,8 +26,8 @@ func TestSocialCollector_Collect(t *testing.T) {
 	// Initialize collector with test sites
 	collector := NewSocialCollector()
 	collector.Sites = map[string]string{
-		"TestSiteFound":    server.URL + "/%s",      // Will hit /found if target is "found"
-		"TestSiteNotFound": server.URL + "/not_%s",  // Will hit /not_found if target is "found"
+		"TestSiteFound":    server.URL + "/%s",     // Will hit /found if target is "found"
+		"TestSiteNotFound": server.URL + "/not_%s", // Will hit /not_found if target is "found"
 	}
 
 	caseID := "test_case_social"
@@ -37,7 +37,7 @@ func TestSocialCollector_Collect(t *testing.T) {
 	defer os.RemoveAll(filepath.Join("evidence_storage", caseID))
 	os.RemoveAll(filepath.Join("evidence_storage", caseID))
 
-	evidence, err := collector.Collect(caseID, target)
+	evidence, err := collector.Collect(caseID, target, nil)
 	if err != nil {
 		t.Fatalf("Collect failed: %v", err)
 	}
@@ -65,7 +65,7 @@ func TestSocialCollector_Collect(t *testing.T) {
 	// Logic: Collect only appends "found" results to the list?
 	// Let's check social.go implementation:
 	// if status == "found" { append }
-	
+
 	// So we expect 1 result (TestSiteFound)
 	if len(results) != 1 {
 		t.Errorf("Expected 1 found result, got %d", len(results))

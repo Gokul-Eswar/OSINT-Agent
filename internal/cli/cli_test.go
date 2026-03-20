@@ -12,9 +12,9 @@ func TestMain(m *testing.M) {
 	tempDir, _ := os.MkdirTemp("", "spectre-cli-test-main")
 	os.Setenv("SPECTRE_HOME", tempDir)
 	os.Setenv("GO_TESTING", "true")
-	
+
 	code := m.Run()
-	
+
 	os.RemoveAll(tempDir)
 	os.Exit(code)
 }
@@ -23,7 +23,7 @@ func TestCLICommands(t *testing.T) {
 
 	// Mock config
 	config.InitConfig("")
-	
+
 	t.Run("InitCommand", func(t *testing.T) {
 		// Cleanup if exists
 		os.Remove("spectre.db")
@@ -34,7 +34,7 @@ func TestCLICommands(t *testing.T) {
 		if err := rootCmd.Execute(); err != nil {
 			t.Fatalf("init command failed: %v", err)
 		}
-		
+
 		if _, err := os.Stat("spectre.db"); os.IsNotExist(err) {
 			t.Error("spectre.db was not created by init command")
 		}
@@ -50,7 +50,7 @@ func TestCLICommands(t *testing.T) {
 		os.Remove("spectre.db")
 		os.Remove("spectre.db-wal")
 		os.Remove("spectre.db-shm")
-		
+
 		if err := storage.InitDB(); err != nil {
 			t.Fatal(err)
 		}
@@ -63,7 +63,7 @@ func TestCLICommands(t *testing.T) {
 		if err := rootCmd.Execute(); err != nil {
 			t.Fatalf("case new command failed: %v", err)
 		}
-		
+
 		// Verify case exists
 		rows, err := storage.DB.Query("SELECT name FROM cases WHERE name='test-cli-case'")
 		if err != nil {

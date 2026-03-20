@@ -19,19 +19,19 @@ var newCaseCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
-		
+
 		if err := storage.InitDB(); err != nil {
 			return err
 		}
-		
+
 		c := &core.Case{
 			Name: name,
 		}
-		
+
 		if err := storage.CreateCase(c); err != nil {
 			return err
 		}
-		
+
 		// Save context
 		if err := SaveContext(c.ID); err != nil {
 			fmt.Printf("Warning: failed to save context: %v\n", err)

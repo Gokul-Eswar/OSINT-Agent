@@ -27,7 +27,7 @@ func TestGeoIPCollector_Collect(t *testing.T) {
 	defer server.Close()
 
 	c := &GeoIPCollector{BaseURL: server.URL + "/"}
-	evs, err := c.Collect("test-case", "8.8.8.8")
+	evs, err := c.Collect("test-case", "8.8.8.8", nil)
 	if err != nil {
 		t.Fatalf("Collect failed: %v", err)
 	}

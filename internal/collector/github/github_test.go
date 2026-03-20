@@ -19,8 +19,8 @@ func TestGitHubCollector_Collect(t *testing.T) {
 	c := &GitHubCollector{}
 	caseID := "test_case_github"
 	// Use a very specific target that is likely to exist but small, or just a keyword
-	target := "spectre-cli-test-target" 
-	
+	target := "spectre-cli-test-target"
+
 	// Reset config
 	viper.Reset()
 
@@ -28,7 +28,7 @@ func TestGitHubCollector_Collect(t *testing.T) {
 	defer os.RemoveAll("evidence_storage")
 
 	// Execute
-	evidence, err := c.Collect(caseID, target)
+	evidence, err := c.Collect(caseID, target, nil)
 
 	// Verify
 	require.NoError(t, err)
@@ -37,15 +37,15 @@ func TestGitHubCollector_Collect(t *testing.T) {
 	e := evidence[0]
 	assert.Equal(t, caseID, e.CaseID)
 	assert.Equal(t, "github", e.Collector)
-	
+
 	// Check content
 	content, err := os.ReadFile(e.FilePath)
 	require.NoError(t, err)
-	
+
 	var result map[string]interface{}
 	err = json.Unmarshal(content, &result)
 	require.NoError(t, err)
-	
+
 	// GitHub Search API response has "items" or "total_count"
 	_, hasItems := result["items"]
 	_, hasTotal := result["total_count"]

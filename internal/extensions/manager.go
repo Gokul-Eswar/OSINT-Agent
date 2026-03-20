@@ -13,7 +13,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-
 type Manager struct {
 	pluginsDir  string
 	registryURL string
@@ -37,8 +36,8 @@ func (m *Manager) ensureRegistryFetched() error {
 
 	// Check if URL is actually a local file path
 	// e.g. "file://C:/path/to/registry.json" or just "registry.json"
-	isLocal := strings.HasPrefix(m.registryURL, "file://") || 
-              (strings.HasSuffix(m.registryURL, ".json") && !strings.HasPrefix(m.registryURL, "http"))
+	isLocal := strings.HasPrefix(m.registryURL, "file://") ||
+		(strings.HasSuffix(m.registryURL, ".json") && !strings.HasPrefix(m.registryURL, "http"))
 
 	if isLocal {
 		cleanPath := strings.TrimPrefix(m.registryURL, "file://")
@@ -46,7 +45,7 @@ func (m *Manager) ensureRegistryFetched() error {
 		if err != nil {
 			return fmt.Errorf("failed to read local registry file '%s': %w", cleanPath, err)
 		}
-		
+
 		var reg Registry
 		if err := json.Unmarshal(data, &reg); err != nil {
 			return fmt.Errorf("failed to parse local registry JSON: %w", err)
@@ -139,7 +138,6 @@ func (m *Manager) ListInstalled() ([]Extension, error) {
 	return installed, nil
 }
 
-
 func (m *Manager) Install(extName string) error {
 	if err := m.ensureRegistryFetched(); err != nil {
 		return err
@@ -155,7 +153,7 @@ func (m *Manager) Install(extName string) error {
 	}
 
 	// Because we are iterating over a slice of structs, target is a pointer to the loop variable.
-	// But since we break immediately, it's fine. 
+	// But since we break immediately, it's fine.
 	// However, correct Go idiom is:
 	if target == nil {
 		// Re-check just to be safe if loop finished
@@ -181,30 +179,30 @@ func (m *Manager) Install(extName string) error {
 	// 3. Real Git Clone
 	fmt.Printf("Installing %s from %s...\n", target.Name, target.URL)
 
-    // Ensure git is installed
-    if _, err := exec.LookPath("git"); err != nil {
-        return fmt.Errorf("git is not installed or not in PATH. Please install git to fetch extensions")
-    }
+	// Ensure git is installed
+	if _, err := exec.LookPath("git"); err != nil {
+		return fmt.Errorf("git is not installed or not in PATH. Please install git to fetch extensions")
+	}
 
 	cmd := exec.Command("git", "clone", "--depth", "1", target.URL, destPath)
-    cmd.Stdout = os.Stdout
-    cmd.Stderr = os.Stderr
-    
-    if err := cmd.Run(); err != nil {
-        return fmt.Errorf("git clone failed: %w", err)
-    }
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("git clone failed: %w", err)
+	}
 
 	// 4. Install dependencies if any
 	m.InstallDependencies(target.Name)
 
 	// 5. Verification (Optional but recommended)
 
-    // Check if plugin.yaml exists in the cloned repo
-    if _, err := os.Stat(filepath.Join(destPath, "plugin.yaml")); err != nil {
-        // Rollback
-        // os.RemoveAll(destPath) // DISABLED for safety, user might want to inspect
-        return fmt.Errorf("warning: 'plugin.yaml' missing in repository. Extension may not load")
-    }
+	// Check if plugin.yaml exists in the cloned repo
+	if _, err := os.Stat(filepath.Join(destPath, "plugin.yaml")); err != nil {
+		// Rollback
+		// os.RemoveAll(destPath) // DISABLED for safety, user might want to inspect
+		return fmt.Errorf("warning: 'plugin.yaml' missing in repository. Extension may not load")
+	}
 
 	return nil
 }
@@ -261,7 +259,6 @@ func (m *Manager) UpdateAll() error {
 	return nil
 }
 
-
 // GetInfo returns details about an extension (from registry or local).
 func (m *Manager) GetInfo(extName string) (*Extension, bool, error) {
 	// Try to find in registry first
@@ -298,7 +295,7 @@ func (m *Manager) InstallDependencies(extName string) {
 
 	if _, err := os.Stat(reqPath); err == nil {
 		fmt.Printf("Found requirements.txt for %s. Installing dependencies...\n", extName)
-		
+
 		// Try to use the project's venv if it exists, otherwise use system pip
 		pipCmd := "pip"
 		if _, err := os.Stat(".venv"); err == nil {
@@ -313,7 +310,7 @@ func (m *Manager) InstallDependencies(extName string) {
 		cmd.Dir = destPath
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
-		
+
 		if err := cmd.Run(); err != nil {
 			fmt.Printf("Warning: Failed to install dependencies for %s: %v\n", extName, err)
 		}

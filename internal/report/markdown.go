@@ -32,7 +32,7 @@ func GenerateMarkdownReport(caseID string) (string, error) {
 	if analysis != nil {
 		sb.WriteString("## 🧠 AI Intelligence Synthesis\n")
 		sb.WriteString(fmt.Sprintf("**Confidence:** %.2f\n\n", analysis.Confidence))
-		
+
 		sb.WriteString("### Key Findings\n")
 		for _, f := range analysis.Findings {
 			sb.WriteString(fmt.Sprintf("- %s\n", escapeMarkdown(f)))

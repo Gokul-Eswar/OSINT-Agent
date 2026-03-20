@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/spectre/spectre/internal/config"
 	"github.com/spectre/spectre/internal/collector"
+	"github.com/spectre/spectre/internal/config"
 	"github.com/spectre/spectre/internal/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -54,10 +54,9 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&caseID, "case", "c", "", "Case ID")
 }
 
-
 func initConfig() {
 	config.InitConfig(cfgFile)
-	
+
 	if strictProxy {
 		viper.Set("http.strict", true)
 	}

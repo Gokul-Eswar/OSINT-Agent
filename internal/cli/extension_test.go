@@ -30,7 +30,7 @@ func TestExtensionCommands(t *testing.T) {
 
 	// Configure viper to use our temp registry and plugins dir
 	viper.Set("extension_registry_url", "file://"+regPath)
-	
+
 	// We need to override the getManager behavior or the pluginsDir it uses
 	// Currently getManager is hardcoded to "plugins"
 	// I'll update it to be configurable via viper if needed, but for now
@@ -38,13 +38,13 @@ func TestExtensionCommands(t *testing.T) {
 
 	t.Run("SearchCommand", func(t *testing.T) {
 		rootCmd.SetArgs([]string{"extension", "search", "test"})
-		
+
 		old := os.Stdout
 		r, w, _ := os.Pipe()
 		os.Stdout = w
 
 		err := rootCmd.Execute()
-		
+
 		w.Close()
 		os.Stdout = old
 
@@ -59,13 +59,13 @@ func TestExtensionCommands(t *testing.T) {
 
 	t.Run("InfoCommand", func(t *testing.T) {
 		rootCmd.SetArgs([]string{"extension", "info", "test-plugin"})
-		
+
 		old := os.Stdout
 		r, w, _ := os.Pipe()
 		os.Stdout = w
 
 		err := rootCmd.Execute()
-		
+
 		w.Close()
 		os.Stdout = old
 

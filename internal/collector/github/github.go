@@ -50,7 +50,7 @@ func (g *GitHubCollector) Collect(caseID string, target string, options map[stri
 		log.Error().Err(err).Msg("failed to create http client")
 		return nil, fmt.Errorf("failed to create http client: %w", err)
 	}
-	
+
 	// Search repositories
 	url := fmt.Sprintf("https://api.github.com/search/repositories?q=%s", target)
 	req, err := http.NewRequest("GET", url, nil)

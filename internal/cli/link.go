@@ -113,9 +113,13 @@ var linkListCmd = &cobra.Command{
 		fmt.Println("---------------------------------------------------------------------------------------------------")
 		for _, r := range rels {
 			from := entityMap[r.FromEntityID]
-			if from == "" { from = r.FromEntityID }
+			if from == "" {
+				from = r.FromEntityID
+			}
 			to := entityMap[r.ToEntityID]
-			if to == "" { to = r.ToEntityID }
+			if to == "" {
+				to = r.ToEntityID
+			}
 			fmt.Printf("%-40s | %-40s | %-20s\n", from, to, r.Type)
 		}
 
@@ -126,7 +130,7 @@ var linkListCmd = &cobra.Command{
 func init() {
 	linkCmd.PersistentFlags().StringVarP(&caseID, "case", "c", "", "Case ID (required)")
 	linkAddCmd.Flags().StringVarP(&relType, "type", "t", "", "Relationship type (required)")
-	
+
 	linkCmd.AddCommand(linkAddCmd)
 	linkCmd.AddCommand(linkListCmd)
 	rootCmd.AddCommand(linkCmd)

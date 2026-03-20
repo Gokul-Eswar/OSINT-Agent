@@ -60,7 +60,7 @@ func (c *HTTPCollector) Collect(caseID string, target string, options map[string
 	results := make(map[string]interface{})
 	results["url"] = url
 	results["status_code"] = resp.StatusCode
-	
+
 	headers := make(map[string]string)
 	for k, v := range resp.Header {
 		headers[k] = strings.Join(v, ", ")
@@ -71,7 +71,7 @@ func (c *HTTPCollector) Collect(caseID string, target string, options map[string
 	bodyBytes := make([]byte, 4096) // Read first 4KB
 	n, _ := resp.Body.Read(bodyBytes)
 	body := string(bodyBytes[:n])
-	
+
 	re := regexp.MustCompile(`(?i)<title>(.*?)</title>`)
 	match := re.FindStringSubmatch(body)
 	if len(match) > 1 {

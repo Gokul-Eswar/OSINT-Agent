@@ -22,9 +22,13 @@ func FetchRelationships(caseID string) ([]table.Row, error) {
 	var rows []table.Row
 	for _, r := range rels {
 		from := entMap[r.FromEntityID]
-		if from == "" { from = r.FromEntityID }
+		if from == "" {
+			from = r.FromEntityID
+		}
 		to := entMap[r.ToEntityID]
-		if to == "" { to = r.ToEntityID }
+		if to == "" {
+			to = r.ToEntityID
+		}
 
 		rows = append(rows, table.Row{
 			from,

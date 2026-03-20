@@ -10,9 +10,9 @@ import (
 
 // Engine manages the state and execution loop of the SPECTRE Agent.
 type Engine struct {
-	CaseID   string
-	History  []analyzer.Message
-	Tools    []interface{}
+	CaseID  string
+	History []analyzer.Message
+	Tools   []interface{}
 }
 
 // NewEngine initializes a new agent engine for a specific case.

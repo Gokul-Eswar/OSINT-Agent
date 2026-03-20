@@ -31,12 +31,12 @@ func TestFullAgentLoop(t *testing.T) {
 	engine := NewEngine(caseID)
 
 	t.Run("Agent Tool Use Loop", func(t *testing.T) {
-		// This should trigger: 
-		// 1. User: "run dns" 
+		// This should trigger:
+		// 1. User: "run dns"
 		// 2. LLM (mock) -> tool_use: collect(dns)
 		// 3. Go -> executes dns tool
 		// 4. LLM (mock) -> content: "I have finished..."
-		
+
 		response, err := engine.Execute("Please run dns on google.com")
 		if err != nil {
 			t.Fatalf("Agent loop failed: %v", err)

@@ -41,7 +41,7 @@ var installPluginCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		target := args[0]
-		
+
 		// 1. Resolve target (is it a URL or a name?)
 		url := target
 		if !strings.HasPrefix(target, "http") {
@@ -50,14 +50,14 @@ var installPluginCmd = &cobra.Command{
 			if err != nil {
 				return err
 			}
-			
+
 			found := false
 			for _, ext := range reg.Extensions {
 				if ext.Name == target {
 					return installExtension(ext)
 				}
 			}
-			
+
 			if !found {
 				return fmt.Errorf("plugin '%s' not found in registry", target)
 			}
@@ -80,7 +80,7 @@ var updatePluginCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		target := args[0]
-		
+
 		entries, err := os.ReadDir("plugins")
 		if err != nil {
 			return err
@@ -151,10 +151,10 @@ var searchPluginCmd = &cobra.Command{
 		fmt.Println(strings.Repeat("─", 85))
 
 		for _, ext := range reg.Extensions {
-			match := query == "" || 
-					strings.Contains(strings.ToLower(ext.Name), query) || 
-					strings.Contains(strings.ToLower(ext.Description), query)
-			
+			match := query == "" ||
+				strings.Contains(strings.ToLower(ext.Name), query) ||
+				strings.Contains(strings.ToLower(ext.Description), query)
+
 			if !match {
 				for _, tag := range ext.Tags {
 					if strings.Contains(strings.ToLower(tag), query) {
@@ -231,7 +231,7 @@ var checkUpdatesPluginCmd = &cobra.Command{
 
 				latestVersion := "unknown"
 				status := "up to date"
-				
+
 				for _, ext := range reg.Extensions {
 					if ext.Name == metadata.Name {
 						latestVersion = ext.Version
@@ -265,7 +265,7 @@ var listPluginsCmd = &cobra.Command{
 		fmt.Println("INSTALLED EXTERNAL PLUGINS:")
 		fmt.Printf("%-20s %-10s %-40s\n", "NAME", "VERSION", "DESCRIPTION")
 		fmt.Println(strings.Repeat("─", 75))
-		
+
 		found := false
 		for _, entry := range entries {
 			if entry.IsDir() {

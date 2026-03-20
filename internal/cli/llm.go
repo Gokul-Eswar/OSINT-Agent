@@ -60,7 +60,7 @@ var visionCmd = &cobra.Command{
 func init() {
 	queryCmd.Flags().StringVarP(&caseID, "case", "c", "", "Case ID (required)")
 	queryCmd.Flags().StringVarP(&modelName, "model", "m", "llama3", "Model to use")
-	
+
 	visionCmd.Flags().StringVarP(&modelName, "model", "m", "llava", "Vision model to use (default: llava)")
 
 	llmCmd.AddCommand(queryCmd)
