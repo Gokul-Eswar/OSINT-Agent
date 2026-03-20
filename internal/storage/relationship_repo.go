@@ -56,16 +56,17 @@ func GetRelationship(id string) (*core.Relationship, error) {
 	return &r, nil
 }
 
-// ListRelationshipsByCase retrieves all relationships associated with a specific case.
-func ListRelationshipsByCase(caseID string) ([]*core.Relationship, error) {
+// ListRelationshipsByFromEntity retrieves all relationships originating from a specific entity.
+func ListRelationshipsByFromEntity(entityID string) ([]*core.Relationship, error) {
 	if DB == nil {
 		return nil, fmt.Errorf("database not initialized")
 	}
 
-	query := TranslatePlaceholder(`SELECT id, case_id, from_entity, to_entity, rel_type, confidence, evidence_id, discovered_at FROM relationships WHERE case_id = ?`)
-	rows, err := DB.Query(query, caseID)
+	query := TranslatePlaceholder(`SELECT id, case_id, from_entity, to_entity, rel_type, confidence, evidence_id, discovered_at 
+	          FROM relationships WHERE from_entity = ?`)
+	rows, err := DB.Query(query, entityID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list relationships: %w", err)
+		return nil, fmt.Errorf("failed to query relationships by from_entity: %w", err)
 	}
 	defer rows.Close()
 
@@ -73,7 +74,33 @@ func ListRelationshipsByCase(caseID string) ([]*core.Relationship, error) {
 	for rows.Next() {
 		var r core.Relationship
 		if err := rows.Scan(&r.ID, &r.CaseID, &r.FromEntityID, &r.ToEntityID, &r.Type, &r.Confidence, &r.EvidenceID, &r.DiscoveredAt); err != nil {
-			return nil, fmt.Errorf("failed to scan relationship: %w", err)
+			return nil, err
+		}
+		relationships = append(relationships, &r)
+	}
+
+	return relationships, nil
+}
+
+// ListRelationshipsByType retrieves all relationships of a specific type in a case.
+func ListRelationshipsByType(caseID, relType string) ([]*core.Relationship, error) {
+	if DB == nil {
+		return nil, fmt.Errorf("database not initialized")
+	}
+
+	query := TranslatePlaceholder(`SELECT id, case_id, from_entity, to_entity, rel_type, confidence, evidence_id, discovered_at 
+	          FROM relationships WHERE case_id = ? AND rel_type = ?`)
+	rows, err := DB.Query(query, caseID, relType)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query relationships by type: %w", err)
+	}
+	defer rows.Close()
+
+	var relationships []*core.Relationship
+	for rows.Next() {
+		var r core.Relationship
+		if err := rows.Scan(&r.ID, &r.CaseID, &r.FromEntityID, &r.ToEntityID, &r.Type, &r.Confidence, &r.EvidenceID, &r.DiscoveredAt); err != nil {
+			return nil, err
 		}
 		relationships = append(relationships, &r)
 	}

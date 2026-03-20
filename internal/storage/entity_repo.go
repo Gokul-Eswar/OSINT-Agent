@@ -137,35 +137,30 @@ func ListEntitiesByCase(caseID string) ([]*core.Entity, error) {
 	return entities, nil
 }
 
-// GetEntityByValue retrieves an entity by its value and case ID.
-func GetEntityByValue(caseID, value string) (*core.Entity, error) {
+// ListEntitiesByType retrieves all entities of a specific type in a case.
+func ListEntitiesByType(caseID, entityType string) ([]*core.Entity, error) {
 	if DB == nil {
 		return nil, fmt.Errorf("database not initialized")
 	}
 
 	query := TranslatePlaceholder(`SELECT id, case_id, type, value, source, confidence, discovered_at, metadata 
-	          FROM entities WHERE case_id = ? AND value = ?`)
-	row := DB.QueryRow(query, caseID, value)
-
-	var e core.Entity
-	var metadataStr string
-	err := row.Scan(&e.ID, &e.CaseID, &e.Type, &e.Value, &e.Source, &e.Confidence, &e.DiscoveredAt, &metadataStr)
-	if err == sql.ErrNoRows {
-		return nil, nil
-	}
+	          FROM entities WHERE case_id = ? AND type = ?`)
+	rows, err := DB.Query(query, caseID, entityType)
 	if err != nil {
-		log.Error().
-			Err(err).
-			Str("case_id", caseID).
-			Str("value", value).
-			Msg("failed to get entity by value")
-		return nil, fmt.Errorf("failed to get entity by value %s in case %s: %w", value, caseID, err)
+		return nil, fmt.Errorf("failed to query entities by type: %w", err)
+	}
+	defer rows.Close()
+
+	var entities []*core.Entity
+	for rows.Next() {
+		var e core.Entity
+		var metadataStr string
+		if err := rows.Scan(&e.ID, &e.CaseID, &e.Type, &e.Value, &e.Source, &e.Confidence, &e.DiscoveredAt, &metadataStr); err != nil {
+			return nil, err
+		}
+		json.Unmarshal([]byte(metadataStr), &e.Metadata)
+		entities = append(entities, &e)
 	}
 
-	if err := json.Unmarshal([]byte(metadataStr), &e.Metadata); err != nil {
-		log.Error().Err(err).Str("case_id", caseID).Str("value", value).Msg("failed to unmarshal metadata for entity by value")
-		return nil, fmt.Errorf("failed to unmarshal metadata for entity %s in case %s: %w", value, caseID, err)
-	}
-
-	return &e, nil
+	return entities, nil
 }
