@@ -19,3 +19,4 @@ This file tracks all major tracks for the project. Completed tracks are listed b
 - [x] **Track: Chat Orchestrator (The Agent REPL)**
 - [x] **Track: External Plugin System (The Ecosystem)**
 - [x] **Track: Advanced Active Reconnaissance (Social & Visual)**
+- [ ] **Track: Ecosystem Growth & Scale**

@@ -1,0 +1,8 @@
+{
+  "id": "ecosystem_growth",
+  "name": "Ecosystem Growth & Scale",
+  "description": "Expanding SPECTRE's capabilities for high-volume collection, community growth, and AI guidance.",
+  "status": "in_progress",
+  "priority": "high",
+  "owner": "gemini-cli"
+}
