@@ -61,3 +61,36 @@ func TestGenerateMarkdownReport(t *testing.T) {
 	}
 
 }
+
+func TestGenerateMarkdownReport_CaseNotFound(t *testing.T) {
+	// Setup isolated DB
+	db, err := sql.Open("sqlite3", ":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	storage.DB = db
+	if err := storage.Migrate(); err != nil {
+		t.Fatalf("migrate failed: %v", err)
+	}
+
+	_, err = GenerateMarkdownReport("missing-case")
+	if err == nil {
+		t.Fatal("expected error for missing case")
+	}
+	if !strings.Contains(err.Error(), "case not found") {
+		t.Fatalf("expected case not found error, got: %v", err)
+	}
+}
+
+func TestEscapeMarkdown(t *testing.T) {
+	input := "*bold* _italic_ `code` [link] <script> a|b"
+	got := escapeMarkdown(input)
+
+	checks := []string{"\\*bold\\*", "\\_italic\\_", "\\`code\\`", "\\[link\\]", "&lt;script&gt;", "a\\|b"}
+	for _, want := range checks {
+		if !strings.Contains(got, want) {
+			t.Fatalf("expected escaped markdown to contain %q, got %q", want, got)
+		}
+	}
+}

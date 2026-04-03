@@ -31,4 +31,4 @@ jobs:
       - name: Coverage gate
         run: |
           go test -coverprofile=coverage.out ./...
-          go run ./scripts/check_coverage.go -profile coverage.out -min 36
+          go run ./scripts/check_coverage.go -profile coverage.out -min 38
