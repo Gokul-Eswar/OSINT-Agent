@@ -2,7 +2,7 @@
 
 BINARY_NAME=spectre
 COVER_PROFILE=coverage.out
-COVER_MIN=34
+COVER_MIN=36
 
 build:
 	go build -o $(BINARY_NAME) cmd/spectre/main.go
