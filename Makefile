@@ -1,6 +1,8 @@
-.PHONY: build install-python install clean run
+.PHONY: build install-python install clean run test vet lint cover cover-check check
 
 BINARY_NAME=spectre
+COVER_PROFILE=coverage.out
+COVER_MIN=34
 
 build:
 	go build -o $(BINARY_NAME) cmd/spectre/main.go
@@ -18,6 +20,25 @@ install: build install-python
 clean:
 	rm -f $(BINARY_NAME)
 	rm -f $(BINARY_NAME).exe
+	rm -f $(COVER_PROFILE)
 
 run: build
 	./$(BINARY_NAME)
+
+test:
+	go test ./...
+
+vet:
+	go vet ./...
+
+lint: vet
+
+cover:
+	go test -coverprofile=$(COVER_PROFILE) ./...
+	go tool cover -func=$(COVER_PROFILE)
+
+cover-check:
+	go test -coverprofile=$(COVER_PROFILE) ./...
+	go run ./scripts/check_coverage.go -profile $(COVER_PROFILE) -min $(COVER_MIN)
+
+check: lint test cover-check

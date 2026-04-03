@@ -152,6 +152,21 @@ llm:
 
 Contributions are welcome! Please check the `conductor` folder for detailed product guidelines.
 
+## ✅ Development Quality Gates
+
+Use these commands to validate changes before opening a PR:
+
+```bash
+make test          # Run unit tests
+make lint          # Run static checks (go vet)
+make cover         # Generate coverage profile and summary
+make cover-check   # Enforce minimum coverage threshold (default: 34%)
+make check         # Full gate: lint + test + coverage threshold
+```
+
+For CI parity, use `make check` as the local pre-commit command.
+Increase `COVER_MIN` over time to track toward the long-term target of 80%+ coverage.
+
 ## 📄 License
 
 MIT License. See `LICENSE` for details.
