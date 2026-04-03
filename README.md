@@ -160,7 +160,7 @@ Use these commands to validate changes before opening a PR:
 make test          # Run unit tests
 make lint          # Run static checks (go vet)
 make cover         # Generate coverage profile and summary
-make cover-check   # Enforce minimum coverage threshold (default: 38%)
+make cover-check   # Enforce minimum coverage threshold (default: 40%)
 make check         # Full gate: lint + test + coverage threshold
 ```
 
