@@ -24,8 +24,14 @@ func NewEngine(caseID string) *Engine {
 	}
 }
 
-// Execute processes a user input and returns the final agent response.
-// It handles the tool-use loop internally.
+// Execute runs a bounded tool-use loop for agent chat.
+//
+// The loop alternates between LLM turns and tool execution until either:
+//   - the model returns a final response with no tool request, or
+//   - the iteration limit is reached to prevent runaway tool recursion.
+//
+// Tool output is appended as system context, allowing follow-up model turns to
+// reason over action results without mutating prior user/assistant messages.
 func (e *Engine) Execute(userInput string) (string, error) {
 	e.History = append(e.History, analyzer.Message{
 		Role:    "user",

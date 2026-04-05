@@ -8,7 +8,12 @@ import (
 	"github.com/spectre/spectre/internal/core"
 )
 
-// IngestEvidence parses evidence data and populates the graph (entities/relationships).
+// IngestEvidence dispatches collector-specific parsers that convert raw evidence
+// into graph entities and relationships.
+//
+// The collector name is the routing key for ingestion behavior. Unknown
+// collectors are ignored so newly added plugins can still persist evidence even
+// before a dedicated ingestor exists.
 func IngestEvidence(ev *core.Evidence) error {
 	switch ev.Collector {
 	case "dns":
@@ -32,6 +37,8 @@ func IngestEvidence(ev *core.Evidence) error {
 	}
 }
 
+// ingestSocial maps discovered social profiles into account entities linked to
+// the seed username.
 func ingestSocial(ev *core.Evidence) error {
 	username := ev.Metadata["target"].(string)
 
@@ -87,6 +94,11 @@ func ingestSocial(ev *core.Evidence) error {
 	return nil
 }
 
+// ingestScreenshot records screenshot evidence as a self-referential
+// relationship on the target entity.
+//
+// This models screenshots as supporting evidence for an entity without creating
+// a second synthetic node type just for image artifacts.
 func ingestScreenshot(ev *core.Evidence) error {
 	target := ev.Metadata["target"].(string)
 
@@ -116,6 +128,11 @@ func ingestScreenshot(ev *core.Evidence) error {
 	return CreateRelationship(rel)
 }
 
+// ingestPorts creates service entities for open ports and links them to the
+// target IP.
+//
+// Closed ports are intentionally ignored to keep the graph focused on actionable
+// attack surface relationships.
 func ingestPorts(ev *core.Evidence) error {
 	targetIP := ev.Metadata["target"].(string)
 
@@ -167,6 +184,8 @@ func ingestPorts(ev *core.Evidence) error {
 	return nil
 }
 
+// ingestHTTP enriches a target domain with server/software relationship data
+// when available from HTTP collector metadata.
 func ingestHTTP(ev *core.Evidence) error {
 	target := ev.Metadata["target"].(string)
 	server := ""
@@ -209,6 +228,11 @@ func ingestHTTP(ev *core.Evidence) error {
 	return nil
 }
 
+// ingestGeo applies geolocation metadata directly to the IP entity instead of
+// creating additional geo nodes.
+//
+// This keeps the graph compact while still making location attributes queryable
+// through entity metadata.
 func ingestGeo(ev *core.Evidence) error {
 	targetIP := ev.Metadata["target"].(string)
 
@@ -247,6 +271,8 @@ func ingestGeo(ev *core.Evidence) error {
 	return UpdateEntity(ipEnt)
 }
 
+// ingestGitHub builds repository and owner entities from search results and
+// links them via ownership relationships.
 func ingestGitHub(ev *core.Evidence) error {
 	var data []byte
 	var err error
@@ -318,6 +344,8 @@ func ingestGitHub(ev *core.Evidence) error {
 	return nil
 }
 
+// ingestWHOIS links a domain to registrant contact artifacts extracted from
+// WHOIS metadata.
 func ingestWHOIS(ev *core.Evidence) error {
 	targetDomain := ev.Metadata["target"].(string)
 
@@ -368,6 +396,8 @@ func ingestWHOIS(ev *core.Evidence) error {
 	return nil
 }
 
+// ingestDNS maps DNS A-record resolution edges from domain entities to IP
+// entities, preserving evidence provenance on each relationship.
 func ingestDNS(ev *core.Evidence) error {
 	var results map[string][]string
 

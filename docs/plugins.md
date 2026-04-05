@@ -2,6 +2,8 @@
 
 Spectre is designed to be extensible. You can write your own collectors in any language (Python, Bash, Go, Node.js) and integrate them seamlessly into the platform.
 
+For full implementation details, testing, packaging, and troubleshooting, use the canonical guide in [PLUGIN_DEVELOPMENT.md](./PLUGIN_DEVELOPMENT.md).
+
 ## How it Works
 
 Plugins are external executables that Spectre calls via CLI arguments.

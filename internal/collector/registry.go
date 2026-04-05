@@ -84,7 +84,16 @@ func List() []core.Collector {
 	return globalRegistry.List()
 }
 
-// Run executes a collector by name with ethics enforcement.
+// Run executes a collector behind mandatory ethics gates.
+//
+// Gate order is intentional:
+//  1. active probe consent,
+//  2. scope enforcement,
+//  3. per-collector rate limiting,
+//  4. collector execution.
+//
+// This keeps policy decisions centralized and consistent across native and
+// external collectors.
 func Run(name string, caseID string, target string, activeAllowed bool, options map[string]interface{}) ([]core.Evidence, error) {
 	c, err := Get(name)
 	if err != nil {
@@ -110,7 +119,11 @@ func Run(name string, caseID string, target string, activeAllowed bool, options 
 	return c.Collect(caseID, target, options)
 }
 
-// RunAndSave executes a collector and automatically persists evidence and ingests it.
+// RunAndSave executes a collector, writes evidence records, then attempts graph
+// ingestion for each result.
+//
+// Ingestion failures are logged as warnings and do not roll back saved evidence
+// so raw data remains available for later re-processing.
 func RunAndSave(name string, caseID string, target string, activeAllowed bool, options map[string]interface{}) ([]core.Evidence, error) {
 	evidenceList, err := Run(name, caseID, target, activeAllowed, options)
 	if err != nil {

@@ -44,7 +44,11 @@ func (e *ExternalCollector) IsActive() bool {
 	return e.metadata.IsActive
 }
 
-// Collect executes the external plugin and captures its output.
+// Collect executes an external plugin, persists raw output as evidence, and
+// enriches metadata for downstream analysis.
+//
+// Environment injection is centralized here so external plugins inherit Ghost
+// Mode and proxy behavior consistently with native collectors.
 func (e *ExternalCollector) Collect(caseID string, target string, options map[string]interface{}) ([]core.Evidence, error) {
 	// Prepare command
 	args := append(e.metadata.Args, target)
@@ -119,7 +123,11 @@ func (e *ExternalCollector) Collect(caseID string, target string, options map[st
 	return []core.Evidence{evidence}, nil
 }
 
-// DiscoverPlugins scans the plugins directory for valid plugins.
+// DiscoverPlugins scans the plugins directory and returns collectors backed by
+// plugin.yaml manifests.
+//
+// Invalid plugin manifests are skipped (with logging) instead of aborting the
+// full discovery pass so one broken plugin cannot disable the ecosystem.
 func DiscoverPlugins() ([]core.Collector, error) {
 	pluginsDir := "plugins"
 	entries, err := os.ReadDir(pluginsDir)

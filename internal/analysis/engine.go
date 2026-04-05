@@ -15,7 +15,12 @@ import (
 	"github.com/spf13/viper"
 )
 
-// QueryCase asks a specific question about a case to the LLM.
+// QueryCase runs a question-answer flow over a case by reusing the same
+// synthesized context used for full analysis.
+//
+// The function intentionally falls back to returning raw output when the
+// analyzer response is not JSON. This keeps CLI behavior useful even when the
+// backend model returns plain text.
 func QueryCase(caseID string, model string, question string) (string, error) {
 	log.Info().
 		Str("case_id", caseID).
@@ -69,7 +74,11 @@ func QueryCase(caseID string, model string, question string) (string, error) {
 	return resp.Answer, nil
 }
 
-// AnalyzeImage runs visual analysis on a local image file using a vision model.
+// AnalyzeImage performs one-shot vision analysis against a local image.
+//
+// Image bytes are base64-encoded and passed through the same analyzer bridge
+// used by text workflows so provider selection, timeout handling, and auditing
+// remain consistent with other LLM tasks.
 func AnalyzeImage(imagePath string, prompt string, model string) (string, error) {
 	log.Info().
 		Str("image", imagePath).
@@ -112,7 +121,16 @@ func AnalyzeImage(imagePath string, prompt string, model string) (string, error)
 	return resp.Answer, nil
 }
 
-// AnalyzeCase runs the AI analysis via the Python analyzer.
+// AnalyzeCase executes the end-to-end synthesis pipeline for a case.
+//
+// Flow summary:
+//  1. Load case and build normalized prompt context.
+//  2. Compute a deterministic context hash and check cached analysis.
+//  3. Delegate synthesis to the Python analyzer bridge.
+//  4. Parse the structured response and persist it with the context hash.
+//
+// The context hash is the cache key, so identical case context avoids repeated
+// model calls while preserving deterministic traceability.
 func AnalyzeCase(caseID string, model string) (*core.Analysis, error) {
 	log.Info().
 		Str("case_id", caseID).

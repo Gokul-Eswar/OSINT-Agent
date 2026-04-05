@@ -48,7 +48,10 @@ type ToolUse struct {
 	Arguments map[string]interface{} `json:"arguments"`
 }
 
-// Validate checks if the request has all required fields.
+// Validate enforces minimum request requirements before invoking Python.
+//
+// CaseID is required for all current tasks except visualize-style tasks where
+// graph data may be supplied directly in Data.
 func (r *Request) Validate() error {
 	if r.Task == "" {
 		return fmt.Errorf("task is required")
@@ -67,7 +70,12 @@ type LLMConfig struct {
 	Timeout  int    `json:"timeout"`
 }
 
-// RunPythonTask executes the Python analyzer module.
+// RunPythonTask executes the Python analyzer as a subprocess with a strict
+// timeout and JSON-over-CLI contract.
+//
+// The bridge chooses a local virtualenv Python when present, then falls back to
+// PATH resolution. On failures it attempts structured error extraction from
+// stdout before returning stderr-heavy execution errors.
 func RunPythonTask(req Request) (string, error) {
 	if err := req.Validate(); err != nil {
 		return "", fmt.Errorf("invalid request: %w", err)

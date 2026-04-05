@@ -8,7 +8,10 @@ import (
 	"github.com/spectre/spectre/internal/storage"
 )
 
-// PromptBuilder helps in constructing complex, accurate LLM prompts
+// PromptBuilder materializes a stable text context from graph state.
+//
+// The generated format is designed for model readability and deterministic
+// hashing so AnalyzeCase can safely cache synthesis results.
 type PromptBuilder struct {
 	Case          *core.Case
 	Entities      []*core.Entity
@@ -16,7 +19,10 @@ type PromptBuilder struct {
 	Evidence      []*core.Evidence
 }
 
-// NewPromptBuilder creates a new PromptBuilder for a case
+// NewPromptBuilder loads all case-side primitives required to build a prompt.
+//
+// Keeping data collection centralized here prevents drift between chat/query
+// and synthesis flows that depend on the same contextual snapshot.
 func NewPromptBuilder(caseID string) (*PromptBuilder, error) {
 	c, err := storage.GetCase(caseID)
 	if err != nil {
@@ -49,7 +55,12 @@ func NewPromptBuilder(caseID string) (*PromptBuilder, error) {
 	}, nil
 }
 
-// Build creates the final context string for the LLM
+// Build serializes case metadata, entities, relationships, and evidence into a
+// single prompt string consumed by synthesis and question-answer tasks.
+//
+// Relationship rendering first resolves entity IDs to readable labels, then
+// falls back to raw IDs when entities are missing so partial graph corruption
+// does not block analysis.
 func (pb *PromptBuilder) Build() string {
 	var sb strings.Builder
 
@@ -89,7 +100,8 @@ func (pb *PromptBuilder) Build() string {
 	return sb.String()
 }
 
-// BuildCaseContext aggregates all case data into a prompt-ready string using PromptBuilder.
+// BuildCaseContext is a convenience entrypoint used by analysis workflows to
+// produce the canonical prompt payload for the analyzer bridge.
 func BuildCaseContext(caseID string) (string, error) {
 	pb, err := NewPromptBuilder(caseID)
 	if err != nil {
@@ -98,7 +110,11 @@ func BuildCaseContext(caseID string) (string, error) {
 	return pb.Build(), nil
 }
 
-// ExportCaseForViz gathers all case data into a map for JSON export to the visualizer.
+// ExportCaseForViz exports case primitives in a bridge-friendly map for
+// visualization tasks.
+//
+// The payload keys are consumed by the Python visualizer module and should be
+// treated as a compatibility contract across Go/Python boundaries.
 func ExportCaseForViz(caseID string) (map[string]interface{}, error) {
 	c, err := storage.GetCase(caseID)
 	if err != nil {
