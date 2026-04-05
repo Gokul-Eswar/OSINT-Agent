@@ -51,6 +51,8 @@ By default, SPECTRE runs collectors sequentially. To speed up investigations, yo
 spectre collect --target example.com --scanners dns,whois,geo
 ```
 
+Current baseline measurements and re-run rules are documented in [performance.md](./performance.md).
+
 ### 2. LLM Response Times
 If `spectre analyze` is slow:
 - **Local Models:** Ensure you have enough RAM (8GB+ for 7B models). If you have a GPU, ensure Ollama is configured to use it.
