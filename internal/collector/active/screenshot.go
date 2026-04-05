@@ -52,6 +52,7 @@ func (c *ScreenshotCollector) Collect(caseID string, target string, options map[
 	if os.Getenv("CI") != "" {
 		opts = append(opts,
 			chromedp.Flag("no-sandbox", true),
+			chromedp.Flag("disable-setuid-sandbox", true),
 			chromedp.Flag("disable-dev-shm-usage", true),
 		)
 	}

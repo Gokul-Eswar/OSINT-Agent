@@ -34,12 +34,12 @@ func TestScreenshotCollector_Collect(t *testing.T) {
 
 	evidence, err := collector.Collect(caseID, target, nil)
 	if err != nil {
-		// If chrome is missing, this might fail.
-		// Check error message to decide if we should fail or skip?
-		// For now, let's fail to be explicit, but log it clearly.
+		// Skip locally when Chrome is unavailable, but fail in CI to surface setup regressions.
 		if strings.Contains(err.Error(), "exec: \"google-chrome\": executable file not found") ||
 			strings.Contains(err.Error(), "executable file not found") {
-			t.Skipf("Skipping screenshot test: Chrome not found: %v", err)
+			if os.Getenv("CI") == "" {
+				t.Skipf("Skipping screenshot test: Chrome not found: %v", err)
+			}
 		}
 		t.Fatalf("Collect failed: %v", err)
 	}

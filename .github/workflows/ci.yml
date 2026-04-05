@@ -22,25 +22,19 @@ jobs:
       - name: Verify dependencies
         run: go mod download
 
-      - name: Install Chromium for screenshot tests
+      - name: Setup Chrome for screenshot tests
+        id: setup-chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
+      - name: Export Chrome path
+        run: echo "CHROME_BIN=${{ steps.setup-chrome.outputs.chrome-path }}" >> "$GITHUB_ENV"
+
+      - name: Verify Chrome setup
         run: |
-          sudo apt-get update
-          browser=""
-          for package in chromium-browser chromium; do
-            if sudo apt-get install -y "$package"; then
-              browser="$(command -v "$package")"
-              break
-            fi
-          done
-
-          if [ -z "$browser" ]; then
-            echo "Failed to install Chromium" >&2
-            exit 1
-          fi
-
-          echo "CHROME_BIN=$browser" >> "$GITHUB_ENV"
-          echo "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true" >> "$GITHUB_ENV"
-          echo "CI=true" >> "$GITHUB_ENV"
+          echo "CHROME_BIN=${{ steps.setup-chrome.outputs.chrome-path }}"
+          "${{ steps.setup-chrome.outputs.chrome-path }}" --version
 
       - name: Vet
         run: go vet ./...
