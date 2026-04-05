@@ -22,6 +22,26 @@ jobs:
       - name: Verify dependencies
         run: go mod download
 
+      - name: Install Chromium for screenshot tests
+        run: |
+          sudo apt-get update
+          browser=""
+          for package in chromium-browser chromium; do
+            if sudo apt-get install -y "$package"; then
+              browser="$(command -v "$package")"
+              break
+            fi
+          done
+
+          if [ -z "$browser" ]; then
+            echo "Failed to install Chromium" >&2
+            exit 1
+          fi
+
+          echo "CHROME_BIN=$browser" >> "$GITHUB_ENV"
+          echo "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true" >> "$GITHUB_ENV"
+          echo "CI=true" >> "$GITHUB_ENV"
+
       - name: Vet
         run: go vet ./...
 

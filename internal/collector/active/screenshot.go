@@ -45,6 +45,17 @@ func (c *ScreenshotCollector) Collect(caseID string, target string, options map[
 		chromedp.Flag("disable-gpu", true),
 	)
 
+	if execPath := os.Getenv("CHROME_BIN"); execPath != "" {
+		opts = append(opts, chromedp.ExecPath(execPath))
+	}
+
+	if os.Getenv("CI") != "" {
+		opts = append(opts,
+			chromedp.Flag("no-sandbox", true),
+			chromedp.Flag("disable-dev-shm-usage", true),
+		)
+	}
+
 	// Proxy Logic (Respect Ghost Mode)
 	var proxy string
 	if viper.GetBool("ghost_mode") {
