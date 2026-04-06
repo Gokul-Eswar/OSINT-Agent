@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -8,35 +9,56 @@ import (
 	"github.com/spf13/viper"
 )
 
-// InitConfig reads in config file and ENV variables if set.
+// InitConfig reads config using the full initialization path.
+// Kept for backward compatibility with existing call sites.
 func InitConfig(cfgFile string) {
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	} else {
-		// Find home directory.
-		home, err := os.UserHomeDir()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
+	_ = InitConfigFull(cfgFile)
+}
 
-		// Search config in home directory with name ".spectre" (without extension).
-		viper.AddConfigPath(home)
-		viper.AddConfigPath(".")
-		viper.AddConfigPath("configs") // Added to find default.yaml if present
-		viper.SetConfigType("yaml")
-		viper.SetConfigName("default") // Default to default.yaml
+// InitConfigLight performs low-overhead config initialization.
+// It only binds environment variables and optionally reads an explicit config file.
+func InitConfigLight(cfgFile string) error {
+	viper.AutomaticEnv()
+
+	if cfgFile != "" {
+		viper.SetConfigFile(cfgFile)
+		if err := viper.ReadInConfig(); err != nil {
+			return fmt.Errorf("failed to read config file %q: %w", cfgFile, err)
+		}
 	}
 
-	viper.AutomaticEnv() // read in environment variables that match
+	return nil
+}
 
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+// InitConfigFull performs full config initialization including default
+// config-file discovery and ethics policy hydration.
+func InitConfigFull(cfgFile string) error {
+	if cfgFile != "" {
+		viper.SetConfigFile(cfgFile)
+	} else {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return fmt.Errorf("failed to resolve user home directory: %w", err)
+		}
+
+		viper.AddConfigPath(home)
+		viper.AddConfigPath(".")
+		viper.AddConfigPath("configs")
+		viper.SetConfigType("yaml")
+		viper.SetConfigName("default")
+	}
+
+	viper.AutomaticEnv()
+
+	if err := viper.ReadInConfig(); err != nil {
+		var notFound viper.ConfigFileNotFoundError
+		if !errors.As(err, &notFound) {
+			return fmt.Errorf("failed to read config: %w", err)
+		}
 	}
 
 	ApplyEthicsConfig()
+	return nil
 }
 
 // ApplyEthicsConfig loads settings from viper into the ethics package.

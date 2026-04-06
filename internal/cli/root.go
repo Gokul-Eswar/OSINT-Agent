@@ -30,6 +30,9 @@ Not scraping. Not search. Intelligence synthesis with auditability.`,
 			os.Exit(1)
 		}
 	},
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		return initializeForCommand(cmd)
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -42,8 +45,6 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
-
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
@@ -53,12 +54,41 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&caseID, "case", "c", "", "Case ID")
 }
 
-func initConfig() {
-	config.InitConfig(cfgFile)
+func initializeForCommand(cmd *cobra.Command) error {
+	if shouldSkipStartupInit(cmd) {
+		return nil
+	}
+
+	if err := config.InitConfigFull(cfgFile); err != nil {
+		return err
+	}
 
 	if strictProxy {
 		viper.Set("http.strict", true)
 	}
 
-	logger.InitLogger()
+	logger.InitLoggerFull()
+	return nil
+}
+
+func shouldSkipStartupInit(cmd *cobra.Command) bool {
+	if cmd == nil {
+		return false
+	}
+
+	if cmd.Flags().Changed("help") {
+		return true
+	}
+	if cmd.InheritedFlags().Changed("help") {
+		return true
+	}
+
+	for c := cmd; c != nil; c = c.Parent() {
+		switch c.Name() {
+		case "version", "help", "completion":
+			return true
+		}
+	}
+
+	return false
 }

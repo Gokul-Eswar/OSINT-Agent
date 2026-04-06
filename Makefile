@@ -1,4 +1,4 @@
-.PHONY: build install-python install clean run test vet lint cover cover-check check
+.PHONY: build install-python install clean run test vet lint cover cover-check startup-bench check
 
 BINARY_NAME=spectre
 COVER_PROFILE=coverage.out
@@ -40,5 +40,8 @@ cover:
 cover-check:
 	go test -coverprofile=$(COVER_PROFILE) ./...
 	go run ./scripts/check_coverage.go -profile $(COVER_PROFILE) -min $(COVER_MIN)
+
+startup-bench: build
+	go run ./scripts/startup_perf -binary ./$(BINARY_NAME) -runs 20
 
 check: lint test cover-check
