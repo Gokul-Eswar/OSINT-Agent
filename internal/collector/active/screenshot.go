@@ -11,17 +11,12 @@ import (
 	"time"
 
 	"github.com/chromedp/chromedp"
-	"github.com/spectre/spectre/internal/collector"
 	"github.com/spectre/spectre/internal/core"
 	"github.com/spectre/spectre/internal/ethics"
 	"github.com/spf13/viper"
 )
 
 type ScreenshotCollector struct{}
-
-func init() {
-	collector.Register(&ScreenshotCollector{})
-}
 
 func (c *ScreenshotCollector) Name() string {
 	return "screenshot"

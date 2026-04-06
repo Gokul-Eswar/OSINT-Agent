@@ -33,7 +33,7 @@ type DNSCollector struct {
 	resolver Resolver
 }
 
-func init() {
+func Register() {
 	collector.Register(&DNSCollector{resolver: &NetResolver{}})
 }
 

@@ -29,7 +29,7 @@ type WHOISCollector struct {
 	client WhoisClient
 }
 
-func init() {
+func Register() {
 	collector.Register(&WHOISCollector{client: &DefaultWhoisClient{}})
 }
 

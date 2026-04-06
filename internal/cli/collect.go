@@ -10,11 +10,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spectre/spectre/internal/collector"
-	_ "github.com/spectre/spectre/internal/collector/active" // Register Active Probes
-	_ "github.com/spectre/spectre/internal/collector/dns"    // Register DNS
-	_ "github.com/spectre/spectre/internal/collector/geo"    // Register GeoIP
-	_ "github.com/spectre/spectre/internal/collector/github" // Register GitHub
-	_ "github.com/spectre/spectre/internal/collector/whois"  // Register WHOIS
 	"github.com/spectre/spectre/internal/storage"
 	"github.com/spf13/cobra"
 )
@@ -152,6 +147,10 @@ var collectCmd = &cobra.Command{
 	Short: "Run a passive collector (or all) against a target",
 	Args:  cobra.RangeArgs(1, 2),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if err := ensureCollectorBootstrap(); err != nil {
+			return err
+		}
+
 		// Try to load context if caseID is missing
 		if caseID == "" {
 			ctxID, err := LoadContext()

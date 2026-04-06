@@ -11,16 +11,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/spectre/spectre/internal/collector"
 	"github.com/spectre/spectre/internal/core"
-	"github.com/spectre/spectre/internal/http"
+	netclient "github.com/spectre/spectre/internal/http"
 )
 
 type HTTPCollector struct{}
-
-func init() {
-	collector.Register(&HTTPCollector{})
-}
 
 func (c *HTTPCollector) Name() string {
 	return "http"

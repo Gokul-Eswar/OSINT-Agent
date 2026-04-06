@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/spectre/spectre/internal/collector"
 	"github.com/spectre/spectre/internal/config"
 	"github.com/spectre/spectre/internal/logger"
 	"github.com/spf13/cobra"
@@ -62,12 +61,4 @@ func initConfig() {
 	}
 
 	logger.InitLogger()
-
-	// Discover and register external plugins
-	plugins, err := collector.DiscoverPlugins()
-	if err == nil {
-		for _, p := range plugins {
-			collector.Register(p)
-		}
-	}
 }

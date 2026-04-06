@@ -21,7 +21,7 @@ type GitHubCollector struct {
 	Client *http.Client
 }
 
-func init() {
+func Register() {
 	collector.Register(&GitHubCollector{})
 }
 

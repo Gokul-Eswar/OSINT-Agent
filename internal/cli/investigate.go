@@ -17,6 +17,10 @@ var investigateCmd = &cobra.Command{
 	Short: "Automated end-to-end investigation (One-Shot)",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if err := ensureCollectorBootstrap(); err != nil {
+			return err
+		}
+
 		target := args[0]
 
 		if err := storage.InitDB(); err != nil {

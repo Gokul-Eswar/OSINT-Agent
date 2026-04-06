@@ -15,6 +15,10 @@ var analyzeCmd = &cobra.Command{
 	Use:   "analyze",
 	Short: "Generate an AI-powered intelligence report",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if err := ensureCollectorBootstrap(); err != nil {
+			return err
+		}
+
 		if caseID == "" {
 			ctxID, err := LoadContext()
 			if err == nil && ctxID != "" {

@@ -12,17 +12,12 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"github.com/spectre/spectre/internal/collector"
 	"github.com/spectre/spectre/internal/core"
 	"github.com/spectre/spectre/internal/ethics"
 	"github.com/spf13/viper"
 )
 
 type PortCollector struct{}
-
-func init() {
-	collector.Register(&PortCollector{})
-}
 
 func (c *PortCollector) Name() string {
 	return "ports"

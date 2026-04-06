@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"github.com/spectre/spectre/internal/collector"
 	"github.com/spectre/spectre/internal/core"
 	"github.com/spectre/spectre/internal/ethics"
 	netclient "github.com/spectre/spectre/internal/http"
@@ -20,10 +19,6 @@ import (
 
 type SocialCollector struct {
 	Sites map[string]string
-}
-
-func init() {
-	collector.Register(NewSocialCollector())
 }
 
 func NewSocialCollector() *SocialCollector {

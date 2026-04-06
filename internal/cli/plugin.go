@@ -33,6 +33,9 @@ type Registry struct {
 var pluginCmd = &cobra.Command{
 	Use:   "plugin",
 	Short: "Manage external plugins and extensions",
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		return ensureCollectorBootstrap()
+	},
 }
 
 var installPluginCmd = &cobra.Command{

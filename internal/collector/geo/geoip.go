@@ -13,14 +13,14 @@ import (
 
 	"github.com/spectre/spectre/internal/collector"
 	"github.com/spectre/spectre/internal/core"
-	"github.com/spectre/spectre/internal/http"
+	netclient "github.com/spectre/spectre/internal/http"
 )
 
 type GeoIPCollector struct {
 	BaseURL string
 }
 
-func init() {
+func Register() {
 	collector.Register(&GeoIPCollector{
 		BaseURL: "http://ip-api.com/json/",
 	})
