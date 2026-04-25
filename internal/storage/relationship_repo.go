@@ -9,6 +9,9 @@ import (
 	"github.com/spectre/spectre/internal/core"
 )
 
+// OnRelationshipCreated is a hook for real-time updates
+var OnRelationshipCreated func(*core.Relationship)
+
 // CreateRelationship inserts a new relationship into the database.
 func CreateRelationship(r *core.Relationship) error {
 	if DB == nil {
@@ -30,6 +33,10 @@ func CreateRelationship(r *core.Relationship) error {
 	_, err := DB.Exec(query, r.ID, r.CaseID, r.FromEntityID, r.ToEntityID, r.Type, r.Confidence, r.EvidenceID, r.DiscoveredAt)
 	if err != nil {
 		return fmt.Errorf("failed to create relationship: %w", err)
+	}
+
+	if OnRelationshipCreated != nil {
+		OnRelationshipCreated(r)
 	}
 
 	return nil

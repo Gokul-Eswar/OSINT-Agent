@@ -1,0 +1,8 @@
+{
+  "id": "v2_live_visualization",
+  "title": "V2 Live Visualization Dashboard",
+  "description": "Upgrade the static dashboard to a real-time command center using Server-Sent Events (SSE) and dynamic graph rendering.",
+  "status": "in-progress",
+  "priority": "high",
+  "owner": "gemini-cli"
+}

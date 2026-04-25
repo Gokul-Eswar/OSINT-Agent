@@ -366,27 +366,45 @@
                 evtSource.onmessage = (event) => {
                     try {
                         const msg = JSON.parse(event.data);
-                        if (msg.type === 'entity_created') {
-                            const entity = msg.data;
+                        
+                        if (msg.type === 'entity_created' || msg.type === 'relationship_created') {
+                            const payload = msg.data;
                             setIsLive(true);
                             setTimeout(() => setIsLive(false), 2000);
 
-                            // Update selected case if applicable
                             setSelectedCase(prev => {
-                                if (prev && prev.id === entity.case_id) {
-                                    // Avoid duplicates
-                                    if (prev.entities.some(e => e.id === entity.id)) return prev;
-                                    
-                                    // Add new entity
-                                    const newCaseData = {
-                                        ...prev,
-                                        entities: [...prev.entities, entity]
-                                    };
-                                    
-                                    // Trigger graph re-render
-                                    setTimeout(() => renderGraph(newCaseData), 50);
-                                    
-                                    return newCaseData;
+                                if (prev && prev.id === payload.case_id) {
+                                    if (msg.type === 'entity_created') {
+                                        if (prev.entities.some(e => e.id === payload.id)) return prev;
+                                        const newCaseData = { ...prev, entities: [...prev.entities, payload] };
+                                        
+                                        // Incremental Graph Update
+                                        if (visNetwork.current) {
+                                            visNetwork.current.body.data.nodes.update({
+                                                id: payload.id,
+                                                label: payload.value.length > 20 ? payload.value.substring(0, 18) + '...' : payload.value,
+                                                group: payload.type,
+                                                title: `<div class="p-2 text-xs font-sans"><strong>Type:</strong> ${payload.type}<br><strong>Value:</strong> ${payload.value}</div>`
+                                            });
+                                        }
+                                        return newCaseData;
+                                    } else {
+                                        // relationship_created
+                                        if (prev.relationships.some(r => r.id === payload.id)) return prev;
+                                        const newCaseData = { ...prev, relationships: [...prev.relationships, payload] };
+                                        
+                                        // Incremental Graph Update
+                                        if (visNetwork.current) {
+                                            visNetwork.current.body.data.edges.update({
+                                                id: payload.id,
+                                                from: payload.from_entity,
+                                                to: payload.to_entity,
+                                                label: payload.rel_type,
+                                                arrows: 'to'
+                                            });
+                                        }
+                                        return newCaseData;
+                                    }
                                 }
                                 return prev;
                             });

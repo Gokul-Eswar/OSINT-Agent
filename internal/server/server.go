@@ -87,6 +87,13 @@ func Start(port int) error {
 		})
 	}
 
+	storage.OnRelationshipCreated = func(r *core.Relationship) {
+		Broadcast(map[string]interface{}{
+			"type": "relationship_created",
+			"data": r,
+		})
+	}
+
 	fmt.Printf("SPECTRE API Server starting on 127.0.0.1:%d...\n", port)
 	return http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", port), mux)
 }
