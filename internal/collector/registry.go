@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/rs/zerolog/log"
+	"github.com/spectre/spectre/internal/analyzer"
 	"github.com/spectre/spectre/internal/core"
 	"github.com/spectre/spectre/internal/ethics"
 	"github.com/spectre/spectre/internal/storage"

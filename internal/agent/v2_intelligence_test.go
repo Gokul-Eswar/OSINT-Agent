@@ -5,8 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-
-	"github.com/spectre/spectre/internal/storage"
 )
 
 func TestVectorSearchTool(t *testing.T) {
