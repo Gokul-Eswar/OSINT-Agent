@@ -1,0 +1,8 @@
+{
+  "id": "v2_collector_hub",
+  "title": "V2 Collector Hub (Plugin SDK & Dorking)",
+  "description": "Standardize the external plugin ecosystem with a Python SDK and implement an AI-powered Automated Dorking Engine for leaked data discovery.",
+  "status": "completed",
+  "priority": "medium",
+  "owner": "gemini-cli"
+}

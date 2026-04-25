@@ -1,13 +1,13 @@
 import json
 import sys
 import argparse
-from .llm import analyze_case, chat, query_case, analyze_image
+from .llm import analyze_case, chat, query_case, analyze_image, generate_dorks
 from .graph_viz import generate_visual_report
 from .vector_store import index_evidence, search_evidence
 
 def main():
     parser = argparse.ArgumentParser(description="SPECTRE Analyzer (Python)")
-    parser.add_argument("--task", choices=["synthesize", "visualize", "chat", "query", "vision", "index_evidence", "search_evidence"], required=True)
+    parser.add_argument("--task", choices=["synthesize", "visualize", "chat", "query", "vision", "index_evidence", "search_evidence", "generate_dorks"], required=True)
     parser.add_argument("--input", help="JSON input data", required=True)
     
     args = parser.parse_args()
@@ -42,6 +42,9 @@ def main():
             query = input_data.get("query")
             n_results = input_data.get("n_results", 3)
             result = search_evidence(case_id, query, n_results)
+            print(json.dumps(result))
+        elif args.task == "generate_dorks":
+            result = generate_dorks(input_data)
             print(json.dumps(result))
             
     except Exception as e:

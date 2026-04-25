@@ -269,6 +269,48 @@ var Registry = map[string]Tool{
 			return resp.Answer, nil
 		},
 	},
+
+	"generate_dorks": {
+		Name:        "generate_dorks",
+		Description: "Generate a list of specialized Google Dorks for a target domain to find sensitive or leaked information.",
+		Parameters: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"target": map[string]interface{}{
+					"type":        "string",
+					"description": "The target domain (e.g., 'example.com').",
+				},
+			},
+			"required": []string{"target"},
+		},
+		Execute: func(caseID string, args map[string]interface{}) (string, error) {
+			target, _ := args["target"].(string)
+
+			req := analyzer.Request{
+				Task:   "generate_dorks",
+				CaseID: caseID,
+				Data:   target,
+			}
+
+			output, err := analyzer.RunPythonTask(req)
+			if err != nil {
+				return "", fmt.Errorf("dork generation failed: %w", err)
+			}
+
+			var resp struct {
+				Dorks []string `json:"dorks"`
+			}
+			if err := json.Unmarshal([]byte(output), &resp); err != nil {
+				return "", fmt.Errorf("failed to parse dorks: %w", err)
+			}
+
+			if len(resp.Dorks) == 0 {
+				return "No dorks generated.", nil
+			}
+
+			return "Suggested Google Dorks:\n" + strings.Join(resp.Dorks, "\n"), nil
+		},
+	},
 }
 
 // GetToolDefinitions returns the JSON-serializable tool definitions for the LLM.

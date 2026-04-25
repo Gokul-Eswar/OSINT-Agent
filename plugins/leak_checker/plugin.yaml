@@ -1,0 +1,6 @@
+name: leak_checker
+description: "Checks for common exposed data leaks using simulated dork patterns."
+version: "1.0.0"
+command: "python"
+args: ["leak_checker.py"]
+is_active: false

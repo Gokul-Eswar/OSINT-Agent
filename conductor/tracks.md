@@ -23,3 +23,4 @@ This file tracks all major tracks for the project. Completed tracks are listed b
 - [x] **Track: V2 Intelligence Brain (Autonomous Reasoning & Search)**
 - [x] **Track: V2 Live Visualization Dashboard**
 - [x] **Track: V2 Ghost Edge (Operational Security)**
+- [x] **Track: V2 Collector Hub (Plugin SDK & Dorking)**

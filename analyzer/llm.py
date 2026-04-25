@@ -283,3 +283,56 @@ def analyze_image(data):
 
     except Exception as e:
         return {"answer": f"Error performing visual analysis: {str(e)}"}
+
+def generate_dorks(data):
+    """
+    Generate specialized Google Dorks for a target domain using the LLM.
+    """
+    target = data.get("data", "example.com")
+    model = data.get("model", "llama3")
+    llm_config = data.get("llm_config", {})
+
+    api_url = llm_config.get("url", "http://localhost:11434/api/generate")
+    api_key = llm_config.get("api_key", "")
+    timeout = llm_config.get("timeout", 120)
+    
+    headers = {"Content-Type": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    
+    system_prompt = (
+        "You are a SPECTRE OSINT Specialist. "
+        "Generate a list of 10 effective Google Dorks for the given target domain "
+        "to find leaked documents, exposed .env files, git repositories, or sensitive logs. "
+        "Your output must be a JSON object with a 'dorks' array of strings."
+    )
+    
+    full_prompt = f"{system_prompt}\n\nTARGET: {target}"
+    
+    payload = {
+        "model": model,
+        "prompt": full_prompt,
+        "stream": False,
+        "format": "json"
+    }
+
+    try:
+        resp = session.post(
+            api_url,
+            json=payload,
+            headers=headers,
+            timeout=timeout
+        )
+        resp.raise_for_status()
+        
+        response_json = resp.json()
+        raw_response = response_json.get("response", "")
+        
+        extracted = extract_json(raw_response)
+        if extracted:
+            return extracted
+        
+        return {"dorks": [d.strip() for d in raw_response.split('\n') if ':' in d]}
+
+    except Exception as e:
+        return {"error": str(e)}
