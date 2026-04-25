@@ -1,9 +1,13 @@
 package agent
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 
+	"github.com/spectre/spectre/internal/analyzer"
 	"github.com/spectre/spectre/internal/collector"
 	"github.com/spectre/spectre/internal/storage"
 )
@@ -208,6 +212,61 @@ var Registry = map[string]Tool{
 			// Implementation would use storage or direct file access
 			// For brevity, assuming we have a way to get the path
 			return fmt.Sprintf("Full content of %s requested. (Implementation pending file path resolution)", filename), nil
+		},
+	},
+
+	"analyze_image": {
+		Name:        "analyze_image",
+		Description: "Perform visual analysis on an image file (e.g., screenshots) to extract text, logos, or descriptions using a local vision model.",
+		Parameters: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"filename": map[string]interface{}{
+					"type":        "string",
+					"description": "The name of the image file to analyze (must be in evidence_storage/<case_id>/).",
+				},
+				"prompt": map[string]interface{}{
+					"type":        "string",
+					"description": "Specific instructions or questions about the image (e.g., 'What text is visible?').",
+				},
+			},
+			"required": []string{"filename"},
+		},
+		Execute: func(caseID string, args map[string]interface{}) (string, error) {
+			filename, _ := args["filename"].(string)
+			prompt, ok := args["prompt"].(string)
+			if !ok {
+				prompt = "Describe this image in detail. Focus on text, logos, or identifying features."
+			}
+
+			filePath := fmt.Sprintf("evidence_storage/%s/%s", caseID, filename)
+			imgData, err := os.ReadFile(filePath)
+			if err != nil {
+				return "", fmt.Errorf("failed to read image file: %w", err)
+			}
+
+			base64Str := base64.StdEncoding.EncodeToString(imgData)
+
+			req := analyzer.Request{
+				Task:    "vision",
+				CaseID:  caseID,
+				Data:    prompt,
+				Context: base64Str,
+			}
+
+			output, err := analyzer.RunPythonTask(req)
+			if err != nil {
+				return "", fmt.Errorf("vision analysis failed: %w", err)
+			}
+
+			var resp struct {
+				Answer string `json:"answer"`
+			}
+			if err := json.Unmarshal([]byte(output), &resp); err != nil {
+				return "", fmt.Errorf("failed to parse vision response: %w", err)
+			}
+
+			return resp.Answer, nil
 		},
 	},
 }

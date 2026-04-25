@@ -21,3 +21,5 @@ This file tracks all major tracks for the project. Completed tracks are listed b
 - [x] **Track: Advanced Active Reconnaissance (Social & Visual)**
 - [x] **Track: Ecosystem Growth & Scale**
 - [x] **Track: V2 Intelligence Brain (Autonomous Reasoning & Search)**
+- [x] **Track: V2 Live Visualization Dashboard**
+- [x] **Track: V2 Ghost Edge (Operational Security)**
