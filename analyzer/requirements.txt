@@ -6,3 +6,5 @@ requests
 jinja2
 pytest
 responses
+chromadb
+sentence-transformers

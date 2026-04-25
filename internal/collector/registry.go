@@ -144,5 +144,12 @@ func RunAndSave(name string, caseID string, target string, activeAllowed bool, o
 		}
 	}
 
+	// Trigger Vector Re-indexing (Autonomous Brain)
+	go func() {
+		if err := analyzer.IndexEvidence(caseID); err != nil {
+			log.Warn().Err(err).Msg("failed to re-index evidence vector store")
+		}
+	}()
+
 	return evidenceList, nil
 }

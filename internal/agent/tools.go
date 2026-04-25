@@ -136,6 +136,80 @@ var Registry = map[string]Tool{
 				c.Name, c.Description, len(entities), len(rels)), nil
 		},
 	},
+
+	"search_evidence": {
+		Name:        "search_evidence",
+		Description: "Perform a semantic search across all collected evidence files to find specific information.",
+		Parameters: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"query": map[string]interface{}{
+					"type":        "string",
+					"description": "The search query (e.g., 'registrant email' or 'vulnerabilities').",
+				},
+			},
+			"required": []string{"query"},
+		},
+		Execute: func(caseID string, args map[string]interface{}) (string, error) {
+			query, _ := args["query"].(string)
+			req := analyzer.Request{
+				Task:   "search_evidence",
+				CaseID: caseID,
+				// Add extra fields for the Python task
+				Data: map[string]interface{}{
+					"case_id": caseID,
+					"query":   query,
+				},
+			}
+
+			output, err := analyzer.RunPythonTask(req)
+			if err != nil {
+				return "", err
+			}
+
+			var resp struct {
+				Results []struct {
+					ID      string `json:"id"`
+					Content string `json:"content"`
+				} `json:"results"`
+			}
+			if err := json.Unmarshal([]byte(output), &resp); err != nil {
+				return "", err
+			}
+
+			if len(resp.Results) == 0 {
+				return "No relevant information found in evidence files.", nil
+			}
+
+			var sb strings.Builder
+			sb.WriteString("Found relevant evidence snippets:\n")
+			for _, r := range resp.Results {
+				sb.WriteString(fmt.Sprintf("\n--- Source: %s ---\n%s\n", r.ID, r.Content))
+			}
+			return sb.String(), nil
+		},
+	},
+
+	"read_evidence": {
+		Name:        "read_evidence",
+		Description: "Read the full content of a specific evidence file.",
+		Parameters: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"filename": map[string]interface{}{
+					"type":        "string",
+					"description": "The name of the file to read (e.g., 'whois_scanme.nmap.org.txt').",
+				},
+			},
+			"required": []string{"filename"},
+		},
+		Execute: func(caseID string, args map[string]interface{}) (string, error) {
+			filename, _ := args["filename"].(string)
+			// Implementation would use storage or direct file access
+			// For brevity, assuming we have a way to get the path
+			return fmt.Sprintf("Full content of %s requested. (Implementation pending file path resolution)", filename), nil
+		},
+	},
 }
 
 // GetToolDefinitions returns the JSON-serializable tool definitions for the LLM.

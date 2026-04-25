@@ -70,6 +70,35 @@ type LLMConfig struct {
 	Timeout  int    `json:"timeout"`
 }
 
+// IndexEvidence triggers the Python analyzer to index all evidence files for a case.
+func IndexEvidence(caseID string) error {
+	// List files in evidence_storage/<caseID>
+	evidenceDir := fmt.Sprintf("evidence_storage/%s", caseID)
+	files, err := os.ReadDir(evidenceDir)
+	if err != nil {
+		return fmt.Errorf("failed to read evidence directory: %w", err)
+	}
+
+	var filePaths []string
+	for _, f := range files {
+		if !f.IsDir() {
+			filePaths = append(filePaths, fmt.Sprintf("%s/%s", evidenceDir, f.Name()))
+		}
+	}
+
+	req := Request{
+		Task:   "index_evidence",
+		CaseID: caseID,
+		Data: map[string]interface{}{
+			"case_id": caseID,
+			"files":   filePaths,
+		},
+	}
+
+	_, err = RunPythonTask(req)
+	return err
+}
+
 // RunPythonTask executes the Python analyzer as a subprocess with a strict
 // timeout and JSON-over-CLI contract.
 //

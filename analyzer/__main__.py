@@ -3,10 +3,11 @@ import sys
 import argparse
 from .llm import analyze_case, chat, query_case, analyze_image
 from .graph_viz import generate_visual_report
+from .vector_store import index_evidence, search_evidence
 
 def main():
     parser = argparse.ArgumentParser(description="SPECTRE Analyzer (Python)")
-    parser.add_argument("--task", choices=["synthesize", "visualize", "chat", "query", "vision"], required=True)
+    parser.add_argument("--task", choices=["synthesize", "visualize", "chat", "query", "vision", "index_evidence", "search_evidence"], required=True)
     parser.add_argument("--input", help="JSON input data", required=True)
     
     args = parser.parse_args()
@@ -30,6 +31,17 @@ def main():
             # Extract the actual graph data payload
             graph_data = input_data.get("data", {})
             result = generate_visual_report(graph_data)
+            print(json.dumps(result))
+        elif args.task == "index_evidence":
+            case_id = input_data.get("case_id")
+            files = input_data.get("files", [])
+            result = index_evidence(case_id, files)
+            print(json.dumps(result))
+        elif args.task == "search_evidence":
+            case_id = input_data.get("case_id")
+            query = input_data.get("query")
+            n_results = input_data.get("n_results", 3)
+            result = search_evidence(case_id, query, n_results)
             print(json.dumps(result))
             
     except Exception as e:

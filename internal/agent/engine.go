@@ -8,6 +8,23 @@ import (
 	"github.com/spf13/viper"
 )
 
+const AgentPersona = `You are the SPECTRE Autonomous Intelligence Agent. 
+Your goal is to assist in OSINT (Open Source Intelligence) investigations.
+You have access to a variety of tools to collect data, search entities, and analyze evidence.
+
+Guidelines:
+1. Be methodical. Plan your steps before executing them.
+2. If you find a new lead (e.g., an email in WHOIS), follow it using relevant collectors.
+3. Use 'search_evidence' to look for specific details within the files you've collected.
+4. When you have enough information or have reached a dead end, summarize your findings clearly.
+5. Always maintain operational security and follow ethical guidelines.
+
+Respond in a structured way:
+Thought: <Your reasoning about the current state>
+Plan: <What you intend to do next>
+Tool: <If calling a tool, specify the tool name and arguments>
+`
+
 // Engine manages the state and execution loop of the SPECTRE Agent.
 type Engine struct {
 	CaseID  string
@@ -18,27 +35,22 @@ type Engine struct {
 // NewEngine initializes a new agent engine for a specific case.
 func NewEngine(caseID string) *Engine {
 	return &Engine{
-		CaseID:  caseID,
-		History: []analyzer.Message{},
-		Tools:   GetToolDefinitions(),
+		CaseID: caseID,
+		History: []analyzer.Message{
+			{Role: "system", Content: AgentPersona},
+		},
+		Tools: GetToolDefinitions(),
 	}
 }
 
 // Execute runs a bounded tool-use loop for agent chat.
-//
-// The loop alternates between LLM turns and tool execution until either:
-//   - the model returns a final response with no tool request, or
-//   - the iteration limit is reached to prevent runaway tool recursion.
-//
-// Tool output is appended as system context, allowing follow-up model turns to
-// reason over action results without mutating prior user/assistant messages.
 func (e *Engine) Execute(userInput string) (string, error) {
 	e.History = append(e.History, analyzer.Message{
 		Role:    "user",
 		Content: userInput,
 	})
 
-	for i := 0; i < 5; i++ { // Limit iterations to prevent infinite loops
+	for i := 0; i < 8; i++ { // Increased iteration limit for autonomous loops
 		req := analyzer.Request{
 			Task:     "chat",
 			CaseID:   e.CaseID,
@@ -96,6 +108,7 @@ func (e *Engine) Execute(userInput string) (string, error) {
 			continue
 		}
 
+		fmt.Printf("[Agent] Executing tool: %s...\n", resp.ToolUse.Name)
 		result, err := tool.Execute(e.CaseID, resp.ToolUse.Arguments)
 		if err != nil {
 			result = fmt.Sprintf("Error executing tool '%s': %v", resp.ToolUse.Name, err)
@@ -104,11 +117,11 @@ func (e *Engine) Execute(userInput string) (string, error) {
 		// Add tool result to history
 		e.History = append(e.History, analyzer.Message{
 			Role:    "system",
-			Content: fmt.Sprintf("Tool '%s' result: %s", resp.ToolUse.Name, result),
+			Content: fmt.Sprintf("Observation from '%s': %s", resp.ToolUse.Name, result),
 		})
 
 		// Loop continues to let LLM process the tool result
 	}
 
-	return "", fmt.Errorf("agent reached maximum iteration limit (5) without finishing")
+	return "Agent reached maximum iteration limit without finishing the task.", nil
 }
