@@ -72,7 +72,7 @@ func (e *Engine) Execute(userInput string) (string, error) {
 			req.LLMConfig.URL = "http://localhost:11434/api/chat"
 		}
 
-		output, err := analyzer.RunPythonTask(req)
+		output, err := analyzer.GlobalTaskRunner.Run(req)
 		if err != nil {
 			return "", fmt.Errorf("llm error: %w", err)
 		}
@@ -108,7 +108,9 @@ func (e *Engine) Execute(userInput string) (string, error) {
 			continue
 		}
 
-		fmt.Printf("[Agent] Executing tool: %s...\n", resp.ToolUse.Name)
+		fmt.Printf("\n[Agent] Decision: %s\n", resp.Content)
+		fmt.Printf("[Agent] Action: Running tool '%s' with arguments: %v\n", resp.ToolUse.Name, resp.ToolUse.Arguments)
+		
 		result, err := tool.Execute(e.CaseID, resp.ToolUse.Arguments)
 		if err != nil {
 			result = fmt.Sprintf("Error executing tool '%s': %v", resp.ToolUse.Name, err)

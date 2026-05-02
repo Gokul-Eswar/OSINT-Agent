@@ -166,7 +166,7 @@ var Registry = map[string]Tool{
 				},
 			}
 
-			output, err := analyzer.RunPythonTask(req)
+			output, err := analyzer.GlobalTaskRunner.Run(req)
 			if err != nil {
 				return "", err
 			}
@@ -209,9 +209,25 @@ var Registry = map[string]Tool{
 		},
 		Execute: func(caseID string, args map[string]interface{}) (string, error) {
 			filename, _ := args["filename"].(string)
-			// Implementation would use storage or direct file access
-			// For brevity, assuming we have a way to get the path
-			return fmt.Sprintf("Full content of %s requested. (Implementation pending file path resolution)", filename), nil
+			
+			// Basic path traversal protection
+			if strings.Contains(filename, "..") || strings.Contains(filename, "/") || strings.Contains(filename, "\\") {
+				return "", fmt.Errorf("invalid filename: path traversal attempt detected")
+			}
+
+			filePath := fmt.Sprintf("evidence_storage/%s/%s", caseID, filename)
+			data, err := os.ReadFile(filePath)
+			if err != nil {
+				return "", fmt.Errorf("failed to read evidence file '%s': %w", filename, err)
+			}
+
+			content := string(data)
+			// Truncate if excessively large to protect LLM context window
+			if len(content) > 15000 {
+				content = content[:15000] + "\n\n[... content truncated for brevity ...]"
+			}
+
+			return fmt.Sprintf("--- Content of %s ---\n%s", filename, content), nil
 		},
 	},
 
@@ -254,7 +270,7 @@ var Registry = map[string]Tool{
 				Context: base64Str,
 			}
 
-			output, err := analyzer.RunPythonTask(req)
+			output, err := analyzer.GlobalTaskRunner.Run(req)
 			if err != nil {
 				return "", fmt.Errorf("vision analysis failed: %w", err)
 			}
@@ -292,7 +308,7 @@ var Registry = map[string]Tool{
 				Data:   target,
 			}
 
-			output, err := analyzer.RunPythonTask(req)
+			output, err := analyzer.GlobalTaskRunner.Run(req)
 			if err != nil {
 				return "", fmt.Errorf("dork generation failed: %w", err)
 			}

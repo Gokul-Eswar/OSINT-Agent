@@ -47,7 +47,7 @@ var visualizeCmd = &cobra.Command{
 			Data:     data,
 		}
 
-		responseJSON, err := analyzer.RunPythonTask(req)
+		responseJSON, err := analyzer.GlobalTaskRunner.Run(req)
 		if err != nil {
 			return fmt.Errorf("visualization failed: %w", err)
 		}

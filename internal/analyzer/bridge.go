@@ -95,9 +95,24 @@ func IndexEvidence(caseID string) error {
 		},
 	}
 
-	_, err = RunPythonTask(req)
+	_, err = GlobalTaskRunner.Run(req)
 	return err
 }
+
+// TaskRunner defines the interface for executing analysis tasks.
+type TaskRunner interface {
+	Run(req Request) (string, error)
+}
+
+// DefaultTaskRunner is the standard implementation that spawns Python subprocesses.
+type DefaultTaskRunner struct{}
+
+func (d *DefaultTaskRunner) Run(req Request) (string, error) {
+	return RunPythonTask(req)
+}
+
+// GlobalTaskRunner is used by the application and can be replaced in tests.
+var GlobalTaskRunner TaskRunner = &DefaultTaskRunner{}
 
 // RunPythonTask executes the Python analyzer as a subprocess with a strict
 // timeout and JSON-over-CLI contract.
@@ -144,29 +159,41 @@ func RunPythonTask(req Request) (string, error) {
 	cmd.Stderr = &stderr
 
 	err = cmd.Run()
+	output := stdout.String()
+	stderrStr := stderr.String()
+
 	if err != nil {
 		if ctx.Err() == context.DeadlineExceeded {
 			log.Error().Err(err).Str("task", req.Task).Msg("python_task_timeout")
 			return "", fmt.Errorf("python analysis timed out after 3 minutes")
 		}
 
-		// Try to parse error from stdout if stderr is empty (some python errors might go there)
+		// Try to parse structured error from stdout
 		var errResp struct {
 			Error string `json:"error"`
 		}
 		if json.Unmarshal(stdout.Bytes(), &errResp) == nil && errResp.Error != "" {
-			log.Error().Str("error", errResp.Error).Str("task", req.Task).Msg("python_task_failed")
-			return "", fmt.Errorf("python execution failed: %s", errResp.Error)
+			return "", fmt.Errorf("python task '%s' failed: %s", req.Task, errResp.Error)
 		}
 
-		log.Error().
-			Err(err).
-			Str("task", req.Task).
-			Str("stderr", stderr.String()).
-			Msg("python_task_execution_error")
-		return "", fmt.Errorf("python execution failed: %w\nStderr: %s", err, stderr.String())
+		// Fallback to stderr for unhandled Python exceptions
+		if stderrStr != "" {
+			return "", fmt.Errorf("python execution error: %s", stderrStr)
+		}
+
+		return "", fmt.Errorf("python execution failed: %w", err)
+	}
+
+	if output == "" {
+		return "", fmt.Errorf("python task '%s' returned empty output", req.Task)
+	}
+
+	// Ensure output is valid JSON as per the contract
+	if !json.Valid(stdout.Bytes()) {
+		log.Error().Str("task", req.Task).Str("output", output).Msg("invalid_json_from_python")
+		return "", fmt.Errorf("python task '%s' returned invalid JSON", req.Task)
 	}
 
 	log.Debug().Str("task", req.Task).Msg("python_task_completed")
-	return stdout.String(), nil
+	return output, nil
 }

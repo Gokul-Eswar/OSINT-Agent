@@ -105,3 +105,46 @@ func TestGetEntityByValue(t *testing.T) {
 		t.Errorf("expected nil for non-existent value, got %v", retrieved)
 	}
 }
+
+func TestEnsureEntity(t *testing.T) {
+	db, err := sql.Open("sqlite3", ":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	oldDB := DB
+	DB = db
+	defer func() { DB = oldDB }()
+
+	if err := Migrate(); err != nil {
+		t.Fatal(err)
+	}
+
+	c1 := &core.Case{ID: "case-1", Name: "Case 1"}
+	CreateCase(c1)
+
+	// 1. Create new entity via EnsureEntity
+	ent1, err := EnsureEntity("case-1", "ip", "1.1.1.1", "test")
+	if err != nil {
+		t.Fatalf("EnsureEntity failed on first call: %v", err)
+	}
+	if ent1 == nil {
+		t.Fatal("Expected entity, got nil")
+	}
+	if ent1.Value != "1.1.1.1" {
+		t.Errorf("Expected value 1.1.1.1, got %s", ent1.Value)
+	}
+
+	// 2. Call again with same value, should return existing
+	ent2, err := EnsureEntity("case-1", "ip", "1.1.1.1", "test2")
+	if err != nil {
+		t.Fatalf("EnsureEntity failed on second call: %v", err)
+	}
+	if ent2 == nil {
+		t.Fatal("Expected entity on second call, got nil")
+	}
+	if ent2.ID != ent1.ID {
+		t.Errorf("Expected same ID, got %s vs %s", ent1.ID, ent2.ID)
+	}
+}

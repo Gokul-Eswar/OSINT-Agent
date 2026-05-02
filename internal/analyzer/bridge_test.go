@@ -64,7 +64,7 @@ func TestRunPythonTaskBinaryCheck(t *testing.T) {
 		CaseID: "test",
 	}
 
-	_, err = RunPythonTask(req)
+	_, err = GlobalTaskRunner.Run(req)
 	if err == nil {
 		t.Error("Expected error for invalid task, got nil")
 	}

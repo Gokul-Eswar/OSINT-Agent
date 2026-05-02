@@ -57,7 +57,7 @@ func QueryCase(caseID string, model string, question string) (string, error) {
 	}
 
 	// 4. Run Task
-	responseJSON, err := analyzer.RunPythonTask(req)
+	responseJSON, err := analyzer.GlobalTaskRunner.Run(req)
 	if err != nil {
 		return "", fmt.Errorf("query failed: %w", err)
 	}
@@ -106,7 +106,7 @@ func AnalyzeImage(imagePath string, prompt string, model string) (string, error)
 		},
 	}
 
-	responseJSON, err := analyzer.RunPythonTask(req)
+	responseJSON, err := analyzer.GlobalTaskRunner.Run(req)
 	if err != nil {
 		return "", fmt.Errorf("visual analysis failed: %w", err)
 	}
@@ -186,7 +186,7 @@ func AnalyzeCase(caseID string, model string) (*core.Analysis, error) {
 	}
 
 	// 4. Run Python Analyzer
-	responseJSON, err := analyzer.RunPythonTask(req)
+	responseJSON, err := analyzer.GlobalTaskRunner.Run(req)
 	if err != nil {
 		log.Error().Err(err).Str("case_id", caseID).Msg("python analyzer task failed")
 		return nil, fmt.Errorf("python analysis failed: %w", err)

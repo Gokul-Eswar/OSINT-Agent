@@ -62,16 +62,18 @@ The agent can run collectors, search entities, and provide summaries of your cas
 				continue
 			}
 
-			fmt.Print("Agent is thinking...")
+			fmt.Print("[*] Agent is thinking...")
 			response, err := engine.Execute(input)
-			fmt.Print("\r                      \r") // Clear thinking line
+			fmt.Print("\r                          \r") // Clear thinking line
 
 			if err != nil {
-				fmt.Printf("\nError: %v\n", err)
+				fmt.Printf("\n[!] Error: %v\n", err)
 				continue
 			}
 
-			fmt.Printf("Agent > %s\n\n", response)
+			if response != "" {
+				fmt.Printf("\nAgent > %s\n\n", response)
+			}
 		}
 
 		fmt.Println("Session ended.")

@@ -12,7 +12,7 @@ def main():
     messages = input_data.get("messages", [])
     
     # Check if we just received a tool result
-    if messages and messages[-1]["role"] == "system" and "Tool 'collect' result" in messages[-1]["content"]:
+    if messages and messages[-1]["role"] == "system" and "Observation from 'collect'" in messages[-1]["content"]:
         print(json.dumps({
             "role": "assistant",
             "content": "I have finished the DNS collection for google.com. It was successful."

@@ -56,30 +56,24 @@ func ingestSocial(ev *core.Evidence) error {
 	}
 
 	// Ensure username entity exists
-	userEnt, _ := GetEntityByValue(ev.CaseID, username)
-	if userEnt == nil {
-		userEnt = &core.Entity{CaseID: ev.CaseID, Type: "username", Value: username, Source: "social"}
-		CreateEntity(userEnt)
+	userEnt, err := EnsureEntity(ev.CaseID, "username", username, "social")
+	if err != nil {
+		return err
 	}
 
 	for _, res := range results {
 		// Create site entity
-		siteEnt := &core.Entity{
-			CaseID: ev.CaseID,
-			Type:   "account",
-			Value:  res.URL,
-			Source: "social",
-			Metadata: map[string]interface{}{
-				"platform": res.Site,
-			},
+		siteEnt, err := EnsureEntity(ev.CaseID, "account", res.URL, "social")
+		if err != nil {
+			return err
 		}
 
-		existing, _ := GetEntityByValue(ev.CaseID, res.URL)
-		if existing == nil {
-			CreateEntity(siteEnt)
-		} else {
-			siteEnt = existing
+		// Update metadata if it's a new entity or we want to ensure it has platform info
+		if siteEnt.Metadata == nil {
+			siteEnt.Metadata = make(map[string]interface{})
 		}
+		siteEnt.Metadata["platform"] = res.Site
+		UpdateEntity(siteEnt)
 
 		// Link Username -> has_account -> Site
 		rel := &core.Relationship{
@@ -103,15 +97,13 @@ func ingestScreenshot(ev *core.Evidence) error {
 	target := ev.Metadata["target"].(string)
 
 	// Ensure target entity exists (usually a domain or IP)
-	targetEnt, _ := GetEntityByValue(ev.CaseID, target)
-	if targetEnt == nil {
-		// Try to guess type
-		entityType := "domain"
-		if len(target) > 0 && (target[0] >= '0' && target[0] <= '9') {
-			entityType = "ip"
-		}
-		targetEnt = &core.Entity{CaseID: ev.CaseID, Type: entityType, Value: target, Source: "screenshot"}
-		CreateEntity(targetEnt)
+	entityType := "domain"
+	if len(target) > 0 && (target[0] >= '0' && target[0] <= '9') {
+		entityType = "ip"
+	}
+	targetEnt, err := EnsureEntity(ev.CaseID, entityType, target, "screenshot")
+	if err != nil {
+		return err
 	}
 
 	// Link target to the screenshot evidence
@@ -147,27 +139,17 @@ func ingestPorts(ev *core.Evidence) error {
 	}
 
 	// Ensure IP entity exists
-	ipEnt, _ := GetEntityByValue(ev.CaseID, targetIP)
-	if ipEnt == nil {
-		ipEnt = &core.Entity{CaseID: ev.CaseID, Type: "ip", Value: targetIP, Source: "ports"}
-		CreateEntity(ipEnt)
+	ipEnt, err := EnsureEntity(ev.CaseID, "ip", targetIP, "ports")
+	if err != nil {
+		return err
 	}
 
 	for port, status := range results {
 		if status == "open" {
 			svcName := fmt.Sprintf("TCP/%s", port)
-			svcEnt := &core.Entity{
-				CaseID: ev.CaseID,
-				Type:   "service",
-				Value:  svcName,
-				Source: "ports",
-			}
-
-			existing, _ := GetEntityByValue(ev.CaseID, svcName)
-			if existing == nil {
-				CreateEntity(svcEnt)
-			} else {
-				svcEnt = existing
+			svcEnt, err := EnsureEntity(ev.CaseID, "service", svcName, "ports")
+			if err != nil {
+				return err
 			}
 
 			// Link IP -> has -> Service
@@ -194,25 +176,15 @@ func ingestHTTP(ev *core.Evidence) error {
 	}
 
 	// Ensure target entity exists
-	targetEnt, _ := GetEntityByValue(ev.CaseID, target)
-	if targetEnt == nil {
-		targetEnt = &core.Entity{CaseID: ev.CaseID, Type: "domain", Value: target, Source: "http"}
-		CreateEntity(targetEnt)
+	targetEnt, err := EnsureEntity(ev.CaseID, "domain", target, "http")
+	if err != nil {
+		return err
 	}
 
 	if server != "" {
-		svcEnt := &core.Entity{
-			CaseID: ev.CaseID,
-			Type:   "service",
-			Value:  server,
-			Source: "http",
-		}
-
-		existing, _ := GetEntityByValue(ev.CaseID, server)
-		if existing == nil {
-			CreateEntity(svcEnt)
-		} else {
-			svcEnt = existing
+		svcEnt, err := EnsureEntity(ev.CaseID, "service", server, "http")
+		if err != nil {
+			return err
 		}
 
 		// Link Target -> runs -> Service
@@ -306,27 +278,15 @@ func ingestGitHub(ev *core.Evidence) error {
 
 	for _, item := range results.Items {
 		// Create Repo entity
-		repoEnt := &core.Entity{
-			CaseID: ev.CaseID,
-			Type:   "repo",
-			Value:  item.HTMLURL,
-			Source: "github",
+		repoEnt, err := EnsureEntity(ev.CaseID, "repo", item.HTMLURL, "github")
+		if err != nil {
+			return err
 		}
-		CreateEntity(repoEnt)
 
 		// Create User entity
-		userEnt := &core.Entity{
-			CaseID: ev.CaseID,
-			Type:   "username",
-			Value:  item.Owner.Login,
-			Source: "github",
-		}
-
-		existingUser, _ := GetEntityByValue(ev.CaseID, item.Owner.Login)
-		if existingUser == nil {
-			CreateEntity(userEnt)
-		} else {
-			userEnt = existingUser
+		userEnt, err := EnsureEntity(ev.CaseID, "username", item.Owner.Login, "github")
+		if err != nil {
+			return err
 		}
 
 		// Link User -> owns -> Repo
@@ -350,35 +310,16 @@ func ingestWHOIS(ev *core.Evidence) error {
 	targetDomain := ev.Metadata["target"].(string)
 
 	// Ensure domain entity exists
-	domainEnt, _ := GetEntityByValue(ev.CaseID, targetDomain)
-	if domainEnt == nil {
-		domainEnt = &core.Entity{
-			CaseID: ev.CaseID,
-			Type:   "domain",
-			Value:  targetDomain,
-			Source: "whois",
-		}
-		if err := CreateEntity(domainEnt); err != nil {
-			return err
-		}
+	domainEnt, err := EnsureEntity(ev.CaseID, "domain", targetDomain, "whois")
+	if err != nil {
+		return err
 	}
 
 	// If we have a registrant email, create it and link it
 	if email, ok := ev.Metadata["registrant_email"].(string); ok && email != "" {
-		emailEnt := &core.Entity{
-			CaseID: ev.CaseID,
-			Type:   "email",
-			Value:  email,
-			Source: "whois",
-		}
-
-		existingEmail, _ := GetEntityByValue(ev.CaseID, email)
-		if existingEmail == nil {
-			if err := CreateEntity(emailEnt); err != nil {
-				return err
-			}
-		} else {
-			emailEnt = existingEmail
+		emailEnt, err := EnsureEntity(ev.CaseID, "email", email, "whois")
+		if err != nil {
+			return err
 		}
 
 		// Link Domain -> owns -> Email (or registered_by)
@@ -423,39 +364,16 @@ func ingestDNS(ev *core.Evidence) error {
 	targetDomain := ev.Metadata["target"].(string)
 
 	// Ensure target domain entity exists
-	domainEnt := &core.Entity{
-		CaseID: ev.CaseID,
-		Type:   "domain",
-		Value:  targetDomain,
-		Source: "dns",
-	}
-
-	// Check if already exists to avoid errors (or use GetEntityByValue)
-	existing, _ := GetEntityByValue(ev.CaseID, targetDomain)
-	if existing == nil {
-		if err := CreateEntity(domainEnt); err != nil {
-			return err
-		}
-	} else {
-		domainEnt = existing
+	domainEnt, err := EnsureEntity(ev.CaseID, "domain", targetDomain, "dns")
+	if err != nil {
+		return err
 	}
 
 	// Process A records
 	for _, ip := range results["A"] {
-		ipEnt := &core.Entity{
-			CaseID: ev.CaseID,
-			Type:   "ip",
-			Value:  ip,
-			Source: "dns",
-		}
-
-		existingIP, _ := GetEntityByValue(ev.CaseID, ip)
-		if existingIP == nil {
-			if err := CreateEntity(ipEnt); err != nil {
-				return err
-			}
-		} else {
-			ipEnt = existingIP
+		ipEnt, err := EnsureEntity(ev.CaseID, "ip", ip, "dns")
+		if err != nil {
+			return err
 		}
 
 		// Create relationship
