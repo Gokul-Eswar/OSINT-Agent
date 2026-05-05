@@ -51,3 +51,24 @@ func TestCreateAndGetCase(t *testing.T) {
 		t.Errorf("expected name %s, got %s", testCase.Name, retrieved.Name)
 	}
 }
+
+func TestListCases(t *testing.T) {
+	db, _ := sql.Open("sqlite3", ":memory:")
+	defer db.Close()
+	oldDB := DB
+	DB = db
+	defer func() { DB = oldDB }()
+	Migrate()
+
+	CreateCase(&core.Case{ID: "c1", Name: "Case 1"})
+	CreateCase(&core.Case{ID: "c2", Name: "Case 2"})
+
+	cases, err := ListCases()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(cases) != 2 {
+		t.Errorf("expected 2 cases, got %d", len(cases))
+	}
+}

@@ -26,6 +26,79 @@ func (m *mockCollector) Collect(caseID string, target string, options map[string
 	}, nil
 }
 
+func TestRegistry_RegisterDuplicate(t *testing.T) {
+	r := NewRegistry()
+	c := &mockCollector{}
+	if err := r.Register(c); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.Register(c); err == nil {
+		t.Error("expected error when registering duplicate collector")
+	}
+}
+
+func TestRegistry_Get(t *testing.T) {
+	r := NewRegistry()
+	c := &mockCollector{}
+	r.Register(c)
+
+	got, err := r.Get("mock")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Name() != "mock" {
+		t.Errorf("got %s, want mock", got.Name())
+	}
+
+	_, err = r.Get("nonexistent")
+	if err == nil {
+		t.Error("expected error when getting nonexistent collector")
+	}
+}
+
+func TestRegistry_List(t *testing.T) {
+	r := NewRegistry()
+	c := &mockCollector{}
+	r.Register(c)
+
+	list := r.List()
+	if len(list) != 1 {
+		t.Errorf("expected 1 collector, got %d", len(list))
+	}
+}
+
+func TestRun_ActiveConsent(t *testing.T) {
+	r := NewRegistry()
+	active := &activeMockCollector{}
+	r.Register(active)
+
+	// Save the old global registry and restore it after
+	oldRegistry := globalRegistry
+	globalRegistry = r
+	defer func() { globalRegistry = oldRegistry }()
+
+	// Try to run active collector without consent
+	_, err := Run("active_mock", "case-1", "example.com", false, nil)
+	if err == nil {
+		t.Error("expected error when running active collector without consent")
+	}
+
+	// Run with consent
+	_, err = Run("active_mock", "case-1", "example.com", true, nil)
+	if err != nil {
+		t.Fatalf("Run failed with consent: %v", err)
+	}
+}
+
+type activeMockCollector struct{}
+
+func (m *activeMockCollector) Name() string        { return "active_mock" }
+func (m *activeMockCollector) Description() string { return "Active Mock" }
+func (m *activeMockCollector) IsActive() bool      { return true }
+func (m *activeMockCollector) Collect(caseID string, target string, options map[string]interface{}) ([]core.Evidence, error) {
+	return []core.Evidence{}, nil
+}
+
 func TestRunAndSave(t *testing.T) {
 	// Setup DB
 	db, err := sql.Open("sqlite3", ":memory:")

@@ -74,4 +74,11 @@ func TestCLICommands(t *testing.T) {
 			t.Error("case was not found in database")
 		}
 	})
+
+	t.Run("VersionCommand", func(t *testing.T) {
+		rootCmd.SetArgs([]string{"version"})
+		if err := rootCmd.Execute(); err != nil {
+			t.Fatalf("version command failed: %v", err)
+		}
+	})
 }
