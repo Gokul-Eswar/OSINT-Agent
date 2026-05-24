@@ -94,6 +94,13 @@ func Start(port int) error {
 		})
 	}
 
+	storage.OnLeadCreated = func(l *core.IntelligenceLead) {
+		Broadcast(map[string]interface{}{
+			"type": "lead_created",
+			"data": l,
+		})
+	}
+
 	fmt.Printf("SPECTRE API Server starting on 127.0.0.1:%d...\n", port)
 	return http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", port), mux)
 }

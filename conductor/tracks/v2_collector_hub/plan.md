@@ -11,5 +11,5 @@
 - [x] Create a library of dork templates (Cloud buckets, Git leaks, DB dumps).
 
 ## Phase 3: Validation
-- [ ] Run the `leak_checker` plugin and verify output.
-- [ ] Ask the agent to "Find potential data leaks for example.com" and verify it generates valid dorks.
+- [x] Run the `leak_checker` plugin and verify output.
+- [x] Ask the agent to "Find potential data leaks for example.com" and verify it generates valid dorks.

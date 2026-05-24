@@ -11,5 +11,5 @@
 - [x] Add `analyze_image` logic to the agent tools in `internal/agent/tools.go`.
 
 ## Phase 3: Validation
-- [ ] Enable `ghost_mode` and confirm that a network request fails when no proxy is running, proving the bypass protection.
-- [ ] Pass an image to the Python analyzer and confirm it returns a text description suitable for vector indexing.
+- [x] Enable `ghost_mode` and confirm that a network request fails when no proxy is running, proving the bypass protection.
+- [x] Pass an image to the Python analyzer and confirm it returns a text description suitable for vector indexing.

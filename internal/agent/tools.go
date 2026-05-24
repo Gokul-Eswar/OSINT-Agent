@@ -9,6 +9,7 @@ import (
 
 	"github.com/spectre/spectre/internal/analyzer"
 	"github.com/spectre/spectre/internal/collector"
+	"github.com/spectre/spectre/internal/core"
 	"github.com/spectre/spectre/internal/storage"
 )
 
@@ -325,6 +326,99 @@ var Registry = map[string]Tool{
 			}
 
 			return "Suggested Google Dorks:\n" + strings.Join(resp.Dorks, "\n"), nil
+		},
+	},
+
+	"update_hypotheses": {
+		Name:        "update_hypotheses",
+		Description: "Record or update an intelligence hypothesis/lead for the current case.",
+		Parameters: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"hypothesis": map[string]interface{}{
+					"type":        "string",
+					"description": "The detailed intelligence hypothesis or lead statement (e.g., 'Target registrant is likely located in Berlin based on whois info').",
+				},
+				"confidence": map[string]interface{}{
+					"type":        "number",
+					"description": "Confidence score between 0.0 and 1.0.",
+				},
+				"evidence_filenames": map[string]interface{}{
+					"type":        "array",
+					"items": map[string]interface{}{
+						"type": "string",
+					},
+					"description": "List of evidence file names supporting this hypothesis.",
+				},
+				"status": map[string]interface{}{
+					"type":        "string",
+					"description": "Current status of the lead: 'active', 'verified', or 'refuted'.",
+				},
+			},
+			"required": []string{"hypothesis"},
+		},
+		Execute: func(caseID string, args map[string]interface{}) (string, error) {
+			hypothesis, ok := args["hypothesis"].(string)
+			if !ok {
+				return "", fmt.Errorf("hypothesis is required")
+			}
+
+			confidence := 0.5
+			if confVal, ok := args["confidence"].(float64); ok {
+				confidence = confVal
+			}
+
+			var filenames []string
+			if fnList, ok := args["evidence_filenames"].([]interface{}); ok {
+				for _, item := range fnList {
+					if fnStr, ok := item.(string); ok {
+						filenames = append(filenames, fnStr)
+					}
+				}
+			}
+
+			status := "active"
+			if statusVal, ok := args["status"].(string); ok {
+				status = statusVal
+			}
+
+			// Resolve evidence file names to DB evidence IDs if possible
+			var evidenceIDs []string
+			if len(filenames) > 0 {
+				allEvidence, err := storage.ListEvidenceByCase(caseID)
+				if err == nil {
+					for _, fn := range filenames {
+						found := false
+						for _, ev := range allEvidence {
+							if strings.HasSuffix(ev.FilePath, fn) || strings.Contains(ev.FilePath, fn) {
+								evidenceIDs = append(evidenceIDs, ev.ID)
+								found = true
+								break
+							}
+						}
+						// If not found in database, just use filename as reference
+						if !found {
+							evidenceIDs = append(evidenceIDs, fn)
+						}
+					}
+				} else {
+					evidenceIDs = filenames
+				}
+			}
+
+			lead := &core.IntelligenceLead{
+				CaseID:      caseID,
+				Hypothesis:  hypothesis,
+				Confidence:  confidence,
+				EvidenceIDs: evidenceIDs,
+				Status:      status,
+			}
+
+			if err := storage.CreateLead(lead); err != nil {
+				return "", err
+			}
+
+			return fmt.Sprintf("Intelligence lead recorded successfully with ID: %s", lead.ID), nil
 		},
 	},
 }

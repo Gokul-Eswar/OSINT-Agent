@@ -2,6 +2,7 @@ package agent
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -49,6 +50,32 @@ func TestFullAgentLoop(t *testing.T) {
 		// Verify history length (User, Assistant/ToolUse, System/ToolResult, Assistant/Final)
 		if len(engine.History) < 4 {
 			t.Errorf("Expected at least 4 messages in history, got %d", len(engine.History))
+		}
+	})
+
+	t.Run("Agent Whois Flag Integration Test", func(t *testing.T) {
+		// 1. Create a dummy WHOIS evidence file with a secret flag
+		evidenceDir := filepath.Join("evidence_storage", caseID)
+		os.MkdirAll(evidenceDir, 0755)
+		defer os.RemoveAll(evidenceDir)
+
+		secretFile := filepath.Join(evidenceDir, "whois_flag.txt")
+		content := "Registrant: John Doe\nFlag: SPECTRE_FLAG_998877\n"
+		if err := os.WriteFile(secretFile, []byte(content), 0644); err != nil {
+			t.Fatalf("Failed to write mock whois flag file: %v", err)
+		}
+
+		// 2. Initialize a fresh engine
+		flagEngine := NewEngine(caseID)
+
+		// 3. Run execution
+		response, err := flagEngine.Execute("Please search WHOIS flag inside evidence files")
+		if err != nil {
+			t.Fatalf("Agent WHOIS flag loop failed: %v", err)
+		}
+
+		if !strings.Contains(response, "SPECTRE_FLAG_998877") {
+			t.Errorf("Expected response to contain 'SPECTRE_FLAG_998877', got: %s", response)
 		}
 	})
 }

@@ -70,4 +70,36 @@ func TestAgentToolIntegration(t *testing.T) {
 			t.Errorf("expected summary to contain case name, got: %s", res)
 		}
 	})
+
+	t.Run("update_hypotheses execution", func(t *testing.T) {
+		tool := Registry["update_hypotheses"]
+		args := map[string]interface{}{
+			"hypothesis": "Whois indicates the server host is located in the US.",
+			"confidence": 0.75,
+			"evidence_filenames": []interface{}{"whois_result.txt"},
+			"status": "active",
+		}
+		res, err := tool.Execute(caseID, args)
+		if err != nil {
+			t.Fatalf("update_hypotheses failed: %v", err)
+		}
+		if !strings.Contains(res, "recorded successfully") {
+			t.Errorf("expected output to contain 'recorded successfully', got: %s", res)
+		}
+
+		// Verify database
+		leads, err := storage.ListLeadsByCase(caseID)
+		if err != nil {
+			t.Fatalf("ListLeadsByCase failed: %v", err)
+		}
+		if len(leads) != 1 {
+			t.Fatalf("expected 1 lead, got %d", len(leads))
+		}
+		if leads[0].Hypothesis != "Whois indicates the server host is located in the US." {
+			t.Errorf("expected hypothesis to match, got: %s", leads[0].Hypothesis)
+		}
+		if leads[0].Confidence != 0.75 {
+			t.Errorf("expected confidence 0.75, got %f", leads[0].Confidence)
+		}
+	})
 }

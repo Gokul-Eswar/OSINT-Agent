@@ -11,8 +11,8 @@
 - [x] Implement incremental graph updates (adding to `vis.DataSet` instead of full re-render).
 
 ## Phase 3: Visual Polish
-- [ ] Add pulsing animations for "Live" nodes.
-- [ ] Implement a "Lead Feed" sidebar that shows the latest 5 discoveries in real-time.
+- [x] Add pulsing animations for "Live" nodes.
+- [x] Implement a "Lead Feed" sidebar that shows the latest 5 discoveries in real-time.
 
 ## Phase 4: Validation
-- [ ] Run a WHOIS collector and verify that nodes and edges appear in the browser without refreshing.
+- [x] Run a WHOIS collector and verify that nodes and edges appear in the browser without refreshing.

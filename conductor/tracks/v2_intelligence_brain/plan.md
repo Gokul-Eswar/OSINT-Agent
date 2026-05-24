@@ -12,7 +12,7 @@
 
 ## Phase 3: Automated Ingestion
 - [x] Update `internal/collector/registry.go` to automatically trigger re-indexing after any collector run.
-- [ ] Implement an `IntelligenceLead` model in `internal/core` to track agent-derived hypotheses.
+- [x] Implement an `IntelligenceLead` model in `internal/core` to track agent-derived hypotheses.
 
 ## Phase 4: Validation
-- [ ] Create an integration test where the agent must find a specific "flag" hidden in a WHOIS record file.
+- [x] Create an integration test where the agent must find a specific "flag" hidden in a WHOIS record file.
