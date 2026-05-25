@@ -12,73 +12,103 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// PythonCommand allows overriding the command used to run python tasks (useful for testing)
+// PythonCommand defines the command-line flags/arguments passed to Python.
+// By default, we run "-m analyzer" which tells Python to run the 'analyzer' package as a module (looking for __main__.py).
+// We use a slice of strings to make it easy to append CLI flags or override the target command during unit testing.
 var PythonCommand = []string{"-m", "analyzer"}
 
-// Request defines the structure sent to the Python analyzer.
+// Request defines the structure sent to the Python analyzer subprocess via stdin or CLI argument.
+// This struct maps directly to the expected JSON input schema on the Python side.
 type Request struct {
+	// Task specifies what operation Python should run (e.g. "synthesize", "chat", "query", "vision").
 	Task      string        `json:"task"`
+	// CaseID represents the unique identifier of the active investigation case.
 	CaseID    string        `json:"case_id"`
+	// CaseName is the human-readable name of the case.
 	CaseName  string        `json:"case_name"`
+	// Context passes general string context or raw data (like base64 images for vision tasks).
 	Context   string        `json:"context"`
+	// Model specifies which local LLM model to use (e.g. "llama3", "mistral", "llava").
 	Model     string        `json:"model"`
-	Data      interface{}   `json:"data"` // For track 5 graph data
+	// Data holds arbitrary structured payload (like node/link data for visualization, or query strings).
+	Data      interface{}   `json:"data"` 
+	// LLMConfig contains connection details, endpoints, and timeouts for hitting the LLM provider.
 	LLMConfig LLMConfig     `json:"llm_config"`
+	// Messages is used for multi-turn conversations in chat mode, representing chat history.
 	Messages  []Message     `json:"messages,omitempty"`
+	// Tools defines the array of tool JSON schemas the LLM is allowed to invoke.
 	Tools     []interface{} `json:"tools,omitempty"`
 }
 
-// Message represents a single turn in a chat.
+// Message represents a single turn (user, assistant, or system prompt) in a conversational LLM interaction.
 type Message struct {
+	// Role defines who sent the message: "system", "user", or "assistant".
 	Role    string `json:"role"`
+	// Content contains the raw text of the message.
 	Content string `json:"content"`
 }
 
-// Response represents a structured response from the Python analyzer.
+// Response represents the structured response returned by the Python analyzer's stdout.
+// The Go application reads and parses this structure to act on the LLM's decisions.
 type Response struct {
+	// Role defines the message sender (typically "assistant").
 	Role    string   `json:"role"`
+	// Content contains the text output or final answer from the LLM.
 	Content string   `json:"content"`
+	// ToolUse is populated if the LLM decides it needs to invoke an external tool instead of replying in plain text.
 	ToolUse *ToolUse `json:"tool_use,omitempty"`
+	// Error contains any application-level error message reported from the Python side.
 	Error   string   `json:"error,omitempty"`
 }
 
-// ToolUse represents an LLM's request to call a tool.
+// ToolUse holds the specific tool name and argument values requested by the LLM.
 type ToolUse struct {
+	// Name matches one of the registered tools (e.g., "collect", "search_evidence").
 	Name      string                 `json:"name"`
+	// Arguments holds key-value pairs matching the parameters required by the tool.
 	Arguments map[string]interface{} `json:"arguments"`
 }
 
-// Validate enforces minimum request requirements before invoking Python.
-//
-// CaseID is required for all current tasks except visualize-style tasks where
-// graph data may be supplied directly in Data.
+// Validate performs sanity checks on the request payload prior to spawning the Python process.
+// This prevents resource wastage on invalid sub-tasks.
 func (r *Request) Validate() error {
+	// A task type must always be specified so Python knows which handler to dispatch.
 	if r.Task == "" {
 		return fmt.Errorf("task is required")
 	}
-	if r.CaseID == "" && r.Task != "visualize" { // CaseID might be optional for some visualization tasks if Data is provided
+	// Most tasks require an active CaseID to contextually resolve database records.
+	// We allow 'visualize' to run without a CaseID if the payload contains self-contained visual data in the Data field.
+	if r.CaseID == "" && r.Task != "visualize" { 
 		return fmt.Errorf("case_id is required")
 	}
 	return nil
 }
 
-// LLMConfig holds configuration for the LLM provider.
+// LLMConfig holds authorization and connection coordinates for local/remote LLM servers.
 type LLMConfig struct {
+	// Provider specifies the backend platform (e.g. "ollama", "openai", "local").
 	Provider string `json:"provider"`
+	// URL points to the API endpoint (e.g., "http://localhost:11434/api/generate").
 	URL      string `json:"url"`
+	// APIKey is used for authenticated backends.
 	APIKey   string `json:"api_key"`
+	// Timeout controls how long we wait for the model to reply before breaking the request (in seconds).
 	Timeout  int    `json:"timeout"`
 }
 
-// IndexEvidence triggers the Python analyzer to index all evidence files for a case.
+// IndexEvidence triggers the Python analyzer to perform vector store ingestion of all evidence files for a case.
+// It lists all files in the case's evidence folder and sends their file paths to Python to update the vector database.
 func IndexEvidence(caseID string) error {
-	// List files in evidence_storage/<caseID>
+	// Define the path where raw evidence files are stored for the case.
 	evidenceDir := fmt.Sprintf("evidence_storage/%s", caseID)
+	
+	// Read the list of files in the directory.
 	files, err := os.ReadDir(evidenceDir)
 	if err != nil {
 		return fmt.Errorf("failed to read evidence directory: %w", err)
 	}
 
+	// Filter out directories and build an array of absolute or relative file paths to send to Python.
 	var filePaths []string
 	for _, f := range files {
 		if !f.IsDir() {
@@ -86,6 +116,7 @@ func IndexEvidence(caseID string) error {
 		}
 	}
 
+	// Prepare the request payload for the Python analyzer's index_evidence task.
 	req := Request{
 		Task:   "index_evidence",
 		CaseID: caseID,
@@ -95,32 +126,36 @@ func IndexEvidence(caseID string) error {
 		},
 	}
 
+	// Dispatch the task using the active task runner.
 	_, err = GlobalTaskRunner.Run(req)
 	return err
 }
 
-// TaskRunner defines the interface for executing analysis tasks.
+// TaskRunner abstracts the execution of Python analysis tasks.
+// This interface allows us to decouple the main Go logic from system process spawning,
+// making it easy to register mock runners for unit testing.
 type TaskRunner interface {
 	Run(req Request) (string, error)
 }
 
-// DefaultTaskRunner is the standard implementation that spawns Python subprocesses.
+// DefaultTaskRunner is the production implementation of TaskRunner.
+// It spawns Python as a real OS subprocess.
 type DefaultTaskRunner struct{}
 
+// Run implements the TaskRunner interface by invoking the subprocess handler.
 func (d *DefaultTaskRunner) Run(req Request) (string, error) {
 	return RunPythonTask(req)
 }
 
-// GlobalTaskRunner is used by the application and can be replaced in tests.
+// GlobalTaskRunner holds the active task execution engine.
+// By default, it uses the OS process launcher (DefaultTaskRunner), but tests can substitute mock implementations.
 var GlobalTaskRunner TaskRunner = &DefaultTaskRunner{}
 
-// RunPythonTask executes the Python analyzer as a subprocess with a strict
-// timeout and JSON-over-CLI contract.
-//
-// The bridge chooses a local virtualenv Python when present, then falls back to
-// PATH resolution. On failures it attempts structured error extraction from
-// stdout before returning stderr-heavy execution errors.
+// RunPythonTask handles the low-level lifecycle of spawning the Python subprocess.
+// It marshals the request, sets up OS context timeouts, detects the correct Python binary,
+// runs the command, and decodes stdout/stderr.
 func RunPythonTask(req Request) (string, error) {
+	// 1. Sanity check the request parameters before spawning a subprocess.
 	if err := req.Validate(); err != nil {
 		return "", fmt.Errorf("invalid request: %w", err)
 	}
@@ -130,45 +165,57 @@ func RunPythonTask(req Request) (string, error) {
 		Str("case_id", req.CaseID).
 		Msg("python_task_started")
 
+	// 2. Serialize the request struct to JSON. This JSON string will be passed as a command-line argument.
 	inputJSON, err := json.Marshal(req)
 	if err != nil {
 		return "", err
 	}
 
-	// Create context with timeout
+	// 3. Create a execution context with a safety timeout of 3 minutes.
+	// This ensures that if the LLM hangs or fails to respond, we don't leave zombie Python processes running forever.
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
 
-	// Determine Python executable
-	pythonPath := "python" // Default to system path
+	// 4. Resolve the correct Python interpreter executable path.
+	// By default, we use "python" from the system's environment PATH.
+	pythonPath := "python" 
 
-	// Check for local venv (Windows)
+	// For maximum user friendliness and zero-setup capability, we check if the user is running
+	// in a local virtualenv (.venv) on Windows, macOS, or Linux, and run that executable first.
 	if _, err := os.Stat(".venv/Scripts/python.exe"); err == nil {
+		// Found virtualenv on Windows
 		pythonPath = ".venv/Scripts/python.exe"
 	} else if _, err := os.Stat(".venv/bin/python"); err == nil {
-		// Unix/Mac
+		// Found virtualenv on Unix/macOS
 		pythonPath = ".venv/bin/python"
 	}
 
-	// Execute: <python> <PythonCommand...> --task <task> --input <json>
+	// 5. Build the argument slice: <PythonCommand...> --task <task> --input <json_data>
 	args := append(PythonCommand, "--task", req.Task, "--input", string(inputJSON))
+	
+	// Create the OS command command with our timeout context.
 	cmd := exec.CommandContext(ctx, pythonPath, args...)
 
+	// Define buffers to capture output streams separately.
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
+	// 6. Launch the subprocess and wait for execution to complete.
 	err = cmd.Run()
 	output := stdout.String()
 	stderrStr := stderr.String()
 
+	// 7. Check for runtime errors
 	if err != nil {
+		// Check if the process exited because the context timeout was exceeded.
 		if ctx.Err() == context.DeadlineExceeded {
 			log.Error().Err(err).Str("task", req.Task).Msg("python_task_timeout")
 			return "", fmt.Errorf("python analysis timed out after 3 minutes")
 		}
 
-		// Try to parse structured error from stdout
+		// Try to parse a structured JSON error response from stdout.
+		// Often, the python code catches exceptions internally and prints a clean {"error": "..."} JSON.
 		var errResp struct {
 			Error string `json:"error"`
 		}
@@ -176,7 +223,7 @@ func RunPythonTask(req Request) (string, error) {
 			return "", fmt.Errorf("python task '%s' failed: %s", req.Task, errResp.Error)
 		}
 
-		// Fallback to stderr for unhandled Python exceptions
+		// If stdout did not contain structured JSON, fallback to returning the raw stderr stream.
 		if stderrStr != "" {
 			return "", fmt.Errorf("python execution error: %s", stderrStr)
 		}
@@ -184,11 +231,12 @@ func RunPythonTask(req Request) (string, error) {
 		return "", fmt.Errorf("python execution failed: %w", err)
 	}
 
+	// 8. If execution succeeded but stdout is empty, report an error.
 	if output == "" {
 		return "", fmt.Errorf("python task '%s' returned empty output", req.Task)
 	}
 
-	// Ensure output is valid JSON as per the contract
+	// 9. Ensure the stdout output matches our JSON-only API contract.
 	if !json.Valid(stdout.Bytes()) {
 		log.Error().Str("task", req.Task).Str("output", output).Msg("invalid_json_from_python")
 		return "", fmt.Errorf("python task '%s' returned invalid JSON", req.Task)

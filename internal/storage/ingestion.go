@@ -8,12 +8,11 @@ import (
 	"github.com/spectre/spectre/internal/core"
 )
 
-// IngestEvidence dispatches collector-specific parsers that convert raw evidence
-// into graph entities and relationships.
-//
-// The collector name is the routing key for ingestion behavior. Unknown
-// collectors are ignored so newly added plugins can still persist evidence even
-// before a dedicated ingestor exists.
+// IngestEvidence is the central routing function for data ingestion.
+// It inspects the Evidence's Collector field and delegates the parsing to the appropriate
+// collector-specific ingestion handler.
+// Unknown collectors are ignored (returning nil), which allows third-party extensions 
+// to write files to evidence_storage without causing failures before ingestors are written.
 func IngestEvidence(ev *core.Evidence) error {
 	switch ev.Collector {
 	case "dns":
@@ -33,15 +32,18 @@ func IngestEvidence(ev *core.Evidence) error {
 	case "social":
 		return ingestSocial(ev)
 	default:
-		return nil // No ingestion logic for this collector yet
+		return nil // Graceful skip for collectors without specialized ingestion rules
 	}
 }
 
-// ingestSocial maps discovered social profiles into account entities linked to
-// the seed username.
+// ingestSocial parses social media account presence checking results.
+// It extracts the seed username and the sites where matches were found,
+// creates account entities, and maps them back to the seed username.
 func ingestSocial(ev *core.Evidence) error {
+	// Extract target username from the collection metadata.
 	username := ev.Metadata["target"].(string)
 
+	// Read the JSON evidence file containing search results.
 	data, err := os.ReadFile(ev.FilePath)
 	if err != nil {
 		return err
@@ -55,27 +57,28 @@ func ingestSocial(ev *core.Evidence) error {
 		return err
 	}
 
-	// Ensure username entity exists
+	// 1. Ensure the root username entity exists in the database.
 	userEnt, err := EnsureEntity(ev.CaseID, "username", username, "social")
 	if err != nil {
 		return err
 	}
 
+	// 2. Iterate over positive site matches.
 	for _, res := range results {
-		// Create site entity
+		// Create a specific entity representing the profile URL.
 		siteEnt, err := EnsureEntity(ev.CaseID, "account", res.URL, "social")
 		if err != nil {
 			return err
 		}
 
-		// Update metadata if it's a new entity or we want to ensure it has platform info
+		// Update or ensure platform metadata (e.g. "platform": "GitHub") is attached to the entity.
 		if siteEnt.Metadata == nil {
 			siteEnt.Metadata = make(map[string]interface{})
 		}
 		siteEnt.Metadata["platform"] = res.Site
 		UpdateEntity(siteEnt)
 
-		// Link Username -> has_account -> Site
+		// 3. Link Username -> has_account -> Profile URL entity.
 		rel := &core.Relationship{
 			CaseID:       ev.CaseID,
 			FromEntityID: userEnt.ID,
@@ -88,31 +91,31 @@ func ingestSocial(ev *core.Evidence) error {
 	return nil
 }
 
-// ingestScreenshot records screenshot evidence as a self-referential
-// relationship on the target entity.
-//
-// This models screenshots as supporting evidence for an entity without creating
-// a second synthetic node type just for image artifacts.
+// ingestScreenshot records headful screenshot capture evidence.
+// Rather than creating a dedicated "image node" in the graph, it represents
+// screenshots as a self-referential relationship on the target entity (e.g., domain/IP).
+// This keeps the intelligence graph clean while linking the visual evidence to the target.
 func ingestScreenshot(ev *core.Evidence) error {
 	target := ev.Metadata["target"].(string)
 
-	// Ensure target entity exists (usually a domain or IP)
+	// Determine if target target is an IP or domain based on the first character.
 	entityType := "domain"
 	if len(target) > 0 && (target[0] >= '0' && target[0] <= '9') {
 		entityType = "ip"
 	}
+	
+	// Ensure the target node (IP/Domain) exists in the database.
 	targetEnt, err := EnsureEntity(ev.CaseID, entityType, target, "screenshot")
 	if err != nil {
 		return err
 	}
 
-	// Link target to the screenshot evidence
-	// We don't create a new entity for the screenshot itself,
-	// but the relationship record stores the EvidenceID.
+	// Create a self-loop relationship: Target -> has_screenshot -> Target.
+	// We bind the relationship to the screenshot's EvidenceID to preserve forensic linkage.
 	rel := &core.Relationship{
 		CaseID:       ev.CaseID,
 		FromEntityID: targetEnt.ID,
-		ToEntityID:   targetEnt.ID, // Self-link to represent property/evidence
+		ToEntityID:   targetEnt.ID, 
 		Type:         "has_screenshot",
 		EvidenceID:   ev.ID,
 		Confidence:   1.0,
@@ -120,11 +123,9 @@ func ingestScreenshot(ev *core.Evidence) error {
 	return CreateRelationship(rel)
 }
 
-// ingestPorts creates service entities for open ports and links them to the
-// target IP.
-//
-// Closed ports are intentionally ignored to keep the graph focused on actionable
-// attack surface relationships.
+// ingestPorts parses TCP port scan results.
+// For every port marked as "open", it creates a "service" entity (e.g. TCP/80)
+// and links the service to the host IP. Closed ports are skipped to keep the database tidy.
 func ingestPorts(ev *core.Evidence) error {
 	targetIP := ev.Metadata["target"].(string)
 
@@ -133,26 +134,31 @@ func ingestPorts(ev *core.Evidence) error {
 		return err
 	}
 
+	// Port scan results are marshaled as map[port_string]status_string (e.g. {"22": "open"})
 	var results map[string]string
 	if err := json.Unmarshal(data, &results); err != nil {
 		return err
 	}
 
-	// Ensure IP entity exists
+	// Ensure the base host IP entity exists.
 	ipEnt, err := EnsureEntity(ev.CaseID, "ip", targetIP, "ports")
 	if err != nil {
 		return err
 	}
 
+	// Process each scanned port.
 	for port, status := range results {
 		if status == "open" {
+			// Format the service name (e.g., "TCP/22")
 			svcName := fmt.Sprintf("TCP/%s", port)
+			
+			// Ensure the Service service entity exists.
 			svcEnt, err := EnsureEntity(ev.CaseID, "service", svcName, "ports")
 			if err != nil {
 				return err
 			}
 
-			// Link IP -> has -> Service
+			// Link Host IP -> has_port -> Service entity.
 			rel := &core.Relationship{
 				CaseID:       ev.CaseID,
 				FromEntityID: ipEnt.ID,
@@ -166,8 +172,8 @@ func ingestPorts(ev *core.Evidence) error {
 	return nil
 }
 
-// ingestHTTP enriches a target domain with server/software relationship data
-// when available from HTTP collector metadata.
+// ingestHTTP parses basic HTTP inspection metadata (such as server banner headers).
+// If a server banner is found, it registers a service and links the target domain to it.
 func ingestHTTP(ev *core.Evidence) error {
 	target := ev.Metadata["target"].(string)
 	server := ""
@@ -175,19 +181,20 @@ func ingestHTTP(ev *core.Evidence) error {
 		server = s
 	}
 
-	// Ensure target entity exists
+	// Ensure the parent domain entity exists.
 	targetEnt, err := EnsureEntity(ev.CaseID, "domain", target, "http")
 	if err != nil {
 		return err
 	}
 
+	// If the HTTP response included a 'Server' header, register it.
 	if server != "" {
 		svcEnt, err := EnsureEntity(ev.CaseID, "service", server, "http")
 		if err != nil {
 			return err
 		}
 
-		// Link Target -> runs -> Service
+		// Link Domain -> runs_service -> Service.
 		rel := &core.Relationship{
 			CaseID:       ev.CaseID,
 			FromEntityID: targetEnt.ID,
@@ -200,21 +207,19 @@ func ingestHTTP(ev *core.Evidence) error {
 	return nil
 }
 
-// ingestGeo applies geolocation metadata directly to the IP entity instead of
-// creating additional geo nodes.
-//
-// This keeps the graph compact while still making location attributes queryable
-// through entity metadata.
+// ingestGeo processes IP geolocation data.
+// Rather than cluttering the graph with distinct "City" or "Country" nodes,
+// we append the geolocation properties directly to the parent IP entity's Metadata JSON store.
 func ingestGeo(ev *core.Evidence) error {
 	targetIP := ev.Metadata["target"].(string)
 
-	// Ensure IP entity exists
+	// Fetch the IP entity from the database.
 	ipEnt, err := GetEntityByValue(ev.CaseID, targetIP)
 	if err != nil {
 		return err
 	}
 	if ipEnt == nil {
-		// Create it if it doesn't exist (though rare if we collected on it)
+		// If the IP node is missing, create it.
 		ipEnt = &core.Entity{
 			CaseID:   ev.CaseID,
 			Type:     "ip",
@@ -227,12 +232,12 @@ func ingestGeo(ev *core.Evidence) error {
 		}
 	}
 
-	// Update metadata
+	// Ensure metadata map is allocated.
 	if ipEnt.Metadata == nil {
 		ipEnt.Metadata = make(map[string]interface{})
 	}
 
-	// Copy relevant fields from evidence metadata
+	// Map geolocation keys from the evidence metadata directly to the entity.
 	fields := []string{"country", "city", "isp", "lat", "lon"}
 	for _, f := range fields {
 		if v, ok := ev.Metadata[f]; ok {
@@ -240,21 +245,24 @@ func ingestGeo(ev *core.Evidence) error {
 		}
 	}
 
+	// Persist the updated metadata properties to the SQLite database.
 	return UpdateEntity(ipEnt)
 }
 
-// ingestGitHub builds repository and owner entities from search results and
-// links them via ownership relationships.
+// ingestGitHub extracts repository details, repository owners,
+// creates the nodes, and links them via ownership relationships.
 func ingestGitHub(ev *core.Evidence) error {
 	var data []byte
 	var err error
 
+	// Prefer reading raw bytes in memory if pre-loaded.
 	if ev.RawData != nil {
 		if b, ok := ev.RawData.([]byte); ok {
 			data = b
 		}
 	}
 
+	// Fallback to reading the saved JSON evidence file from disk.
 	if data == nil {
 		data, err = os.ReadFile(ev.FilePath)
 		if err != nil {
@@ -276,20 +284,21 @@ func ingestGitHub(ev *core.Evidence) error {
 		return err
 	}
 
+	// Iterate through matching GitHub repositories.
 	for _, item := range results.Items {
-		// Create Repo entity
+		// Create Repository entity node.
 		repoEnt, err := EnsureEntity(ev.CaseID, "repo", item.HTMLURL, "github")
 		if err != nil {
 			return err
 		}
 
-		// Create User entity
+		// Create Owner Username entity node.
 		userEnt, err := EnsureEntity(ev.CaseID, "username", item.Owner.Login, "github")
 		if err != nil {
 			return err
 		}
 
-		// Link User -> owns -> Repo
+		// Link Owner -> owns -> Repository.
 		rel := &core.Relationship{
 			CaseID:       ev.CaseID,
 			FromEntityID: userEnt.ID,
@@ -304,25 +313,25 @@ func ingestGitHub(ev *core.Evidence) error {
 	return nil
 }
 
-// ingestWHOIS links a domain to registrant contact artifacts extracted from
-// WHOIS metadata.
+// ingestWHOIS extracts registry contact details (specifically email addresses) from WHOIS text responses.
+// It links the domain node to the email node.
 func ingestWHOIS(ev *core.Evidence) error {
 	targetDomain := ev.Metadata["target"].(string)
 
-	// Ensure domain entity exists
+	// Ensure target domain entity exists.
 	domainEnt, err := EnsureEntity(ev.CaseID, "domain", targetDomain, "whois")
 	if err != nil {
 		return err
 	}
 
-	// If we have a registrant email, create it and link it
+	// If registrant_email metadata is present, map it.
 	if email, ok := ev.Metadata["registrant_email"].(string); ok && email != "" {
 		emailEnt, err := EnsureEntity(ev.CaseID, "email", email, "whois")
 		if err != nil {
 			return err
 		}
 
-		// Link Domain -> owns -> Email (or registered_by)
+		// Link Domain -> registered_by -> Email.
 		rel := &core.Relationship{
 			CaseID:       ev.CaseID,
 			FromEntityID: domainEnt.ID,
@@ -337,19 +346,19 @@ func ingestWHOIS(ev *core.Evidence) error {
 	return nil
 }
 
-// ingestDNS maps DNS A-record resolution edges from domain entities to IP
-// entities, preserving evidence provenance on each relationship.
+// ingestDNS parses passive DNS query records (A, MX, NS).
+// For A-records, it sets up link relationships from the domain node to resolved IP nodes.
 func ingestDNS(ev *core.Evidence) error {
 	var results map[string][]string
 
-	// Try in-memory first
+	// Read in-memory buffer if present.
 	if ev.RawData != nil {
 		if r, ok := ev.RawData.(map[string][]string); ok {
 			results = r
 		}
 	}
 
-	// Fallback to disk
+	// Or load from the saved JSON file on disk.
 	if results == nil {
 		data, err := os.ReadFile(ev.FilePath)
 		if err != nil {
@@ -363,20 +372,21 @@ func ingestDNS(ev *core.Evidence) error {
 
 	targetDomain := ev.Metadata["target"].(string)
 
-	// Ensure target domain entity exists
+	// Ensure target domain entity node exists.
 	domainEnt, err := EnsureEntity(ev.CaseID, "domain", targetDomain, "dns")
 	if err != nil {
 		return err
 	}
 
-	// Process A records
+	// Process resolved A records.
 	for _, ip := range results["A"] {
+		// Ensure IP node exists.
 		ipEnt, err := EnsureEntity(ev.CaseID, "ip", ip, "dns")
 		if err != nil {
 			return err
 		}
 
-		// Create relationship
+		// Link Domain -> resolves_to -> IP.
 		rel := &core.Relationship{
 			CaseID:       ev.CaseID,
 			FromEntityID: domainEnt.ID,
@@ -386,7 +396,7 @@ func ingestDNS(ev *core.Evidence) error {
 			Confidence:   1.0,
 		}
 		if err := CreateRelationship(rel); err != nil {
-			// Might already exist due to unique constraint, ignore error
+			// Failures usually mean relationship constraints already exist. We skip.
 		}
 	}
 

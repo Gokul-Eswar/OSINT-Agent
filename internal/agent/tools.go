@@ -13,16 +13,23 @@ import (
 	"github.com/spectre/spectre/internal/storage"
 )
 
-// Tool represents a capability the LLM can invoke.
+// Tool defines a capability/capability model that the conversational LLM agent can invoke.
 type Tool struct {
+	// Name is the unique string identifier for the tool (e.g. "collect").
 	Name        string      `json:"name"`
+	// Description explains to the LLM what the tool does and when to invoke it.
 	Description string      `json:"description"`
+	// Parameters specifies the JSON schema representing the arguments the LLM must provide.
 	Parameters  interface{} `json:"parameters"`
+	// Execute defines the Go function handler that is run when the LLM triggers the tool.
 	Execute     func(caseID string, args map[string]interface{}) (string, error)
 }
 
-// Registry stores all available tools for the agent.
+// Registry stores the global map of all system tools available to the Agent.
+// The keys match the Tool.Name field.
 var Registry = map[string]Tool{
+	
+	// "collect": Runs active or passive data gathering collectors against a target.
 	"collect": {
 		Name:        "collect",
 		Description: "Run a specific collector on a target to gather intelligence. Use 'list_collectors' to see available collectors.",
@@ -50,7 +57,8 @@ var Registry = map[string]Tool{
 				return "", fmt.Errorf("target is required")
 			}
 
-			// By default, we don't allow active recon via chat unless we add an 'active' parameter
+			// By default, we do not allow active reconnaissance (like active port scanning) 
+			// via autonomous agent conversations to maintain investigator safety, unless configured.
 			evidence, err := collector.RunAndSave(name, caseID, target, false, nil)
 			if err != nil {
 				return "", err
@@ -60,6 +68,8 @@ var Registry = map[string]Tool{
 		},
 	},
 
+	// "list_collectors": Returns all registered collectors. 
+	// Helps the LLM know which collector plug-in names are available.
 	"list_collectors": {
 		Name:        "list_collectors",
 		Description: "List all available intelligence collectors and their descriptions.",
@@ -78,6 +88,7 @@ var Registry = map[string]Tool{
 		},
 	},
 
+	// "search_entities": Performs local database queries looking for specific entities matching a keyword.
 	"search_entities": {
 		Name:        "search_entities",
 		Description: "Search for existing entities in the current case by value or type.",
@@ -102,6 +113,7 @@ var Registry = map[string]Tool{
 				return "", err
 			}
 
+			// Loop and perform case-insensitive substring checks on values and entity types.
 			var matched []string
 			for _, e := range entities {
 				if strings.Contains(strings.ToLower(e.Value), strings.ToLower(query)) ||
@@ -118,6 +130,7 @@ var Registry = map[string]Tool{
 		},
 	},
 
+	// "get_case_summary": Provides general statistics on the number of nodes and relations discovered.
 	"get_case_summary": {
 		Name:        "get_case_summary",
 		Description: "Get a high-level summary of the current investigation, including entity counts.",
@@ -142,6 +155,7 @@ var Registry = map[string]Tool{
 		},
 	},
 
+	// "search_evidence": Calls Python vector search to find key matches across all unstructured/structured files.
 	"search_evidence": {
 		Name:        "search_evidence",
 		Description: "Perform a semantic search across all collected evidence files to find specific information.",
@@ -157,16 +171,18 @@ var Registry = map[string]Tool{
 		},
 		Execute: func(caseID string, args map[string]interface{}) (string, error) {
 			query, _ := args["query"].(string)
+			
+			// Build Request envelope triggering the python side's search_evidence task.
 			req := analyzer.Request{
 				Task:   "search_evidence",
 				CaseID: caseID,
-				// Add extra fields for the Python task
 				Data: map[string]interface{}{
 					"case_id": caseID,
 					"query":   query,
 				},
 			}
 
+			// Invoke the bridge to call ChromaDB.
 			output, err := analyzer.GlobalTaskRunner.Run(req)
 			if err != nil {
 				return "", err
@@ -186,6 +202,7 @@ var Registry = map[string]Tool{
 				return "No relevant information found in evidence files.", nil
 			}
 
+			// Format vector similarity output for LLM consumption.
 			var sb strings.Builder
 			sb.WriteString("Found relevant evidence snippets:\n")
 			for _, r := range resp.Results {
@@ -195,6 +212,7 @@ var Registry = map[string]Tool{
 		},
 	},
 
+	// "read_evidence": Reads the raw content of a chosen file in the case storage.
 	"read_evidence": {
 		Name:        "read_evidence",
 		Description: "Read the full content of a specific evidence file.",
@@ -211,7 +229,8 @@ var Registry = map[string]Tool{
 		Execute: func(caseID string, args map[string]interface{}) (string, error) {
 			filename, _ := args["filename"].(string)
 			
-			// Basic path traversal protection
+			// Path Traversal Security: 
+			// Ensure the model doesn't supply path elements like "../" or absolute windows paths to read host system files.
 			if strings.Contains(filename, "..") || strings.Contains(filename, "/") || strings.Contains(filename, "\\") {
 				return "", fmt.Errorf("invalid filename: path traversal attempt detected")
 			}
@@ -223,7 +242,9 @@ var Registry = map[string]Tool{
 			}
 
 			content := string(data)
-			// Truncate if excessively large to protect LLM context window
+			
+			// LLM Window Safeguard:
+			// Truncate the file content if it exceeds 15,000 characters to prevent blowing out LLM attention context.
 			if len(content) > 15000 {
 				content = content[:15000] + "\n\n[... content truncated for brevity ...]"
 			}
@@ -232,6 +253,7 @@ var Registry = map[string]Tool{
 		},
 	},
 
+	// "analyze_image": Performs visual OCR or screenshot analysis using a multimodal local model.
 	"analyze_image": {
 		Name:        "analyze_image",
 		Description: "Perform visual analysis on an image file (e.g., screenshots) to extract text, logos, or descriptions using a local vision model.",
@@ -262,8 +284,10 @@ var Registry = map[string]Tool{
 				return "", fmt.Errorf("failed to read image file: %w", err)
 			}
 
+			// Encode the image bytes to base64. The Python Ollama endpoint expects a base64 envelope.
 			base64Str := base64.StdEncoding.EncodeToString(imgData)
 
+			// Prepare request payload for python task "vision".
 			req := analyzer.Request{
 				Task:    "vision",
 				CaseID:  caseID,
@@ -271,6 +295,7 @@ var Registry = map[string]Tool{
 				Context: base64Str,
 			}
 
+			// Invoke the python task runner.
 			output, err := analyzer.GlobalTaskRunner.Run(req)
 			if err != nil {
 				return "", fmt.Errorf("vision analysis failed: %w", err)
@@ -287,6 +312,7 @@ var Registry = map[string]Tool{
 		},
 	},
 
+	// "generate_dorks": Uses LLM capabilities to generate OSINT Google search dorks.
 	"generate_dorks": {
 		Name:        "generate_dorks",
 		Description: "Generate a list of specialized Google Dorks for a target domain to find sensitive or leaked information.",
@@ -329,6 +355,7 @@ var Registry = map[string]Tool{
 		},
 	},
 
+	// "update_hypotheses": Allows the agent to record its analytical leads/claims into the database.
 	"update_hypotheses": {
 		Name:        "update_hypotheses",
 		Description: "Record or update an intelligence hypothesis/lead for the current case.",
@@ -382,7 +409,8 @@ var Registry = map[string]Tool{
 				status = statusVal
 			}
 
-			// Resolve evidence file names to DB evidence IDs if possible
+			// Map human-readable file names (e.g. whois_google.com.txt) 
+			// to the correct internal DB evidence IDs by scanning existing records.
 			var evidenceIDs []string
 			if len(filenames) > 0 {
 				allEvidence, err := storage.ListEvidenceByCase(caseID)
@@ -396,7 +424,7 @@ var Registry = map[string]Tool{
 								break
 							}
 						}
-						// If not found in database, just use filename as reference
+						// If evidence record isn't in DB yet, fallback to raw filename reference.
 						if !found {
 							evidenceIDs = append(evidenceIDs, fn)
 						}
@@ -406,6 +434,7 @@ var Registry = map[string]Tool{
 				}
 			}
 
+			// Instantiate the intelligence lead model.
 			lead := &core.IntelligenceLead{
 				CaseID:      caseID,
 				Hypothesis:  hypothesis,
@@ -414,6 +443,7 @@ var Registry = map[string]Tool{
 				Status:      status,
 			}
 
+			// Save to SQL database.
 			if err := storage.CreateLead(lead); err != nil {
 				return "", err
 			}
@@ -423,7 +453,8 @@ var Registry = map[string]Tool{
 	},
 }
 
-// GetToolDefinitions returns the JSON-serializable tool definitions for the LLM.
+// GetToolDefinitions compiles all tools inside Registry into JSON schemas
+// suitable for sending to LLM APIs that support function calling / tool definitions.
 func GetToolDefinitions() []interface{} {
 	var defs []interface{}
 	for _, t := range Registry {
