@@ -215,7 +215,7 @@ def analyze_case(data):
             last_error = str(e)
             
         if attempt < retries - 1:
-            time.sleep(1) // Wait 1 second before retrying
+            time.sleep(1) # Wait 1 second before retrying
                 
     # Final fallback dictionary structure returned on failure.
     return {
