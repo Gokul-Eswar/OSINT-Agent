@@ -78,7 +78,7 @@ jobs:
         with:
           version: v1.60
           args: --timeout=5m
-          fail-on-error: false # Don't block entirely if linter has minor issues, but report them
+        continue-on-error: true # Don't block entirely if linter has minor issues, but report them
 
       - name: Test
         run: go test ./...
