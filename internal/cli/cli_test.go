@@ -81,4 +81,8 @@ func TestCLICommands(t *testing.T) {
 			t.Fatalf("version command failed: %v", err)
 		}
 	})
+
+	t.Run("HelpGuideFunction", func(t *testing.T) {
+		printHelpGuide()
+	})
 }

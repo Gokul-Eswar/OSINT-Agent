@@ -22,7 +22,7 @@ Use Go for the system core and Python for the intelligence sidecar.
 - Python only: rejected due to weaker single-binary distribution and concurrency ergonomics for core orchestration.
 
 ## References
-- Architecture: ../../architecture.md
+- Architecture: ../../docs/ARCHITECTURE.md
 - Tech stack: ../tech-stack.md
 - Code paths:
   - internal/cli

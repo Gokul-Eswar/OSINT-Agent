@@ -21,7 +21,7 @@ Use a dual-store model.
 - External database service: rejected to preserve offline and single-user setup simplicity.
 
 ## References
-- Architecture storage section: ../../architecture.md
+- Architecture storage section: ../../docs/ARCHITECTURE.md
 - Tech stack storage section: ../tech-stack.md
 - Code paths:
   - internal/storage

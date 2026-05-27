@@ -22,7 +22,7 @@ Generate static HTML visualizations from case exports.
 - Native GUI dependency: rejected to keep CLI-first portability.
 
 ## References
-- Architecture visualization flow: ../../architecture.md
+- Architecture visualization flow: ../../docs/ARCHITECTURE.md
 - Code paths:
   - internal/analysis/context.go
   - analyzer/graph_viz.py

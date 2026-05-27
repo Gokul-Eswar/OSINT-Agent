@@ -21,7 +21,7 @@ Hash all raw evidence and persist hash references with evidence metadata.
 - Optional hashing: rejected because partial coverage weakens trust in outputs.
 
 ## References
-- Architecture storage and auditability notes: ../../architecture.md
+- Architecture storage and auditability notes: ../../docs/ARCHITECTURE.md
 - Code paths:
   - internal/collector/external.go
   - internal/core/evidence.go

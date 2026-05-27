@@ -22,7 +22,7 @@ Enforce case-scoped isolation for entities, relationships, analysis, and evidenc
 - Separate database per case: rejected to avoid heavy lifecycle management overhead.
 
 ## References
-- Architecture case/evidence storage flow: ../../architecture.md
+- Architecture case/evidence storage flow: ../../docs/ARCHITECTURE.md
 - Code paths:
   - internal/core/case.go
   - internal/storage

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/spectre/spectre/internal/analysis"
+	"github.com/spectre/spectre/internal/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -19,6 +20,10 @@ var queryCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if caseID == "" {
 			return fmt.Errorf("case ID is required (use --case)")
+		}
+
+		if err := storage.InitDB(); err != nil {
+			return err
 		}
 
 		question := args[0]

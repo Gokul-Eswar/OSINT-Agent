@@ -22,7 +22,7 @@ Use subprocess execution with JSON payload exchange.
 - Shared library embedding: rejected for language/runtime coupling and portability risk.
 
 ## References
-- Architecture bridge section: ../../architecture.md
+- Architecture bridge section: ../../docs/ARCHITECTURE.md
 - Code paths:
   - internal/analyzer/bridge.go
   - internal/analysis/engine.go

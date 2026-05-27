@@ -13,7 +13,7 @@ def generate_visual_report(data):
     
     net = Network(height="750px", width="100%", bgcolor="#222222", font_color="white", heading=f"SPECTRE Intelligence Graph: {case_name}")
     
-    # Entity Colors (from architecture.md)
+    # Entity Colors (from docs/ARCHITECTURE.md)
     colors = {
         "domain": "#3b82f6",
         "email": "#10b981",

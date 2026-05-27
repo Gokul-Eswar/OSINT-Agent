@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/spectre/spectre/internal/agent"
 	"github.com/spectre/spectre/internal/storage"
 	"github.com/spf13/cobra"
@@ -48,6 +49,7 @@ The agent can run collectors, search entities, and provide summaries of your cas
 
 		fmt.Println("--- SPECTRE AGENT SESSION ---")
 		fmt.Println("Type 'exit' or 'quit' to end session.")
+		fmt.Println("Type '/help' to open the professional guide.")
 		fmt.Println()
 
 		for {
@@ -57,6 +59,19 @@ The agent can run collectors, search entities, and provide summaries of your cas
 
 			if input == "exit" || input == "quit" {
 				break
+			}
+			if input == "/help" {
+				printHelpGuide()
+				continue
+			}
+			if input == "/case" {
+				c, err := storage.GetCase(chatCaseID)
+				if err != nil || c == nil {
+					fmt.Printf("\n[*] Current Case ID: %s (Failed to retrieve details)\n\n", chatCaseID)
+				} else {
+					fmt.Printf("\n[*] Active Case: %s\n[*] Case ID:     %s\n[*] Status:      %s\n[*] Description: %s\n\n", c.Name, c.ID, c.Status, c.Description)
+				}
+				continue
 			}
 			if input == "" {
 				continue
@@ -79,6 +94,59 @@ The agent can run collectors, search entities, and provide summaries of your cas
 		fmt.Println("Session ended.")
 		return nil
 	},
+}
+
+func printHelpGuide() {
+	titleStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color("0")).
+		Background(lipgloss.Color("6")).
+		Padding(0, 2).
+		MarginBottom(1)
+
+	headerStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color("6")).
+		Underline(true).
+		MarginTop(1).
+		MarginBottom(1)
+
+	cmdStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color("3"))
+
+	boldStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color("15"))
+
+	fmt.Println()
+	fmt.Println(titleStyle.Render("SPECTRE INTERACTIVE HELP GUIDE"))
+	fmt.Println("Welcome to the SPECTRE AI assistant. Here is a guide to help you navigate")
+	fmt.Println("the platform's capabilities and commands.")
+
+	fmt.Println(headerStyle.Render("1. Conversational Agent Capabilities"))
+	fmt.Println("You can ask the agent in plain English to execute tasks. Examples:")
+	fmt.Printf("  - %s: %s\n", cmdStyle.Render("Reconnaissance"), "Type \"Scan target.com\" or \"Run dns on target.com\"")
+	fmt.Printf("  - %s: %s\n", cmdStyle.Render("Evidence Search"), "Type \"Search for emails in the evidence\"")
+	fmt.Printf("  - %s: %s\n", cmdStyle.Render("Summarization"), "Type \"Summarize the current case\" or \"Show entities\"")
+
+	fmt.Println(headerStyle.Render("2. Session Slash Commands"))
+	fmt.Printf("  %-15s %s\n", cmdStyle.Render("/help"), "Display this professional guide.")
+	fmt.Printf("  %-15s %s\n", cmdStyle.Render("/case"), "Display the active case details (Name, ID, Status, Description).")
+	fmt.Printf("  %-15s %s\n", cmdStyle.Render("exit / quit"), "Terminate the current interactive session.")
+
+	fmt.Println(headerStyle.Render("3. SPECTRE OSINT Lifecycle"))
+	fmt.Printf("  %-15s %s\n", boldStyle.Render("Case"), "The logical container for an investigation. All target data, evidence, and entity")
+	fmt.Printf("                  %s\n", "relations are saved under a unique Case ID.")
+	fmt.Printf("  %-15s %s\n", boldStyle.Render("Collect"), "Runs passive or active modules (Geo, Whois, DNS, Ports, GitHub, etc.) to gather data.")
+	fmt.Printf("  %-15s %s\n", boldStyle.Render("Analyze"), "Uses local LLMs (Ollama Llama3/Mistral) to extract findings, risk rankings, and connections.")
+	fmt.Printf("  %-15s %s\n", boldStyle.Render("Visualize"), "Launches a local web server displaying D3.js interactive entity relation graphs.")
+	fmt.Printf("  %-15s %s\n", boldStyle.Render("Report"), "Generates structured Markdown summaries or executive-ready branded PDF reports.")
+
+	fmt.Println(headerStyle.Render("4. Operational Security (Ghost Mode)"))
+	fmt.Println("  Ensure your proxy (Tor/SOCKS5) configuration is set in configs/default.yaml if you require")
+	fmt.Println("  hardened OpSec. If started with --strict flag, all HTTP actions fail-closed if proxy is offline.")
+	fmt.Println()
 }
 
 func init() {

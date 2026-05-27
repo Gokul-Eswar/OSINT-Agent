@@ -22,7 +22,7 @@ Enforce ethics checks in core orchestration before collector execution.
 - Post-execution auditing only: rejected because it does not prevent unsafe execution.
 
 ## References
-- Architecture ethics section: ../../architecture.md
+- Architecture ethics section: ../../docs/ARCHITECTURE.md
 - Code paths:
   - internal/ethics/limiter.go
   - internal/ethics/scope.go

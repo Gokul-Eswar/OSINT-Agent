@@ -16,7 +16,7 @@ What gets better, and what tradeoffs are accepted?
 What alternatives were rejected and why?
 
 ## References
-- Architecture: ../../architecture.md
+- Architecture: ../../docs/ARCHITECTURE.md
 - Tech stack: ../tech-stack.md
 - Related code paths:
   - internal/
