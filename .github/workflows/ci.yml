@@ -6,8 +6,42 @@ on:
       - main
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build-and-verify:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      go: ${{ steps.filter.outputs.go }}
+      python: ${{ steps.filter.outputs.python }}
+      plugins: ${{ steps.filter.outputs.plugins }}
+      config: ${{ steps.filter.outputs.config }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect Changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            go:
+              - '**/*.go'
+              - 'go.mod'
+              - 'go.sum'
+              - 'internal/**'
+              - 'cmd/**'
+              - 'scripts/**'
+            python:
+              - 'analyzer/**'
+            plugins:
+              - 'plugins/**'
+            config:
+              - 'configs/**'
+
+  go-checks:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -39,6 +73,13 @@ jobs:
       - name: Vet
         run: go vet ./...
 
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.60
+          args: --timeout=5m
+          fail-on-error: false # Don't block entirely if linter has minor issues, but report them
+
       - name: Test
         run: go test ./...
 
@@ -59,3 +100,83 @@ jobs:
         run: |
           go test -coverprofile=coverage.out ./...
           go run ./scripts/check_coverage.go -profile coverage.out -min 40
+
+      - name: Upload Go coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.out
+          flags: go
+          fail_ci_if_error: false
+
+  python-checks:
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.python == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r analyzer/requirements.txt pytest-cov black flake8
+
+      - name: Run Black formatter check
+        run: black --check analyzer/
+
+      - name: Run Flake8 linter
+        run: flake8 analyzer/ --count --select=E9,F63,F7,F82 --show-source --statistics
+
+      - name: Run Pytest
+        run: pytest analyzer/ --cov=analyzer --cov-report=xml
+
+      - name: Upload Python coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.xml
+          flags: python
+          fail_ci_if_error: false
+
+  plugin-checks:
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.plugins == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Validate Plugin Manifests
+        run: python scripts/validate_plugins.py
+
+  config-validation:
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.config == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Validate Configurations
+        run: python scripts/validate_configs.py
