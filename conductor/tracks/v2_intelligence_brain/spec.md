@@ -21,6 +21,6 @@ Transform the SPECTRE Agent from a manual tool-triggering bot into an autonomous
 *   **`update_hypotheses`:** A way for the agent to track and present "Intelligence Leads" or "Hypotheses" to the user.
 
 ## Success Criteria
-- [ ] Agent can answer: "Based on the WHOIS records we found, who is the most likely registrant and where are they located?"
-- [ ] Agent can automatically follow a lead (e.g., finding an email in DNS and then checking that email on GitHub).
-- [ ] Zero-cloud dependency for indexing and reasoning.
+- [x] Agent can answer: "Based on the WHOIS records we found, who is the most likely registrant and where are they located?"
+- [x] Agent can automatically follow a lead (e.g., finding an email in DNS and then checking that email on GitHub).
+- [x] Zero-cloud dependency for indexing and reasoning.

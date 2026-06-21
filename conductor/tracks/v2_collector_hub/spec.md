@@ -16,6 +16,6 @@ Standardize the extension of SPECTRE through a formal Plugin SDK and introduce a
 *   **Search Integration:** (Optional) If an API key for a search engine (like Serper or Google) is provided, the engine can execute these dorks automatically.
 
 ## Success Criteria
-- [ ] A new plugin can be implemented using the `spectre_sdk` in under 20 lines of code.
-- [ ] The agent can generate at least 5 relevant dorks for a given domain target.
-- [ ] Plugins correctly inherit proxy settings from the environment.
+- [x] A new plugin can be implemented using the `spectre_sdk` in under 20 lines of code.
+- [x] The agent can generate at least 5 relevant dorks for a given domain target.
+- [x] Plugins correctly inherit proxy settings from the environment.

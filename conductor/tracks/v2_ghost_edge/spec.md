@@ -15,6 +15,6 @@ Enhance SPECTRE's operational security (OPSEC) by enforcing system-wide proxy su
 *   **Local Processing:** Use a local vision model (e.g., `llava` via Ollama) to generate descriptions of images (e.g., detecting text, logos, or faces) and convert them to structured intelligence that the text-based vector store can index.
 
 ## Success Criteria
-- [ ] Enabling `ghost_mode` in settings routes all subsequent HTTP requests through the configured proxy.
-- [ ] Non-proxied external requests fail securely if `ghost_mode` is active but the proxy is unreachable.
-- [ ] Submitting an image to the local analyzer returns a synthesized textual description of its contents.
+- [x] Enabling `ghost_mode` in settings routes all subsequent HTTP requests through the configured proxy.
+- [x] Non-proxied external requests fail securely if `ghost_mode` is active but the proxy is unreachable.
+- [x] Submitting an image to the local analyzer returns a synthesized textual description of its contents.

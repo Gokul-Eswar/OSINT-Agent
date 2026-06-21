@@ -19,6 +19,6 @@ Replace static investigation reports with a real-time, interactive "Command Cent
 *   **Status Indicators:** Visual cues when a collector is active on a specific node (e.g., a pulsing glow).
 
 ## Success Criteria
-- [ ] New entities appear on the graph within 500ms of being saved to DB.
-- [ ] Relationships are drawn automatically between existing and new nodes.
-- [ ] Dashboard remains responsive with 500+ nodes.
+- [x] New entities appear on the graph within 500ms of being saved to DB.
+- [x] Relationships are drawn automatically between existing and new nodes.
+- [x] Dashboard remains responsive with 500+ nodes.
