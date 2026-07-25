@@ -194,7 +194,7 @@ func ListEntitiesByType(caseID, entityType string) ([]*core.Entity, error) {
 	return entities, nil
 }
 
-// EnsureEntity checks if an entity exists by value and case ID. 
+// EnsureEntity checks if an entity exists by value and case ID.
 // If it does not exist, it creates and returns it; otherwise, it returns the existing entity.
 func EnsureEntity(caseID, entityType, entityValue, source string) (*core.Entity, error) {
 	existing, err := GetEntityByValue(caseID, entityValue)

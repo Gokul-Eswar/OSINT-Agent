@@ -270,6 +270,23 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 		}
 
+		if m.state == ViewReports {
+			switch msg.String() {
+			case "p":
+				if m.selectedCaseID != "" {
+					outPath := fmt.Sprintf("evidence_storage/%s/investigation_report.pdf", m.selectedCaseID)
+					_ = report.GeneratePDFReport(m.selectedCaseID, outPath)
+				}
+			case "v":
+				m.state = ViewAnalysis
+				if m.selectedCaseID != "" && m.analysisStatus == AnalysisIdle {
+					m.analysisStatus = AnalysisRunning
+					m.analysisStep = 0
+					return m, StartAnalysis(m.selectedCaseID, m.modelName)
+				}
+			}
+		}
+
 		// Global navigation if not in a list
 		switch msg.String() {
 		case "1":
@@ -540,7 +557,7 @@ func (m model) renderContent() string {
 		if m.analysisStatus == AnalysisComplete {
 			status = "\n\n" + StyleMuted.Foreground(ColorSuccess).Render(m.analysisResult)
 		}
-		content = "REPORTS\n───────\n\n[1] Generate Markdown Report\n[p] Generate Professional PDF\n[2] View Latest Analysis" + status
+		content = "REPORTS\n───────\n\n[1] Generate Markdown Report\n[p] Generate Professional PDF\n[v] View Latest Analysis" + status
 
 	case ViewChat:
 		if m.selectedCaseID == "" {
@@ -598,7 +615,7 @@ func (m model) renderContent() string {
 		content = m.runner.View()
 
 	default:
-		content = "This view is currently being optimized for high-density intelligence display."
+		content = fmt.Sprintf("HIGH-DENSITY INTELLIGENCE SUMMARY\n──────────────────────────────────\nActive Case: %s\nModel Engine: %s\nStatus: Ready", m.selectedCaseID, m.modelName)
 	}
 
 	return StyleMain.Width(m.width - 25).Height(m.height - 4).Render(content)

@@ -28,7 +28,7 @@ func TestVectorSearchTool(t *testing.T) {
 		// Note: Requires chromadb to be installed in .venv
 		tool := Registry["search_evidence"]
 		res, err := tool.Execute(caseID, map[string]interface{}{"query": "What is the secret flag?"})
-		
+
 		// We expect either a success or a clear error message about missing deps
 		if err != nil {
 			t.Logf("Search failed (likely missing Python deps): %v", err)

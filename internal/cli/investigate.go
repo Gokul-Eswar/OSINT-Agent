@@ -10,7 +10,10 @@ import (
 	"github.com/spectre/spectre/internal/core"
 	"github.com/spectre/spectre/internal/storage"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
+
+var investigateModelName string
 
 var investigateCmd = &cobra.Command{
 	Use:   "investigate [target]",
@@ -61,8 +64,14 @@ var investigateCmd = &cobra.Command{
 		}
 
 		// 3. Analyze
-		fmt.Println("[*] Running AI Analysis...")
-		res, err := analysis.AnalyzeCase(caseID, "llama3:8b")
+		if investigateModelName == "" {
+			investigateModelName = viper.GetString("llm.model")
+		}
+		if investigateModelName == "" {
+			investigateModelName = "llama3:8b"
+		}
+		fmt.Printf("[*] Running AI Analysis with model '%s'...\n", investigateModelName)
+		res, err := analysis.AnalyzeCase(caseID, investigateModelName)
 		if err != nil {
 			return fmt.Errorf("analysis failed: %w", err)
 		}
@@ -87,5 +96,6 @@ var investigateCmd = &cobra.Command{
 }
 
 func init() {
+	investigateCmd.Flags().StringVarP(&investigateModelName, "model", "m", "", "LLM model to use for analysis")
 	rootCmd.AddCommand(investigateCmd)
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os/exec"
+	"runtime"
 
 	"github.com/spectre/spectre/internal/analysis"
 	"github.com/spectre/spectre/internal/analyzer"
@@ -65,9 +66,27 @@ var visualizeCmd = &cobra.Command{
 		fmt.Printf("Dashboard generated: %s\n", filePath)
 		fmt.Println("Opening in browser...")
 
-		// 3. Open in Browser (Windows specific)
-		return exec.Command("cmd", "/c", "start", filePath).Start()
+		// 3. Open in Browser (Cross-platform)
+		return openURL(filePath)
 	},
+}
+
+func openURL(url string) error {
+	var cmd string
+	var args []string
+
+	switch runtime.GOOS {
+	case "windows":
+		cmd = "cmd"
+		args = []string{"/c", "start", url}
+	case "darwin":
+		cmd = "open"
+		args = []string{url}
+	default:
+		cmd = "xdg-open"
+		args = []string{url}
+	}
+	return exec.Command(cmd, args...).Start()
 }
 
 func init() {

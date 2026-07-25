@@ -69,16 +69,25 @@ def index_evidence(case_id, evidence_files):
         # non-UTF-8 characters gracefully without crashing the analysis run.
         with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
             content = f.read()
-            
-        # Store file data in memory for bulk upsert.
-        # Currently, the entire file content is indexed as a single document.
-        # Document ID is set to the file name.
-        ids.append(file_name)
-        documents.append(content)
-        metadatas.append({"path": file_path, "name": file_name})
+
+        # Chunk large evidence content into 500-character blocks with 50-character overlap
+        chunk_size = 500
+        overlap = 50
+        chunks = []
+        if len(content) <= chunk_size:
+            chunks.append((content, 0))
+        else:
+            step = chunk_size - overlap
+            for i in range(0, len(content), step):
+                chunks.append((content[i:i + chunk_size], i))
+
+        for idx, (chunk_text, offset) in enumerate(chunks):
+            chunk_id = f"{file_name}#chunk_{idx}"
+            ids.append(chunk_id)
+            documents.append(chunk_text)
+            metadatas.append({"path": file_path, "name": file_name, "chunk": idx, "offset": offset})
 
     # 4. If we gathered any valid files, upsert them to the database.
-    # collection.upsert inserts the document if it's new, or updates it if the file ID already exists.
     if ids:
         collection.upsert(
             ids=ids,
@@ -92,38 +101,28 @@ def index_evidence(case_id, evidence_files):
 def search_evidence(case_id, query, n_results=3):
     """
     Performs a semantic vector search across the indexed evidence documents.
-    
-    Parameters:
-    - case_id (str): The unique ID of the case to search.
-    - query (str): The natural language query (e.g. "email addresses found").
-    - n_results (int): Max number of matching evidence files to retrieve.
-    
-    Returns:
-    - dict: A status dictionary containing formatted matches, each with the file name, content,
-            metadata, and vector distance (similarity score).
     """
-    # 1. Resolve case-specific database client.
     client = get_client(case_id)
     
-    # 2. Retrieve the collection. It throws an exception if the collection has not been created yet.
-    collection = client.get_collection(name="evidence", embedding_function=default_ef)
+    try:
+        collection = client.get_collection(name="evidence", embedding_function=default_ef)
+    except Exception:
+        # Collection does not exist yet (no evidence indexed)
+        return {"status": "success", "results": []}
     
-    # 3. Query the collection. The text query is converted into a vector embedding under the hood,
-    # and Chroma performs cosine similarity matching to find the closest vectors.
     results = collection.query(
         query_texts=[query],
         n_results=n_results
     )
     
-    # 4. Format search results into a clean list of dictionaries for Go to parse.
     formatted_results = []
-    # Chroma returns lists of results. results['ids'][0] holds matching IDs for the first query text.
-    for i in range(len(results['ids'][0])):
-        formatted_results.append({
-            "id": results['ids'][0][i],
-            "content": results['documents'][0][i],
-            "metadata": results['metadatas'][0][i],
-            "distance": results['distances'][0][i]
-        })
+    if results and 'ids' in results and results['ids'] and len(results['ids'][0]) > 0:
+        for i in range(len(results['ids'][0])):
+            formatted_results.append({
+                "id": results['ids'][0][i],
+                "content": results['documents'][0][i],
+                "metadata": results['metadatas'][0][i],
+                "distance": results['distances'][0][i] if 'distances' in results and results['distances'] else 0.0
+            })
         
     return {"status": "success", "results": formatted_results}

@@ -6,7 +6,9 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -40,8 +42,8 @@ func (c *ScreenshotCollector) Collect(caseID string, target string, options map[
 		chromedp.Flag("disable-gpu", true),
 	)
 
-	if execPath := os.Getenv("CHROME_BIN"); execPath != "" {
-		opts = append(opts, chromedp.ExecPath(execPath))
+	if browserBin := findBrowserExecutable(); browserBin != "" {
+		opts = append(opts, chromedp.ExecPath(browserBin))
 	}
 
 	if os.Getenv("CI") != "" {
@@ -75,7 +77,13 @@ func (c *ScreenshotCollector) Collect(caseID string, target string, options map[
 	defer cancel()
 
 	// Timeout
-	ctx, cancel = context.WithTimeout(ctx, 30*time.Second)
+	timeoutDuration := 30 * time.Second
+	if t, ok := options["timeout"].(int); ok && t > 0 {
+		timeoutDuration = time.Duration(t) * time.Second
+	} else if cfgTimeout := viper.GetInt("collectors.screenshot.timeout"); cfgTimeout > 0 {
+		timeoutDuration = time.Duration(cfgTimeout) * time.Second
+	}
+	ctx, cancel = context.WithTimeout(ctx, timeoutDuration)
 	defer cancel()
 
 	url := target
@@ -128,4 +136,73 @@ func (c *ScreenshotCollector) Collect(caseID string, target string, options map[
 	}
 
 	return []core.Evidence{evidence}, nil
+}
+
+func findBrowserExecutable() string {
+	// 1. Check ENV Overrides
+	for _, env := range []string{"CHROME_BIN", "BROWSER_BIN", "CHROMIUM_BIN"} {
+		if val := os.Getenv(env); val != "" {
+			if _, err := os.Stat(val); err == nil {
+				return val
+			}
+		}
+	}
+
+	// 2. Check Viper Config Override
+	if cfgPath := viper.GetString("browser.executable"); cfgPath != "" {
+		if _, err := os.Stat(cfgPath); err == nil {
+			return cfgPath
+		}
+	}
+
+	// 3. Search system PATH for common browser binaries
+	browsers := []string{"google-chrome", "chromium", "chromium-browser", "chrome", "msedge", "brave"}
+	for _, b := range browsers {
+		if p, err := exec.LookPath(b); err == nil {
+			return p
+		}
+	}
+
+	// 4. Standard OS installation paths fallback
+	switch runtime.GOOS {
+	case "windows":
+		paths := []string{
+			`C:\Program Files\Google\Chrome\Application\chrome.exe`,
+			`C:\Program Files (x86)\Google\Chrome\Application\chrome.exe`,
+			`C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe`,
+			filepath.Join(os.Getenv("LocalAppData"), `Google\Chrome\Application\chrome.exe`),
+		}
+		for _, p := range paths {
+			if _, err := os.Stat(p); err == nil {
+				return p
+			}
+		}
+	case "darwin":
+		paths := []string{
+			"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+			"/Applications/Chromium.app/Contents/MacOS/Chromium",
+			"/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
+			"/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+		}
+		for _, p := range paths {
+			if _, err := os.Stat(p); err == nil {
+				return p
+			}
+		}
+	default:
+		paths := []string{
+			"/usr/bin/google-chrome",
+			"/usr/bin/chromium",
+			"/usr/bin/chromium-browser",
+			"/usr/bin/brave-browser",
+			"/snap/bin/chromium",
+		}
+		for _, p := range paths {
+			if _, err := os.Stat(p); err == nil {
+				return p
+			}
+		}
+	}
+
+	return ""
 }

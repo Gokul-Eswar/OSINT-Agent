@@ -21,7 +21,7 @@ func GeneratePDFReport(caseID string, outputPath string) error {
 	}
 
 	entities, _ := storage.ListEntitiesByCase(caseID)
-	// rels, _ := storage.ListRelationshipsByCase(caseID)
+	rels, _ := storage.ListRelationshipsByCase(caseID)
 	timeline, _ := storage.GetCaseTimeline(caseID)
 	analysis, _ := storage.GetLatestAnalysis(caseID)
 	evidence, _ := storage.ListEvidenceByCase(caseID)
@@ -180,6 +180,35 @@ func GeneratePDFReport(caseID string, outputPath string) error {
 		}
 		pdf.CellFormat(110, 8, val, "1", 0, "", false, 0, "")
 		pdf.CellFormat(50, 8, e.Source, "1", 1, "", false, 0, "")
+	}
+
+	// --- Relationships ---
+	if len(rels) > 0 {
+		pdf.AddPage()
+		pdf.SetFont("Arial", "B", 16)
+		pdf.Cell(0, 10, "Entity Relationships")
+		pdf.Ln(15)
+
+		pdf.SetFont("Arial", "B", 10)
+		pdf.SetFillColor(240, 240, 240)
+		pdf.CellFormat(60, 8, "From Entity", "1", 0, "", true, 0, "")
+		pdf.CellFormat(40, 8, "Relationship Type", "1", 0, "", true, 0, "")
+		pdf.CellFormat(90, 8, "To Entity", "1", 1, "", true, 0, "")
+
+		pdf.SetFont("Arial", "", 9)
+		for _, r := range rels {
+			fromStr := r.FromEntityID
+			toStr := r.ToEntityID
+			if len(fromStr) > 30 {
+				fromStr = fromStr[:27] + "..."
+			}
+			if len(toStr) > 40 {
+				toStr = toStr[:37] + "..."
+			}
+			pdf.CellFormat(60, 8, fromStr, "1", 0, "", false, 0, "")
+			pdf.CellFormat(40, 8, r.Type, "1", 0, "", false, 0, "")
+			pdf.CellFormat(90, 8, toStr, "1", 1, "", false, 0, "")
+		}
 	}
 
 	// --- Timeline ---

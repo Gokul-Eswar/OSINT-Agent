@@ -32,11 +32,11 @@ Tool: <If calling a tool, specify the tool name and arguments>
 // It maintains message history, handles context injection, and routes LLM-determined actions to local tools.
 type Engine struct {
 	// CaseID links this agent's actions and generated evidence to a specific investigation case database.
-	CaseID  string
+	CaseID string
 	// History maintains the conversation thread, including tool executions and system observations.
 	History []analyzer.Message
 	// Tools lists the JSON-schema descriptions of all capabilities the LLM is permitted to trigger.
-	Tools   []interface{}
+	Tools []interface{}
 }
 
 // NewEngine constructs and configures a fresh Agent Engine for the active case.
@@ -65,7 +65,7 @@ func (e *Engine) Execute(userInput string) (string, error) {
 
 	// 2. Run a bounded execution loop (max 8 turns).
 	// Bounding the loop is critical to prevent infinite loops and runaway model api charges if the local LLM gets confused.
-	for i := 0; i < 8; i++ { 
+	for i := 0; i < 8; i++ {
 		// Create the Request payload for the Python analyzer's 'chat' task.
 		req := analyzer.Request{
 			Task:     "chat",
@@ -134,7 +134,7 @@ func (e *Engine) Execute(userInput string) (string, error) {
 		// Log status updates to stdout for real-time operator observability.
 		fmt.Printf("\n[Agent] Decision: %s\n", resp.Content)
 		fmt.Printf("[Agent] Action: Running tool '%s' with arguments: %v\n", resp.ToolUse.Name, resp.ToolUse.Arguments)
-		
+
 		// 5. Execute the Go code handler for the selected tool.
 		result, err := tool.Execute(e.CaseID, resp.ToolUse.Arguments)
 		if err != nil {

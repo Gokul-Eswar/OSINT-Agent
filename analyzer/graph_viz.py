@@ -52,9 +52,14 @@ def generate_visual_report(data):
     net.force_atlas_2based()
     
     # Output path
-    output_dir = os.path.join("evidence_storage", case_id)
-    os.makedirs(output_dir, exist_ok=True)
-    output_path = os.path.join(output_dir, "report.html")
+    custom_output = data.get("output_path")
+    if custom_output:
+        output_path = os.path.abspath(custom_output)
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    else:
+        output_dir = os.path.abspath(os.path.join("evidence_storage", case_id))
+        os.makedirs(output_dir, exist_ok=True)
+        output_path = os.path.join(output_dir, "report.html")
     
     net.save_graph(output_path)
     return {"status": "success", "file_path": output_path}

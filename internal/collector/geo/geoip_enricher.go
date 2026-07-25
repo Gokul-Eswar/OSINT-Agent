@@ -22,7 +22,7 @@ type GeoIPCollector struct {
 
 func Register() {
 	collector.Register(&GeoIPCollector{
-		BaseURL: "http://ip-api.com/json/",
+		BaseURL: "https://ip-api.com/json/",
 	})
 }
 
@@ -31,7 +31,7 @@ func (c *GeoIPCollector) Name() string {
 }
 
 func (c *GeoIPCollector) Description() string {
-	return "Enrich IP addresses with geolocation data via ip-api.com"
+	return "Enrich IP addresses with geolocation data via ip-api.com (HTTPS)"
 }
 
 func (c *GeoIPCollector) IsActive() bool {
@@ -47,7 +47,7 @@ func (c *GeoIPCollector) Collect(caseID string, target string, options map[strin
 	// API Request
 	url := c.BaseURL + target
 	if c.BaseURL == "" {
-		url = "http://ip-api.com/json/" + target
+		url = "https://ip-api.com/json/" + target
 	}
 	resp, err := client.Get(url)
 	if err != nil {

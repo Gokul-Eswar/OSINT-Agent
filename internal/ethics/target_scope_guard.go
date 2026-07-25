@@ -9,10 +9,10 @@ var (
 	// blacklist holds target substrings that are strictly forbidden from scanning/collection.
 	// Defaults cover government, military, and local system addresses to prevent unauthorized local/institutional scanning.
 	blacklist = []string{".gov", ".mil", "localhost", "127.0.0.1"}
-	
+
 	// whitelist holds target substrings that are explicitly allowed.
 	// If the whitelist is populated (non-empty), then only targets matching a whitelisted substring can be scanned.
-	whitelist []string 
+	whitelist []string
 )
 
 // IsAllowed validates if a target scan target conforms to the ethics policy.
@@ -24,7 +24,7 @@ func IsAllowed(target string) (bool, error) {
 
 	// 1. Blacklist Evaluation:
 	// Loop over all prohibited strings and block the target if it contains any blacklisted substring.
-	// NOTE: Because this relies on strings.Contains, it can trigger false positives on innocent domains 
+	// NOTE: Because this relies on strings.Contains, it can trigger false positives on innocent domains
 	// (e.g. "mygovernmentblog.com" contains ".gov" but is not a .gov TLD; "milicious.com" contains ".mil").
 	for _, b := range blacklist {
 		if strings.Contains(target, b) {

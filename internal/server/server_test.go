@@ -45,7 +45,7 @@ func TestBroadcast_DeliversToBufferedClient(t *testing.T) {
 }
 
 func TestHandleCases_MethodNotAllowed(t *testing.T) {
-	req := httptest.NewRequest(http.MethodPost, "/api/cases", nil)
+	req := httptest.NewRequest(http.MethodDelete, "/api/cases", nil)
 	rr := httptest.NewRecorder()
 
 	handleCases(rr, req)

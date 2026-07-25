@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"time"
 
 	"github.com/rs/zerolog/log"
+	"github.com/spf13/viper"
 )
 
 // PythonCommand defines the command-line flags/arguments passed to Python.
@@ -21,29 +23,29 @@ var PythonCommand = []string{"-m", "analyzer"}
 // This struct maps directly to the expected JSON input schema on the Python side.
 type Request struct {
 	// Task specifies what operation Python should run (e.g. "synthesize", "chat", "query", "vision").
-	Task      string        `json:"task"`
+	Task string `json:"task"`
 	// CaseID represents the unique identifier of the active investigation case.
-	CaseID    string        `json:"case_id"`
+	CaseID string `json:"case_id"`
 	// CaseName is the human-readable name of the case.
-	CaseName  string        `json:"case_name"`
+	CaseName string `json:"case_name"`
 	// Context passes general string context or raw data (like base64 images for vision tasks).
-	Context   string        `json:"context"`
+	Context string `json:"context"`
 	// Model specifies which local LLM model to use (e.g. "llama3", "mistral", "llava").
-	Model     string        `json:"model"`
+	Model string `json:"model"`
 	// Data holds arbitrary structured payload (like node/link data for visualization, or query strings).
-	Data      interface{}   `json:"data"` 
+	Data interface{} `json:"data"`
 	// LLMConfig contains connection details, endpoints, and timeouts for hitting the LLM provider.
-	LLMConfig LLMConfig     `json:"llm_config"`
+	LLMConfig LLMConfig `json:"llm_config"`
 	// Messages is used for multi-turn conversations in chat mode, representing chat history.
-	Messages  []Message     `json:"messages,omitempty"`
+	Messages []Message `json:"messages,omitempty"`
 	// Tools defines the array of tool JSON schemas the LLM is allowed to invoke.
-	Tools     []interface{} `json:"tools,omitempty"`
+	Tools []interface{} `json:"tools,omitempty"`
 }
 
 // Message represents a single turn (user, assistant, or system prompt) in a conversational LLM interaction.
 type Message struct {
 	// Role defines who sent the message: "system", "user", or "assistant".
-	Role    string `json:"role"`
+	Role string `json:"role"`
 	// Content contains the raw text of the message.
 	Content string `json:"content"`
 }
@@ -52,19 +54,19 @@ type Message struct {
 // The Go application reads and parses this structure to act on the LLM's decisions.
 type Response struct {
 	// Role defines the message sender (typically "assistant").
-	Role    string   `json:"role"`
+	Role string `json:"role"`
 	// Content contains the text output or final answer from the LLM.
-	Content string   `json:"content"`
+	Content string `json:"content"`
 	// ToolUse is populated if the LLM decides it needs to invoke an external tool instead of replying in plain text.
 	ToolUse *ToolUse `json:"tool_use,omitempty"`
 	// Error contains any application-level error message reported from the Python side.
-	Error   string   `json:"error,omitempty"`
+	Error string `json:"error,omitempty"`
 }
 
 // ToolUse holds the specific tool name and argument values requested by the LLM.
 type ToolUse struct {
 	// Name matches one of the registered tools (e.g., "collect", "search_evidence").
-	Name      string                 `json:"name"`
+	Name string `json:"name"`
 	// Arguments holds key-value pairs matching the parameters required by the tool.
 	Arguments map[string]interface{} `json:"arguments"`
 }
@@ -78,7 +80,7 @@ func (r *Request) Validate() error {
 	}
 	// Most tasks require an active CaseID to contextually resolve database records.
 	// We allow 'visualize' to run without a CaseID if the payload contains self-contained visual data in the Data field.
-	if r.CaseID == "" && r.Task != "visualize" { 
+	if r.CaseID == "" && r.Task != "visualize" {
 		return fmt.Errorf("case_id is required")
 	}
 	return nil
@@ -89,11 +91,11 @@ type LLMConfig struct {
 	// Provider specifies the backend platform (e.g. "ollama", "openai", "local").
 	Provider string `json:"provider"`
 	// URL points to the API endpoint (e.g., "http://localhost:11434/api/generate").
-	URL      string `json:"url"`
+	URL string `json:"url"`
 	// APIKey is used for authenticated backends.
-	APIKey   string `json:"api_key"`
+	APIKey string `json:"api_key"`
 	// Timeout controls how long we wait for the model to reply before breaking the request (in seconds).
-	Timeout  int    `json:"timeout"`
+	Timeout int `json:"timeout"`
 }
 
 // IndexEvidence triggers the Python analyzer to perform vector store ingestion of all evidence files for a case.
@@ -101,7 +103,7 @@ type LLMConfig struct {
 func IndexEvidence(caseID string) error {
 	// Define the path where raw evidence files are stored for the case.
 	evidenceDir := fmt.Sprintf("evidence_storage/%s", caseID)
-	
+
 	// Read the list of files in the directory.
 	files, err := os.ReadDir(evidenceDir)
 	if err != nil {
@@ -176,23 +178,12 @@ func RunPythonTask(req Request) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
 
-	// 4. Resolve the correct Python interpreter executable path.
-	// By default, we use "python" from the system's environment PATH.
-	pythonPath := "python" 
-
-	// For maximum user friendliness and zero-setup capability, we check if the user is running
-	// in a local virtualenv (.venv) on Windows, macOS, or Linux, and run that executable first.
-	if _, err := os.Stat(".venv/Scripts/python.exe"); err == nil {
-		// Found virtualenv on Windows
-		pythonPath = ".venv/Scripts/python.exe"
-	} else if _, err := os.Stat(".venv/bin/python"); err == nil {
-		// Found virtualenv on Unix/macOS
-		pythonPath = ".venv/bin/python"
-	}
+	// 4. Resolve the correct Python interpreter executable path dynamically.
+	pythonPath := resolvePythonExecutable()
 
 	// 5. Build the argument slice: <PythonCommand...> --task <task> --input <json_data>
 	args := append(PythonCommand, "--task", req.Task, "--input", string(inputJSON))
-	
+
 	// Create the OS command command with our timeout context.
 	cmd := exec.CommandContext(ctx, pythonPath, args...)
 
@@ -244,4 +235,55 @@ func RunPythonTask(req Request) (string, error) {
 
 	log.Debug().Str("task", req.Task).Msg("python_task_completed")
 	return output, nil
+}
+
+func resolvePythonExecutable() string {
+	// 1. Environment Variable Overrides
+	for _, env := range []string{"PYTHON_BIN", "PYTHON_PATH", "PYTHONPATH"} {
+		if val := os.Getenv(env); val != "" {
+			if _, err := os.Stat(val); err == nil {
+				return val
+			}
+		}
+	}
+
+	// 2. Viper User Config Override
+	if cfgPath := viper.GetString("python.path"); cfgPath != "" {
+		if _, err := os.Stat(cfgPath); err == nil {
+			return cfgPath
+		}
+	}
+
+	// 3. Walk up directory tree to locate .venv or venv from current working directory
+	dir, err := os.Getwd()
+	if err == nil {
+		for i := 0; i < 5; i++ {
+			winVenv := filepath.Join(dir, ".venv", "Scripts", "python.exe")
+			if _, err := os.Stat(winVenv); err == nil {
+				return winVenv
+			}
+			unixVenv := filepath.Join(dir, ".venv", "bin", "python")
+			if _, err := os.Stat(unixVenv); err == nil {
+				return unixVenv
+			}
+			parent := filepath.Dir(dir)
+			if parent == dir {
+				break
+			}
+			dir = parent
+		}
+	}
+
+	// 4. System PATH Discovery (python3, python, py) - verify binary is functional
+	for _, binary := range []string{"python3", "python", "py"} {
+		if path, err := exec.LookPath(binary); err == nil {
+			// Verify executable actually runs (to avoid Windows App Execution Alias traps)
+			out, err := exec.Command(path, "--version").Output()
+			if err == nil && len(out) > 0 {
+				return path
+			}
+		}
+	}
+
+	return "python"
 }

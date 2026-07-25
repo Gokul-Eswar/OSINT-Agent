@@ -13,19 +13,54 @@ import (
 //go:embed migrations/*.sql
 var migrationsFS embed.FS
 
-// TranslatePlaceholder handles dialect differences between SQLite (?) and Postgres ($1).
+// TranslatePlaceholder handles dialect differences between SQLite (?) and Postgres ($1), ignoring ? inside string literals.
 func TranslatePlaceholder(query string) string {
 	if viper.GetString("database.type") != "postgres" {
 		return query
 	}
 
-	// Simple placeholder translation
+	var sb strings.Builder
 	count := 1
-	for strings.Contains(query, "?") {
-		query = strings.Replace(query, "?", fmt.Sprintf("$%d", count), 1)
-		count++
+	inSingleQuote := false
+	inDoubleQuote := false
+	escaped := false
+
+	for i := 0; i < len(query); i++ {
+		ch := query[i]
+
+		if escaped {
+			sb.WriteByte(ch)
+			escaped = false
+			continue
+		}
+
+		if ch == '\\' {
+			sb.WriteByte(ch)
+			escaped = true
+			continue
+		}
+
+		if ch == '\'' && !inDoubleQuote {
+			inSingleQuote = !inSingleQuote
+			sb.WriteByte(ch)
+			continue
+		}
+
+		if ch == '"' && !inSingleQuote {
+			inDoubleQuote = !inDoubleQuote
+			sb.WriteByte(ch)
+			continue
+		}
+
+		if ch == '?' && !inSingleQuote && !inDoubleQuote {
+			sb.WriteString(fmt.Sprintf("$%d", count))
+			count++
+		} else {
+			sb.WriteByte(ch)
+		}
 	}
-	return query
+
+	return sb.String()
 }
 
 // TranslateDialect handles minor SQL differences for SQLite-style migrations.

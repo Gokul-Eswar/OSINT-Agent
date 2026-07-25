@@ -74,10 +74,10 @@ func TestAgentToolIntegration(t *testing.T) {
 	t.Run("update_hypotheses execution", func(t *testing.T) {
 		tool := Registry["update_hypotheses"]
 		args := map[string]interface{}{
-			"hypothesis": "Whois indicates the server host is located in the US.",
-			"confidence": 0.75,
+			"hypothesis":         "Whois indicates the server host is located in the US.",
+			"confidence":         0.75,
 			"evidence_filenames": []interface{}{"whois_result.txt"},
-			"status": "active",
+			"status":             "active",
 		}
 		res, err := tool.Execute(caseID, args)
 		if err != nil {

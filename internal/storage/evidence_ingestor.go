@@ -11,7 +11,7 @@ import (
 // IngestEvidence is the central routing function for data ingestion.
 // It inspects the Evidence's Collector field and delegates the parsing to the appropriate
 // collector-specific ingestion handler.
-// Unknown collectors are ignored (returning nil), which allows third-party extensions 
+// Unknown collectors are ignored (returning nil), which allows third-party extensions
 // to write files to evidence_storage without causing failures before ingestors are written.
 func IngestEvidence(ev *core.Evidence) error {
 	switch ev.Collector {
@@ -76,7 +76,9 @@ func ingestSocial(ev *core.Evidence) error {
 			siteEnt.Metadata = make(map[string]interface{})
 		}
 		siteEnt.Metadata["platform"] = res.Site
-		UpdateEntity(siteEnt)
+		if err := UpdateEntity(siteEnt); err != nil {
+			return err
+		}
 
 		// 3. Link Username -> has_account -> Profile URL entity.
 		rel := &core.Relationship{
@@ -86,7 +88,9 @@ func ingestSocial(ev *core.Evidence) error {
 			Type:         "has_account",
 			EvidenceID:   ev.ID,
 		}
-		CreateRelationship(rel)
+		if err := CreateRelationship(rel); err != nil {
+			// Log or handle error
+		}
 	}
 	return nil
 }
@@ -103,7 +107,7 @@ func ingestScreenshot(ev *core.Evidence) error {
 	if len(target) > 0 && (target[0] >= '0' && target[0] <= '9') {
 		entityType = "ip"
 	}
-	
+
 	// Ensure the target node (IP/Domain) exists in the database.
 	targetEnt, err := EnsureEntity(ev.CaseID, entityType, target, "screenshot")
 	if err != nil {
@@ -115,7 +119,7 @@ func ingestScreenshot(ev *core.Evidence) error {
 	rel := &core.Relationship{
 		CaseID:       ev.CaseID,
 		FromEntityID: targetEnt.ID,
-		ToEntityID:   targetEnt.ID, 
+		ToEntityID:   targetEnt.ID,
 		Type:         "has_screenshot",
 		EvidenceID:   ev.ID,
 		Confidence:   1.0,
@@ -151,7 +155,7 @@ func ingestPorts(ev *core.Evidence) error {
 		if status == "open" {
 			// Format the service name (e.g., "TCP/22")
 			svcName := fmt.Sprintf("TCP/%s", port)
-			
+
 			// Ensure the Service service entity exists.
 			svcEnt, err := EnsureEntity(ev.CaseID, "service", svcName, "ports")
 			if err != nil {
@@ -166,7 +170,7 @@ func ingestPorts(ev *core.Evidence) error {
 				Type:         "has_port",
 				EvidenceID:   ev.ID,
 			}
-			CreateRelationship(rel)
+			_ = CreateRelationship(rel)
 		}
 	}
 	return nil
@@ -202,7 +206,7 @@ func ingestHTTP(ev *core.Evidence) error {
 			Type:         "runs_service",
 			EvidenceID:   ev.ID,
 		}
-		CreateRelationship(rel)
+		_ = CreateRelationship(rel)
 	}
 	return nil
 }
@@ -307,7 +311,7 @@ func ingestGitHub(ev *core.Evidence) error {
 			EvidenceID:   ev.ID,
 			Confidence:   1.0,
 		}
-		CreateRelationship(rel)
+		_ = CreateRelationship(rel)
 	}
 
 	return nil
@@ -340,7 +344,7 @@ func ingestWHOIS(ev *core.Evidence) error {
 			EvidenceID:   ev.ID,
 			Confidence:   1.0,
 		}
-		CreateRelationship(rel)
+		_ = CreateRelationship(rel)
 	}
 
 	return nil

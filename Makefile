@@ -27,6 +27,7 @@ run: build
 
 test:
 	go test ./...
+	@if [ -d .venv ]; then .\.venv\Scripts\python.exe -m pytest; else python -m pytest; fi
 
 vet:
 	go vet ./...

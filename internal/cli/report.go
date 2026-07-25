@@ -10,7 +10,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var format string
+var (
+	format     string
+	outputFile string
+)
 
 var reportCmd = &cobra.Command{
 	Use:   "report",
@@ -30,24 +33,63 @@ var reportCmd = &cobra.Command{
 		switch format {
 		case "pdf":
 			fmt.Printf("Generating PDF report for case %s...\n", caseID)
-			outputPath := filepath.Join(outputDir, "investigation_report.pdf")
-			err := report.GeneratePDFReport(caseID, outputPath)
+			targetPath := outputFile
+			if targetPath == "" {
+				targetPath = filepath.Join(outputDir, "investigation_report.pdf")
+			}
+			err := report.GeneratePDFReport(caseID, targetPath)
 			if err != nil {
 				return err
 			}
-			fmt.Printf("PDF Report successfully generated: %s\n", outputPath)
+			fmt.Printf("PDF Report successfully generated: %s\n", targetPath)
+		case "html":
+			fmt.Printf("Generating HTML report for case %s...\n", caseID)
+			targetPath := outputFile
+			if targetPath == "" {
+				targetPath = filepath.Join(outputDir, "investigation_report.html")
+			}
+			err := report.GenerateHTMLReport(caseID, targetPath)
+			if err != nil {
+				return err
+			}
+			fmt.Printf("HTML Report successfully generated: %s\n", targetPath)
+		case "json":
+			fmt.Printf("Generating JSON report for case %s...\n", caseID)
+			targetPath := outputFile
+			if targetPath == "" {
+				targetPath = filepath.Join(outputDir, "investigation_report.json")
+			}
+			err := report.GenerateJSONReport(caseID, targetPath)
+			if err != nil {
+				return err
+			}
+			fmt.Printf("JSON Report successfully generated: %s\n", targetPath)
+		case "csv":
+			fmt.Printf("Generating CSV report for case %s...\n", caseID)
+			targetPath := outputFile
+			if targetPath == "" {
+				targetPath = filepath.Join(outputDir, "entities.csv")
+			}
+			err := report.GenerateCSVReport(caseID, targetPath)
+			if err != nil {
+				return err
+			}
+			fmt.Printf("CSV Report successfully generated: %s\n", targetPath)
 		default:
 			fmt.Printf("Generating Markdown report for case %s...\n", caseID)
 			md, err := report.GenerateMarkdownReport(caseID)
 			if err != nil {
 				return err
 			}
-			outputPath := filepath.Join(outputDir, "investigation_report.md")
-			err = os.WriteFile(outputPath, []byte(md), 0644)
+			targetPath := outputFile
+			if targetPath == "" {
+				targetPath = filepath.Join(outputDir, "investigation_report.md")
+			}
+			err = os.WriteFile(targetPath, []byte(md), 0644)
 			if err != nil {
 				return fmt.Errorf("failed to save report: %w", err)
 			}
-			fmt.Printf("Markdown Report successfully generated: %s\n", outputPath)
+			fmt.Printf("Markdown Report successfully generated: %s\n", targetPath)
 			fmt.Println("\n--- PREVIEW ---")
 			if len(md) > 200 {
 				fmt.Println(md[:200] + "...")
@@ -62,6 +104,7 @@ var reportCmd = &cobra.Command{
 
 func init() {
 	reportCmd.Flags().StringVarP(&caseID, "case", "c", "", "Case ID (required)")
-	reportCmd.Flags().StringVarP(&format, "format", "f", "markdown", "Report format (markdown, pdf)")
+	reportCmd.Flags().StringVarP(&format, "format", "f", "markdown", "Report format (markdown, pdf, html, json, csv)")
+	reportCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Custom output file path")
 	rootCmd.AddCommand(reportCmd)
 }

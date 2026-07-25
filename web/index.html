@@ -664,7 +664,31 @@
 
                                 <div className="flex items-center justify-between mb-2 px-1">
                                     <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Active Cases</h3>
-                                    <span className="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full">{filteredCases.length}</span>
+                                    <div className="flex items-center gap-2">
+                                        <button 
+                                            onClick={() => {
+                                                const name = prompt("Enter Case Name:");
+                                                const desc = prompt("Enter Case Description (optional):");
+                                                if (name) {
+                                                    fetch('/api/cases', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({ name, description: desc || '' })
+                                                    })
+                                                    .then(res => res.json())
+                                                    .then(c => {
+                                                        alert(`Case created: ${c.name}`);
+                                                        fetchData();
+                                                    })
+                                                    .catch(err => alert("Failed to create case: " + err));
+                                                }
+                                            }}
+                                            className="text-xs text-indigo-400 hover:text-indigo-300 font-medium"
+                                        >
+                                            + New
+                                        </button>
+                                        <span className="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full">{filteredCases.length}</span>
+                                    </div>
                                 </div>
 
                                 <div className="flex-1 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
@@ -760,11 +784,41 @@
                                             </div>
                                         </div>
                                         <div className="flex gap-2">
-                                            <button className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-md text-sm font-medium transition-colors border border-slate-700 flex items-center gap-2">
+                                            <button 
+                                                onClick={() => {
+                                                    const fmt = prompt("Enter report format (html, pdf, json, csv, markdown):", "html");
+                                                    if (fmt) {
+                                                        fetch(`/api/reports?case_id=${selectedCase.id}&format=${fmt}`)
+                                                            .then(res => res.json())
+                                                            .then(data => alert(`Report generated: ${data.report_path}`))
+                                                            .catch(err => alert("Report generation failed: " + err));
+                                                    }
+                                                }} 
+                                                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-md text-sm font-medium transition-colors border border-slate-700 flex items-center gap-2"
+                                            >
                                                 <i data-lucide="download" className="w-4 h-4"></i> Export
                                             </button>
-                                            <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-md text-sm font-medium transition-colors shadow-lg shadow-indigo-600/20 flex items-center gap-2">
-                                                <i data-lucide="plus" className="w-4 h-4"></i> Add Evidence
+                                            <button 
+                                                onClick={() => {
+                                                    const target = prompt("Enter target domain or IP to collect:");
+                                                    const col = prompt("Enter collector name (dns, whois, geo, ports, screenshot):", "dns");
+                                                    if (target && col) {
+                                                        fetch('/api/collect', {
+                                                            method: 'POST',
+                                                            headers: { 'Content-Type': 'application/json' },
+                                                            body: JSON.stringify({ collector: col, case_id: selectedCase.id, target: target })
+                                                        })
+                                                        .then(res => res.json())
+                                                        .then(data => {
+                                                            alert(`Collection started! Found ${data.evidence_count} items.`);
+                                                            loadGraph(selectedCase.id);
+                                                        })
+                                                        .catch(err => alert("Collection failed: " + err));
+                                                    }
+                                                }}
+                                                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-md text-sm font-medium transition-colors shadow-lg shadow-indigo-600/20 flex items-center gap-2"
+                                            >
+                                                <i data-lucide="plus" className="w-4 h-4"></i> Run Collector
                                             </button>
                                         </div>
                                     </div>

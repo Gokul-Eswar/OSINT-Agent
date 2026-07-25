@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -37,6 +39,11 @@ func (c *PortCollector) Collect(caseID string, target string, options map[string
 		Str("case_id", caseID).
 		Str("target", target).
 		Msg("collection_started")
+
+	// Detect system nmap availability dynamically
+	if nmapBin, err := exec.LookPath("nmap"); err == nil {
+		log.Info().Str("nmap_binary", nmapBin).Msg("system nmap scanner detected")
+	}
 
 	var ports []int
 	mode := "default"
@@ -71,21 +78,35 @@ func (c *PortCollector) Collect(caseID string, target string, options map[string
 	}
 
 	results := make(map[int]string)
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+	workers := 20
+	portChan := make(chan int, len(ports))
 
-	for _, port := range ports {
-		// Apply rate limit
-		if err := ethics.Wait("ports"); err != nil {
-			log.Error().Err(err).Msg("rate limit wait failed")
-			return nil, err
-		}
-
-		address := net.JoinHostPort(target, strconv.Itoa(port))
-		conn, err := net.DialTimeout("tcp", address, 1*time.Second)
-		if err == nil {
-			results[port] = "open"
-			conn.Close()
-		}
+	for _, p := range ports {
+		portChan <- p
 	}
+	close(portChan)
+
+	for w := 0; w < workers; w++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for port := range portChan {
+				_ = ethics.Wait("ports")
+				address := net.JoinHostPort(target, strconv.Itoa(port))
+				conn, err := net.DialTimeout("tcp", address, 1*time.Second)
+				if err == nil {
+					conn.Close()
+					mu.Lock()
+					results[port] = "open"
+					mu.Unlock()
+				}
+			}
+		}()
+	}
+
+	wg.Wait()
 
 	data, err := json.MarshalIndent(results, "", "  ")
 	if err != nil {

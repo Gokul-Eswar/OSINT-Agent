@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/spectre/spectre/internal/analysis"
 	"github.com/spectre/spectre/internal/analyzer"
 	"github.com/spectre/spectre/internal/collector"
 	"github.com/spectre/spectre/internal/core"
@@ -16,19 +17,19 @@ import (
 // Tool defines a capability/capability model that the conversational LLM agent can invoke.
 type Tool struct {
 	// Name is the unique string identifier for the tool (e.g. "collect").
-	Name        string      `json:"name"`
+	Name string `json:"name"`
 	// Description explains to the LLM what the tool does and when to invoke it.
-	Description string      `json:"description"`
+	Description string `json:"description"`
 	// Parameters specifies the JSON schema representing the arguments the LLM must provide.
-	Parameters  interface{} `json:"parameters"`
+	Parameters interface{} `json:"parameters"`
 	// Execute defines the Go function handler that is run when the LLM triggers the tool.
-	Execute     func(caseID string, args map[string]interface{}) (string, error)
+	Execute func(caseID string, args map[string]interface{}) (string, error)
 }
 
 // Registry stores the global map of all system tools available to the Agent.
 // The keys match the Tool.Name field.
 var Registry = map[string]Tool{
-	
+
 	// "collect": Runs active or passive data gathering collectors against a target.
 	"collect": {
 		Name:        "collect",
@@ -57,7 +58,7 @@ var Registry = map[string]Tool{
 				return "", fmt.Errorf("target is required")
 			}
 
-			// By default, we do not allow active reconnaissance (like active port scanning) 
+			// By default, we do not allow active reconnaissance (like active port scanning)
 			// via autonomous agent conversations to maintain investigator safety, unless configured.
 			evidence, err := collector.RunAndSave(name, caseID, target, false, nil)
 			if err != nil {
@@ -68,7 +69,7 @@ var Registry = map[string]Tool{
 		},
 	},
 
-	// "list_collectors": Returns all registered collectors. 
+	// "list_collectors": Returns all registered collectors.
 	// Helps the LLM know which collector plug-in names are available.
 	"list_collectors": {
 		Name:        "list_collectors",
@@ -171,7 +172,7 @@ var Registry = map[string]Tool{
 		},
 		Execute: func(caseID string, args map[string]interface{}) (string, error) {
 			query, _ := args["query"].(string)
-			
+
 			// Build Request envelope triggering the python side's search_evidence task.
 			req := analyzer.Request{
 				Task:   "search_evidence",
@@ -228,8 +229,8 @@ var Registry = map[string]Tool{
 		},
 		Execute: func(caseID string, args map[string]interface{}) (string, error) {
 			filename, _ := args["filename"].(string)
-			
-			// Path Traversal Security: 
+
+			// Path Traversal Security:
 			// Ensure the model doesn't supply path elements like "../" or absolute windows paths to read host system files.
 			if strings.Contains(filename, "..") || strings.Contains(filename, "/") || strings.Contains(filename, "\\") {
 				return "", fmt.Errorf("invalid filename: path traversal attempt detected")
@@ -242,7 +243,7 @@ var Registry = map[string]Tool{
 			}
 
 			content := string(data)
-			
+
 			// LLM Window Safeguard:
 			// Truncate the file content if it exceeds 15,000 characters to prevent blowing out LLM attention context.
 			if len(content) > 15000 {
@@ -371,7 +372,7 @@ var Registry = map[string]Tool{
 					"description": "Confidence score between 0.0 and 1.0.",
 				},
 				"evidence_filenames": map[string]interface{}{
-					"type":        "array",
+					"type": "array",
 					"items": map[string]interface{}{
 						"type": "string",
 					},
@@ -409,7 +410,7 @@ var Registry = map[string]Tool{
 				status = statusVal
 			}
 
-			// Map human-readable file names (e.g. whois_google.com.txt) 
+			// Map human-readable file names (e.g. whois_google.com.txt)
 			// to the correct internal DB evidence IDs by scanning existing records.
 			var evidenceIDs []string
 			if len(filenames) > 0 {
@@ -449,6 +450,23 @@ var Registry = map[string]Tool{
 			}
 
 			return fmt.Sprintf("Intelligence lead recorded successfully with ID: %s", lead.ID), nil
+		},
+	},
+
+	// "correlate_personas": Correlates usernames and profiles across platforms into unified persona nodes.
+	"correlate_personas": {
+		Name:        "correlate_personas",
+		Description: "Analyze accounts and usernames in the case to correlate online personas across platforms.",
+		Parameters: map[string]interface{}{
+			"type":       "object",
+			"properties": map[string]interface{}{},
+		},
+		Execute: func(caseID string, args map[string]interface{}) (string, error) {
+			clusters, err := analysis.CorrelatePersonas(caseID)
+			if err != nil {
+				return "", err
+			}
+			return fmt.Sprintf("Correlated %d personas from target entities.", len(clusters)), nil
 		},
 	},
 }

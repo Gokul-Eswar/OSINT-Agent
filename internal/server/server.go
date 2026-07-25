@@ -5,12 +5,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/spectre/spectre/internal/agent"
 	"github.com/spectre/spectre/internal/analysis"
+	"github.com/spectre/spectre/internal/collector"
 	"github.com/spectre/spectre/internal/core"
+	"github.com/spectre/spectre/internal/report"
 	"github.com/spectre/spectre/internal/storage"
 	"github.com/spf13/viper"
 )
@@ -52,6 +58,8 @@ func Start(port int) error {
 	// API Routes (Protected)
 	mux.HandleFunc("/api/cases", withAuth(handleCases))
 	mux.HandleFunc("/api/cases/", withAuth(handleCaseDetail))
+	mux.HandleFunc("/api/collect", withAuth(handleCollect))
+	mux.HandleFunc("/api/reports", withAuth(handleReports))
 	mux.HandleFunc("/api/events", withAuth(handleEvents))
 	mux.HandleFunc("/api/settings", withAuth(handleSettings))
 	mux.HandleFunc("/api/chat", withAuth(handleChat))
@@ -156,19 +164,54 @@ func Broadcast(msg interface{}) {
 }
 
 func handleCases(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	if r.Method == http.MethodGet {
+		cases, err := storage.ListCases()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(cases)
 		return
 	}
 
-	cases, err := storage.ListCases()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if r.Method == http.MethodPost {
+		var payload struct {
+			Name        string `json:"name"`
+			Description string `json:"description"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		if payload.Name == "" {
+			http.Error(w, "Name is required", http.StatusBadRequest)
+			return
+		}
+
+		c := &core.Case{
+			ID:          uuid.New().String(),
+			Name:        payload.Name,
+			Description: payload.Description,
+			Status:      "active",
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+		}
+
+		if err := storage.CreateCase(c); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(c)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(cases)
+	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 }
 
 func handleCaseDetail(w http.ResponseWriter, r *http.Request) {
@@ -180,16 +223,35 @@ func handleCaseDetail(w http.ResponseWriter, r *http.Request) {
 
 	caseID := parts[3]
 
-	// Check if it's a graph request
-	if len(parts) > 4 && parts[4] == "graph" {
-		data, err := analysis.ExportCaseForViz(caseID)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+	// Check sub-routes
+	if len(parts) > 4 {
+		action := parts[4]
+		if action == "graph" {
+			data, err := analysis.ExportCaseForViz(caseID)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(data)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(data)
-		return
+
+		if action == "export" {
+			outputDir := filepath.Join("evidence_storage", caseID)
+			_ = os.MkdirAll(outputDir, 0755)
+			exportPath := filepath.Join(outputDir, "case_bundle.json")
+			if err := storage.ExportCaseBundle(caseID, exportPath); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]string{
+				"status":      "exported",
+				"export_path": exportPath,
+			})
+			return
+		}
 	}
 
 	// Normal case detail
@@ -205,6 +267,96 @@ func handleCaseDetail(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(c)
+}
+
+func handleCollect(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var payload struct {
+		Collector string                 `json:"collector"`
+		CaseID    string                 `json:"case_id"`
+		Target    string                 `json:"target"`
+		Options   map[string]interface{} `json:"options"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if payload.Collector == "" || payload.CaseID == "" || payload.Target == "" {
+		http.Error(w, "collector, case_id, and target are required", http.StatusBadRequest)
+		return
+	}
+
+	evidence, err := collector.RunAndSave(payload.Collector, payload.CaseID, payload.Target, true, payload.Options)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":         "success",
+		"evidence_count": len(evidence),
+		"collector":      payload.Collector,
+		"target":         payload.Target,
+	})
+}
+
+func handleReports(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet {
+		caseID := r.URL.Query().Get("case_id")
+		fmtType := r.URL.Query().Get("format")
+		if caseID == "" {
+			http.Error(w, "case_id query parameter required", http.StatusBadRequest)
+			return
+		}
+		if fmtType == "" {
+			fmtType = "json"
+		}
+
+		outputDir := filepath.Join("evidence_storage", caseID)
+		_ = os.MkdirAll(outputDir, 0755)
+
+		targetPath := filepath.Join(outputDir, fmt.Sprintf("report.%s", fmtType))
+		var err error
+
+		switch fmtType {
+		case "pdf":
+			err = report.GeneratePDFReport(caseID, targetPath)
+		case "html":
+			err = report.GenerateHTMLReport(caseID, targetPath)
+		case "csv":
+			err = report.GenerateCSVReport(caseID, targetPath)
+		case "json":
+			err = report.GenerateJSONReport(caseID, targetPath)
+		default:
+			var md string
+			md, err = report.GenerateMarkdownReport(caseID)
+			if err == nil {
+				err = os.WriteFile(targetPath, []byte(md), 0644)
+			}
+		}
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{
+			"status":      "generated",
+			"report_path": targetPath,
+			"format":      fmtType,
+		})
+		return
+	}
+
+	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 }
 
 func handleSettings(w http.ResponseWriter, r *http.Request) {
