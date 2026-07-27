@@ -5,9 +5,9 @@ This note captures a repeatable baseline for CLI startup, collector benchmarks, 
 ## Measurement Conditions
 
 - Timestamp: 2026-04-05T12:27:42.9702258+05:30
-- Workspace: D:\GOKUL_ESWAR\Codebase\CLI_AGENNT
+- Workspace: <workspace_root>
 - Binary: .\bin\spectre.exe
-- Host: GOKULESWAR
+- Host: <test_host>
 - OS: Microsoft Windows 11 Home Single Language 10.0.26200
 - CPU: AMD Ryzen 5 5600H with Radeon Graphics
 - RAM: 15.4 GB
@@ -41,10 +41,10 @@ go test -run '^$' -bench 'BenchmarkCollectorConcurrency|BenchmarkHTTPCollector|B
 
 | Timestamp | Machine | Command | Options / Target | Time |
 | --- | --- | --- | --- | ---: |
-| 2026-04-05T12:27:42.9702258+05:30 | GOKULESWAR / Windows 11 Home Single Language / Ryzen 5 5600H / 15.4 GB | version | `.in\spectre.exe version` | 144.89 ms |
-| 2026-04-05T12:27:42.9702258+05:30 | GOKULESWAR / Windows 11 Home Single Language / Ryzen 5 5600H / 15.4 GB | help | `.in\spectre.exe --help` | 65.02 ms |
-| 2026-04-05T12:27:42.9702258+05:30 | GOKULESWAR / Windows 11 Home Single Language / Ryzen 5 5600H / 15.4 GB | init | `.in\spectre.exe init` | 89.97 ms |
-| 2026-04-05T12:27:42.9702258+05:30 | GOKULESWAR / Windows 11 Home Single Language / Ryzen 5 5600H / 15.4 GB | collect dry-run | `GO_TESTING=true .\bin\spectre.exe collect dns example.com --dry-run --case perf-baseline` | 68.33 ms |
+| 2026-04-05T12:27:42.9702258+05:30 | benchmark_host / Windows 11 Home Single Language / Ryzen 5 5600H / 15.4 GB | version | `.\bin\spectre.exe version` | 144.89 ms |
+| 2026-04-05T12:27:42.9702258+05:30 | benchmark_host / Windows 11 Home Single Language / Ryzen 5 5600H / 15.4 GB | help | `.\bin\spectre.exe --help` | 65.02 ms |
+| 2026-04-05T12:27:42.9702258+05:30 | benchmark_host / Windows 11 Home Single Language / Ryzen 5 5600H / 15.4 GB | init | `.\bin\spectre.exe init` | 89.97 ms |
+| 2026-04-05T12:27:42.9702258+05:30 | benchmark_host / Windows 11 Home Single Language / Ryzen 5 5600H / 15.4 GB | collect dry-run | `GO_TESTING=true .\bin\spectre.exe collect dns example.com --dry-run --case perf-baseline` | 68.33 ms |
 
 ## Collector Benchmarks
 
@@ -74,7 +74,7 @@ The dry-run collect path is the safest repeatable investigation smoke test becau
 
 | Timestamp | Machine | Flow | Command | Time |
 | --- | --- | --- | --- | ---: |
-| 2026-04-05T12:27:42.9702258+05:30 | GOKULESWAR / Windows 11 Home Single Language / Ryzen 5 5600H / 15.4 GB | investigation smoke flow | `GO_TESTING=true .\bin\spectre.exe collect dns example.com --dry-run --case perf-baseline` | 68.33 ms |
+| 2026-04-05T12:27:42.9702258+05:30 | benchmark_host / Windows 11 Home Single Language / Ryzen 5 5600H / 15.4 GB | investigation smoke flow | `GO_TESTING=true .\bin\spectre.exe collect dns example.com --dry-run --case perf-baseline` | 68.33 ms |
 
 ## Re-run Rules
 
