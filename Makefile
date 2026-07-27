@@ -1,11 +1,14 @@
-.PHONY: build install-python install clean run test vet lint cover cover-check startup-bench check
+.PHONY: build install-python install installer clean run test vet lint cover cover-check startup-bench check
 
 BINARY_NAME=spectre
 COVER_PROFILE=coverage.out
 COVER_MIN=40
 
 build:
-	go build -o $(BINARY_NAME) cmd/spectre/main.go
+	go build -o $(BINARY_NAME).exe cmd/spectre/main.go
+
+installer:
+	powershell -ExecutionPolicy Bypass -File ./scripts/build_installer.ps1
 
 install-python:
 	@echo "Installing Python dependencies..."
@@ -20,6 +23,7 @@ install: build install-python
 clean:
 	rm -f $(BINARY_NAME)
 	rm -f $(BINARY_NAME).exe
+	rm -f spectre-installer.exe
 	rm -f $(COVER_PROFILE)
 
 run: build
