@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/spectre/spectre/internal/config"
-	"github.com/spectre/spectre/internal/logger"
+	"github.com/Gokul-Eswar/Spectre/internal/config"
+	"github.com/Gokul-Eswar/Spectre/internal/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/spectre/spectre/internal/core"
+	"github.com/Gokul-Eswar/Spectre/internal/core"
 )
 
 func TestFormatAnalysis_WithAllSections(t *testing.T) {

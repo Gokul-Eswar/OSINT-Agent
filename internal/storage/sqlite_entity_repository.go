@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
-	"github.com/spectre/spectre/internal/core"
+	"github.com/Gokul-Eswar/Spectre/internal/core"
 )
 
 // OnEntityCreated is a hook for real-time updates

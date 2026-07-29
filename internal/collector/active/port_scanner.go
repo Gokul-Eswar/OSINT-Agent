@@ -14,8 +14,8 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"github.com/spectre/spectre/internal/core"
-	"github.com/spectre/spectre/internal/ethics"
+	"github.com/Gokul-Eswar/Spectre/internal/core"
+	"github.com/Gokul-Eswar/Spectre/internal/ethics"
 	"github.com/spf13/viper"
 )
 

@@ -7,11 +7,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/spectre/spectre/internal/analysis"
-	"github.com/spectre/spectre/internal/analyzer"
-	"github.com/spectre/spectre/internal/collector"
-	"github.com/spectre/spectre/internal/core"
-	"github.com/spectre/spectre/internal/storage"
+	"github.com/Gokul-Eswar/Spectre/internal/analysis"
+	"github.com/Gokul-Eswar/Spectre/internal/analyzer"
+	"github.com/Gokul-Eswar/Spectre/internal/collector"
+	"github.com/Gokul-Eswar/Spectre/internal/core"
+	"github.com/Gokul-Eswar/Spectre/internal/storage"
 )
 
 // Tool defines a capability/capability model that the conversational LLM agent can invoke.

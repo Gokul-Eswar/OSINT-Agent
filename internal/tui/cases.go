@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/charmbracelet/bubbles/list"
-	"github.com/spectre/spectre/internal/storage"
+	"github.com/Gokul-Eswar/Spectre/internal/storage"
 )
 
 type item struct {

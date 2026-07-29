@@ -3,7 +3,7 @@ package main
 import "testing"
 
 func TestParseTotalCoverage_ValidOutput(t *testing.T) {
-	input := "github.com/spectre/spectre/internal/server/server.go:23:\tStart\t33.3%\n" +
+	input := "github.com/Gokul-Eswar/Spectre/internal/server/server.go:23:\tStart\t33.3%\n" +
 		"total:\t\t\t\t\t(statements)\t36.1%\n"
 
 	got, err := parseTotalCoverage(input)

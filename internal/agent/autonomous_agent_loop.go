@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/spectre/spectre/internal/analyzer"
+	"github.com/Gokul-Eswar/Spectre/internal/analyzer"
 	"github.com/spf13/viper"
 )
 

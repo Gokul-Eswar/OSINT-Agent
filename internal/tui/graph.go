@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/spectre/spectre/internal/storage"
+	"github.com/Gokul-Eswar/Spectre/internal/storage"
 )
 
 func RenderASCIIGraph(caseID string) string {

@@ -7,8 +7,8 @@ import (
 	"text/tabwriter"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/spectre/spectre/internal/extensions"
-	"github.com/spectre/spectre/internal/tui/store"
+	"github.com/Gokul-Eswar/Spectre/internal/extensions"
+	"github.com/Gokul-Eswar/Spectre/internal/tui/store"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

@@ -3,7 +3,7 @@ package tui
 import (
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/spectre/spectre/internal/storage"
+	"github.com/Gokul-Eswar/Spectre/internal/storage"
 )
 
 // FetchEntities fetches all entities for a case and converts them to table rows

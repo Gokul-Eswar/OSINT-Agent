@@ -7,7 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/spectre/spectre/internal/collector"
+	"github.com/Gokul-Eswar/Spectre/internal/collector"
 )
 
 type runnerState int

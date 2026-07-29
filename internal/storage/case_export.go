@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/spectre/spectre/internal/core"
+	"github.com/Gokul-Eswar/Spectre/internal/core"
 )
 
 // CaseBundle represents a fully exported case containing its metadata, entities, relationships, evidence, and timeline.

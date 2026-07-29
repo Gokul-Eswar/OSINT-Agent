@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"github.com/spectre/spectre/internal/collector"
-	"github.com/spectre/spectre/internal/core"
+	"github.com/Gokul-Eswar/Spectre/internal/collector"
+	"github.com/Gokul-Eswar/Spectre/internal/core"
 )
 
 type Resolver interface {

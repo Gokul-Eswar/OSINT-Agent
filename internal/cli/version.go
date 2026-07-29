@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"github.com/spectre/spectre/internal/version"
+	"github.com/Gokul-Eswar/Spectre/internal/version"
 	"github.com/spf13/cobra"
 )
 

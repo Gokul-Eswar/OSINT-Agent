@@ -1,6 +1,6 @@
 package active
 
-import "github.com/spectre/spectre/internal/collector"
+import "github.com/Gokul-Eswar/Spectre/internal/collector"
 
 func RegisterBuiltins() {
 	collector.Register(&HTTPCollector{})

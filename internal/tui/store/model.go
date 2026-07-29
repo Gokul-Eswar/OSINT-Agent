@@ -7,7 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/spectre/spectre/internal/extensions"
+	"github.com/Gokul-Eswar/Spectre/internal/extensions"
 )
 
 var (

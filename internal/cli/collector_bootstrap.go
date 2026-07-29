@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/spectre/spectre/internal/collector"
-	activecollector "github.com/spectre/spectre/internal/collector/active"
-	dnscollector "github.com/spectre/spectre/internal/collector/dns"
-	geocollector "github.com/spectre/spectre/internal/collector/geo"
-	githubcollector "github.com/spectre/spectre/internal/collector/github"
-	whoiscollector "github.com/spectre/spectre/internal/collector/whois"
+	"github.com/Gokul-Eswar/Spectre/internal/collector"
+	activecollector "github.com/Gokul-Eswar/Spectre/internal/collector/active"
+	dnscollector "github.com/Gokul-Eswar/Spectre/internal/collector/dns"
+	geocollector "github.com/Gokul-Eswar/Spectre/internal/collector/geo"
+	githubcollector "github.com/Gokul-Eswar/Spectre/internal/collector/github"
+	whoiscollector "github.com/Gokul-Eswar/Spectre/internal/collector/whois"
 )
 
 var collectorBootstrapOnce sync.Once

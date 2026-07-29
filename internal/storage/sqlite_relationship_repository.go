@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/spectre/spectre/internal/core"
+	"github.com/Gokul-Eswar/Spectre/internal/core"
 )
 
 // OnRelationshipCreated is a hook for real-time updates

@@ -1,4 +1,4 @@
-module github.com/spectre/spectre
+module github.com/Gokul-Eswar/Spectre
 
 go 1.25.4
 

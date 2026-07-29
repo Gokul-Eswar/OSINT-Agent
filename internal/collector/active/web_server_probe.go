@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/spectre/spectre/internal/core"
-	netclient "github.com/spectre/spectre/internal/http"
+	"github.com/Gokul-Eswar/Spectre/internal/core"
+	netclient "github.com/Gokul-Eswar/Spectre/internal/http"
 )
 
 type HTTPCollector struct{}

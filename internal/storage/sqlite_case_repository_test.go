@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/spectre/spectre/internal/core"
+	"github.com/Gokul-Eswar/Spectre/internal/core"
 )
 
 func TestCreateAndGetCase(t *testing.T) {

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/spectre/spectre/internal/extensions"
+	"github.com/Gokul-Eswar/Spectre/internal/extensions"
 )
 
 func TestItemMetadata(t *testing.T) {

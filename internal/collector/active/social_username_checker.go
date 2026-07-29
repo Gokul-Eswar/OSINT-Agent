@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"github.com/spectre/spectre/internal/core"
-	"github.com/spectre/spectre/internal/ethics"
-	netclient "github.com/spectre/spectre/internal/http"
+	"github.com/Gokul-Eswar/Spectre/internal/core"
+	"github.com/Gokul-Eswar/Spectre/internal/ethics"
+	netclient "github.com/Gokul-Eswar/Spectre/internal/http"
 )
 
 type SocialCollector struct {

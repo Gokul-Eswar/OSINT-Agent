@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/spectre/spectre/internal/core"
+	"github.com/Gokul-Eswar/Spectre/internal/core"
 )
 
 // GetCaseTimeline aggregates entities and evidence into a sorted timeline.

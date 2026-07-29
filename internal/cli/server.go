@@ -3,8 +3,8 @@ package cli
 import (
 	"fmt"
 
-	"github.com/spectre/spectre/internal/server"
-	"github.com/spectre/spectre/internal/storage"
+	"github.com/Gokul-Eswar/Spectre/internal/server"
+	"github.com/Gokul-Eswar/Spectre/internal/storage"
 	"github.com/spf13/cobra"
 )
 

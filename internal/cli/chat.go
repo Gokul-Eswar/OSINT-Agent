@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/spectre/spectre/internal/agent"
-	"github.com/spectre/spectre/internal/storage"
+	"github.com/Gokul-Eswar/Spectre/internal/agent"
+	"github.com/Gokul-Eswar/Spectre/internal/storage"
 	"github.com/spf13/cobra"
 )
 

@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/spectre/spectre/internal/storage"
+	"github.com/Gokul-Eswar/Spectre/internal/storage"
 )
 
 // GenerateJSONReport exports case metadata, entities, and relationships into a structured JSON report.

@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/spectre/spectre/internal/core"
-	"github.com/spectre/spectre/internal/storage"
+	"github.com/Gokul-Eswar/Spectre/internal/core"
+	"github.com/Gokul-Eswar/Spectre/internal/storage"
 )
 
 func TestGenerateMarkdownReport(t *testing.T) {

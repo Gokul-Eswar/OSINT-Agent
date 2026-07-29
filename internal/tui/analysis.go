@@ -6,8 +6,8 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/spectre/spectre/internal/analysis"
-	"github.com/spectre/spectre/internal/core"
+	"github.com/Gokul-Eswar/Spectre/internal/analysis"
+	"github.com/Gokul-Eswar/Spectre/internal/core"
 )
 
 type AnalysisStepMsg int

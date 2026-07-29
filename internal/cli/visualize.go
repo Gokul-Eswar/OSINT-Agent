@@ -6,9 +6,9 @@ import (
 	"os/exec"
 	"runtime"
 
-	"github.com/spectre/spectre/internal/analysis"
-	"github.com/spectre/spectre/internal/analyzer"
-	"github.com/spectre/spectre/internal/storage"
+	"github.com/Gokul-Eswar/Spectre/internal/analysis"
+	"github.com/Gokul-Eswar/Spectre/internal/analyzer"
+	"github.com/Gokul-Eswar/Spectre/internal/storage"
 	"github.com/spf13/cobra"
 )
 

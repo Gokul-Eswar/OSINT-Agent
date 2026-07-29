@@ -3,8 +3,8 @@ package main
 import (
 	"embed"
 
-	"github.com/spectre/spectre/internal/cli"
-	"github.com/spectre/spectre/internal/server"
+	"github.com/Gokul-Eswar/Spectre/internal/cli"
+	"github.com/Gokul-Eswar/Spectre/internal/server"
 )
 
 //go:embed web/*

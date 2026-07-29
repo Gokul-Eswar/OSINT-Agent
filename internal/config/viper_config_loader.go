@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/spectre/spectre/internal/ethics"
+	"github.com/Gokul-Eswar/Spectre/internal/ethics"
 	"github.com/spf13/viper"
 )
 

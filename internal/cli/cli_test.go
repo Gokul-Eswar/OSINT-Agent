@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/spectre/spectre/internal/config"
-	"github.com/spectre/spectre/internal/storage"
+	"github.com/Gokul-Eswar/Spectre/internal/config"
+	"github.com/Gokul-Eswar/Spectre/internal/storage"
 )
 
 func TestMain(m *testing.M) {

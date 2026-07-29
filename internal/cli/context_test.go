@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/spectre/spectre/internal/version"
+	"github.com/Gokul-Eswar/Spectre/internal/version"
 )
 
 func TestContextAndTargetRoundTrip(t *testing.T) {

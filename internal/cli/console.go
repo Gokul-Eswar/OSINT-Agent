@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/spectre/spectre/internal/server"
-	"github.com/spectre/spectre/internal/storage"
-	"github.com/spectre/spectre/internal/tui"
+	"github.com/Gokul-Eswar/Spectre/internal/server"
+	"github.com/Gokul-Eswar/Spectre/internal/storage"
+	"github.com/Gokul-Eswar/Spectre/internal/tui"
 	"github.com/spf13/cobra"
 )
 

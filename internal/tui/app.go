@@ -10,10 +10,10 @@ import (
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/spectre/spectre/internal/analysis"
-	"github.com/spectre/spectre/internal/config"
-	"github.com/spectre/spectre/internal/core"
-	"github.com/spectre/spectre/internal/report"
+	"github.com/Gokul-Eswar/Spectre/internal/analysis"
+	"github.com/Gokul-Eswar/Spectre/internal/config"
+	"github.com/Gokul-Eswar/Spectre/internal/core"
+	"github.com/Gokul-Eswar/Spectre/internal/report"
 	"github.com/spf13/viper"
 )
 

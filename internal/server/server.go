@@ -12,12 +12,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/spectre/spectre/internal/agent"
-	"github.com/spectre/spectre/internal/analysis"
-	"github.com/spectre/spectre/internal/collector"
-	"github.com/spectre/spectre/internal/core"
-	"github.com/spectre/spectre/internal/report"
-	"github.com/spectre/spectre/internal/storage"
+	"github.com/Gokul-Eswar/Spectre/internal/agent"
+	"github.com/Gokul-Eswar/Spectre/internal/analysis"
+	"github.com/Gokul-Eswar/Spectre/internal/collector"
+	"github.com/Gokul-Eswar/Spectre/internal/core"
+	"github.com/Gokul-Eswar/Spectre/internal/report"
+	"github.com/Gokul-Eswar/Spectre/internal/storage"
 	"github.com/spf13/viper"
 )
 

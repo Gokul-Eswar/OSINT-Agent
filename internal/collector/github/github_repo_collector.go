@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"github.com/spectre/spectre/internal/collector"
-	"github.com/spectre/spectre/internal/config"
-	"github.com/spectre/spectre/internal/core"
-	netclient "github.com/spectre/spectre/internal/http"
+	"github.com/Gokul-Eswar/Spectre/internal/collector"
+	"github.com/Gokul-Eswar/Spectre/internal/config"
+	"github.com/Gokul-Eswar/Spectre/internal/core"
+	netclient "github.com/Gokul-Eswar/Spectre/internal/http"
 )
 
 type GitHubCollector struct {

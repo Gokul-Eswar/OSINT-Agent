@@ -9,8 +9,8 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/spectre/spectre/internal/collector"
-	"github.com/spectre/spectre/internal/storage"
+	"github.com/Gokul-Eswar/Spectre/internal/collector"
+	"github.com/Gokul-Eswar/Spectre/internal/storage"
 	"github.com/spf13/cobra"
 )
 

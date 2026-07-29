@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/spectre/spectre/internal/collector/active"
-	"github.com/spectre/spectre/internal/core"
+	"github.com/Gokul-Eswar/Spectre/internal/collector/active"
+	"github.com/Gokul-Eswar/Spectre/internal/core"
 )
 
 // MockCollector to simulate workload

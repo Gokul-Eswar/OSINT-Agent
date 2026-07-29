@@ -3,9 +3,9 @@ package cli
 import (
 	"fmt"
 
-	"github.com/spectre/spectre/internal/analysis"
-	"github.com/spectre/spectre/internal/core"
-	"github.com/spectre/spectre/internal/storage"
+	"github.com/Gokul-Eswar/Spectre/internal/analysis"
+	"github.com/Gokul-Eswar/Spectre/internal/core"
+	"github.com/Gokul-Eswar/Spectre/internal/storage"
 	"github.com/spf13/cobra"
 )
 

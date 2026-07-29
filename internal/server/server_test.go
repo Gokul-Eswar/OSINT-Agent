@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/spectre/spectre/internal/agent"
+	"github.com/Gokul-Eswar/Spectre/internal/agent"
 	"github.com/spf13/viper"
 )
 

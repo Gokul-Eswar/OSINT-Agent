@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/spectre/spectre/internal/core"
+	"github.com/Gokul-Eswar/Spectre/internal/core"
 )
 
 // IngestEvidence is the central routing function for data ingestion.

@@ -9,8 +9,8 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/spectre/spectre/internal/agent"
-	"github.com/spectre/spectre/internal/analyzer"
+	"github.com/Gokul-Eswar/Spectre/internal/agent"
+	"github.com/Gokul-Eswar/Spectre/internal/analyzer"
 )
 
 type chatModel struct {
