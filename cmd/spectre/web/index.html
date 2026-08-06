@@ -16,12 +16,9 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
     <!-- Custom Config -->
-
     <script>
         tailwind.config = {
             theme: {
@@ -81,17 +78,13 @@
         }
 
         /* Graph Container */
-        #network, #map { 
+        #network { 
             height: 600px; 
             background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
             border-radius: 0.75rem; 
             border: 1px solid #1e293b;
             position: relative;
             overflow: hidden;
-        }
-
-        #map {
-            background: #0f172a;
         }
         
         /* Grid Pattern Overlay */
@@ -115,6 +108,121 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo } = React;
 
+        // --- Chat Widget Component ---
+        const ChatWidget = ({ caseId }) => {
+            const [isOpen, setIsOpen] = useState(false);
+            const [messages, setMessages] = useState([]);
+            const [input, setInput] = useState("");
+            const [isThinking, setIsThinking] = useState(false);
+            const messagesEndRef = useRef(null);
+
+            const scrollToBottom = () => {
+                messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            };
+
+            useEffect(() => {
+                scrollToBottom();
+            }, [messages]);
+
+            const handleSend = async (e) => {
+                e.preventDefault();
+                if (!input.trim() || isThinking) return;
+
+                const userMsg = { role: 'user', content: input };
+                setMessages(prev => [...prev, userMsg]);
+                setInput("");
+                setIsThinking(true);
+
+                try {
+                    const res = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ case_id: caseId, message: input })
+                    });
+                    const data = await res.json();
+                    setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
+                } catch (err) {
+                    setMessages(prev => [...prev, { role: 'system', content: "Error: " + err.message }]);
+                } finally {
+                    setIsThinking(false);
+                }
+            };
+
+            if (!caseId) return null;
+
+            return (
+                <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end">
+                    {isOpen && (
+                        <div className="bg-slate-900 border border-slate-700 w-80 h-96 rounded-xl shadow-2xl mb-4 flex flex-col overflow-hidden animate-fade-in glass-panel">
+                            <div className="p-3 border-b border-slate-700 bg-slate-800/50 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                                    <span className="text-xs font-semibold text-slate-200">SPECTRE Agent</span>
+                                </div>
+                                <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-white">
+                                    <i data-lucide="minus" className="w-4 h-4"></i>
+                                </button>
+                            </div>
+                            
+                            <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+                                {messages.length === 0 && (
+                                    <div className="text-center py-8 text-slate-500 text-xs italic">
+                                        Ask the agent to analyze this case or run collectors.
+                                    </div>
+                                )}
+                                {messages.map((m, i) => (
+                                    <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                        <div className={`max-w-[85%] p-2.5 rounded-lg text-xs ${
+                                            m.role === 'user' 
+                                            ? 'bg-indigo-600 text-white rounded-br-none' 
+                                            : 'bg-slate-800 text-slate-200 border border-slate-700 rounded-bl-none'
+                                        }`}>
+                                            {m.content}
+                                        </div>
+                                    </div>
+                                ))}
+                                {isThinking && (
+                                    <div className="flex justify-start">
+                                        <div className="bg-slate-800 border border-slate-700 p-2.5 rounded-lg rounded-bl-none">
+                                            <div className="flex gap-1">
+                                                <div className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce"></div>
+                                                <div className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce [animation-delay:-.3s]"></div>
+                                                <div className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce [animation-delay:-.5s]"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                                <div ref={messagesEndRef} />
+                            </div>
+
+                            <form onSubmit={handleSend} className="p-3 border-t border-slate-700 bg-slate-800/30">
+                                <div className="relative">
+                                    <input 
+                                        type="text" 
+                                        value={input}
+                                        onChange={(e) => setInput(e.target.value)}
+                                        placeholder="Type a message..."
+                                        className="w-full bg-slate-950 border border-slate-700 rounded-md py-2 pl-3 pr-10 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                    />
+                                    <button type="submit" className="absolute right-2 top-1.5 text-indigo-500 hover:text-indigo-400">
+                                        <i data-lucide="send" className="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    )}
+                    <button 
+                        onClick={() => setIsOpen(!isOpen)}
+                        className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ${
+                            isOpen ? 'bg-slate-800 rotate-90' : 'bg-indigo-600 hover:bg-indigo-500 hover:scale-110 shadow-indigo-600/20'
+                        }`}
+                    >
+                        <i data-lucide={isOpen ? "x" : "message-square"} className="text-white w-6 h-6"></i>
+                    </button>
+                </div>
+            );
+        };
+
         // --- Icons Component ---
         const Icon = ({ name, size = 16, className = "" }) => {
             useEffect(() => {
@@ -123,40 +231,129 @@
             return <i data-lucide={name} className={className} style={{ width: size, height: size }}></i>;
         };
 
+        // --- Settings Modal Component ---
+        const SettingsModal = ({ isOpen, onClose }) => {
+            const [settings, setSettings] = useState(null);
+
+            useEffect(() => {
+                if (isOpen) {
+                    fetch('/api/settings')
+                        .then(res => res.json())
+                        .then(setSettings)
+                        .catch(err => console.error("Failed to load settings:", err));
+                }
+            }, [isOpen]);
+
+            // Re-render icons when modal opens
+            useEffect(() => {
+                if (isOpen && settings) {
+                    setTimeout(() => lucide.createIcons(), 100);
+                }
+            }, [isOpen, settings]);
+
+            const toggleGhostMode = () => {
+                if (!settings) return;
+                const newMode = !settings.ghost_mode;
+                setSettings({ ...settings, ghost_mode: newMode });
+                
+                fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ghost_mode: newMode })
+                }).catch(err => console.error("Failed to save settings:", err));
+            };
+
+            if (!isOpen) return null;
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+                        <div className="flex items-center justify-between p-4 border-b border-slate-800 bg-slate-900/50">
+                            <h3 className="font-semibold text-white flex items-center gap-2">
+                                <i data-lucide="settings" className="w-4 h-4 text-slate-400"></i>
+                                System Configuration
+                            </h3>
+                            <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
+                                <i data-lucide="x" className="w-5 h-5"></i>
+                            </button>
+                        </div>
+                        
+                        <div className="p-6 space-y-6">
+                            {settings ? (
+                                <>
+                                    <div className="flex items-center justify-between p-4 rounded-lg bg-slate-800/50 border border-slate-700">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`p-2 rounded-lg ${settings.ghost_mode ? 'bg-purple-500/20 text-purple-400' : 'bg-slate-700/50 text-slate-400'}`}>
+                                                <i data-lucide="ghost" className="w-5 h-5"></i>
+                                            </div>
+                                            <div>
+                                                <div className="font-medium text-slate-200">Ghost Mode</div>
+                                                <div className="text-xs text-slate-500">Anonymize requests via Tor/Proxy</div>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            onClick={toggleGhostMode}
+                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-900 ${settings.ghost_mode ? 'bg-indigo-600' : 'bg-slate-700'}`}
+                                        >
+                                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.ghost_mode ? 'translate-x-6' : 'translate-x-1'}`} />
+                                        </button>
+                                    </div>
+                                    
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Logging Level</label>
+                                        <select 
+                                            value={settings.logging}
+                                            disabled
+                                            className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-slate-400 cursor-not-allowed"
+                                        >
+                                            <option value="info">Info</option>
+                                            <option value="debug">Debug</option>
+                                            <option value="error">Error</option>
+                                        </select>
+                                        <p className="text-[10px] text-slate-600">Logging level changes require restart.</p>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="flex justify-center py-8">
+                                    <i data-lucide="loader-2" className="w-6 h-6 text-indigo-500 animate-spin"></i>
+                                </div>
+                            )}
+                        </div>
+                        
+                        <div className="p-4 border-t border-slate-800 bg-slate-900/50 flex justify-end">
+                            <button onClick={onClose} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-md text-sm font-medium transition-colors">
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         // --- Main App Component ---
         function App() {
             const [cases, setCases] = useState([]);
             const [filteredCases, setFilteredCases] = useState([]);
             const [selectedCase, setSelectedCase] = useState(null);
-            const [selectedEntity, setSelectedEntity] = useState(null);
             const [loading, setLoading] = useState(true);
             const [searchTerm, setSearchTerm] = useState("");
             const [sidebarOpen, setSidebarOpen] = useState(true);
             const [isLive, setIsLive] = useState(false);
-            const [view, setView] = useState('graph'); // 'graph' or 'map'
+            const [settingsOpen, setSettingsOpen] = useState(false);
             
             // Refs
             const networkRef = useRef(null);
             const visNetwork = useRef(null);
-            const mapRef = useRef(null);
-            const leafletMap = useRef(null);
+            const activePulses = useRef({});
 
-            // Initial Data Fetch & Polling
+            // Initial Data Fetch & SSE Setup
             useEffect(() => {
                 const fetchData = () => {
                     fetch('/api/cases')
                         .then(res => res.json())
                         .then(data => {
-                            // Check for changes (simplified)
-                            setCases(prev => {
-                                if (JSON.stringify(prev) !== JSON.stringify(data)) {
-                                    setIsLive(true);
-                                    setTimeout(() => setIsLive(false), 2000);
-                                    setFilteredCases(data); // Note: this resets filter if user is searching. Ideal: merge.
-                                    return data;
-                                }
-                                return prev;
-                            });
+                            setCases(data);
+                            setFilteredCases(data);
                             setLoading(false);
                             setTimeout(() => lucide.createIcons(), 100);
                         })
@@ -164,33 +361,81 @@
                 };
 
                 fetchData();
-                const interval = setInterval(fetchData, 5000); // Poll every 5 seconds
-                return () => clearInterval(interval);
-            }, []);
 
-            // Poll graph data if a case is selected
-            useEffect(() => {
-                if (!selectedCase) return;
-                
-                const fetchGraph = () => {
-                     fetch(`/api/cases/${selectedCase.id}/graph`)
-                        .then(res => res.json())
-                        .then(data => {
+                // Real-time updates via SSE
+                const evtSource = new EventSource("/api/events");
+                evtSource.onmessage = (event) => {
+                    try {
+                        const msg = JSON.parse(event.data);
+                        
+                        if (msg.type === 'entity_created' || msg.type === 'relationship_created' || msg.type === 'lead_created') {
+                            const payload = msg.data;
+                            setIsLive(true);
+                            setTimeout(() => setIsLive(false), 2000);
+
                             setSelectedCase(prev => {
-                                // Only update if entity count changed to avoid re-rendering graph constantly
-                                if (prev.entities.length !== data.entities.length || 
-                                    prev.relationships.length !== data.relationships.length) {
-                                    return data;
+                                if (prev && prev.id === payload.case_id) {
+                                    if (msg.type === 'entity_created') {
+                                        if (prev.entities.some(e => e.id === payload.id)) return prev;
+                                        const newCaseData = { ...prev, entities: [...prev.entities, payload] };
+                                        
+                                        // Incremental Graph Update
+                                        if (visNetwork.current) {
+                                            activePulses.current[payload.id] = Date.now();
+                                            visNetwork.current.body.data.nodes.update({
+                                                id: payload.id,
+                                                label: payload.value.length > 20 ? payload.value.substring(0, 18) + '...' : payload.value,
+                                                group: payload.type,
+                                                title: `<div class="p-2 text-xs font-sans"><strong>Type:</strong> ${payload.type}<br><strong>Value:</strong> ${payload.value}</div>`
+                                            });
+                                            visNetwork.current.redraw();
+                                        }
+                                        return newCaseData;
+                                    } else if (msg.type === 'relationship_created') {
+                                        // relationship_created
+                                        if (prev.relationships.some(r => r.id === payload.id)) return prev;
+                                        const newCaseData = { ...prev, relationships: [...prev.relationships, payload] };
+                                        
+                                        // Incremental Graph Update
+                                        if (visNetwork.current) {
+                                            visNetwork.current.body.data.edges.update({
+                                                id: payload.id,
+                                                from: payload.from_entity,
+                                                to: payload.to_entity,
+                                                label: payload.rel_type,
+                                                arrows: 'to'
+                                            });
+                                        }
+                                        return newCaseData;
+                                    } else if (msg.type === 'lead_created') {
+                                        const existingLeads = prev.leads || [];
+                                        if (existingLeads.some(l => l.id === payload.id)) {
+                                            return {
+                                                ...prev,
+                                                leads: existingLeads.map(l => l.id === payload.id ? payload : l)
+                                            };
+                                        }
+                                        return {
+                                            ...prev,
+                                            leads: [payload, ...existingLeads]
+                                        };
+                                    }
                                 }
                                 return prev;
                             });
-                        })
-                        .catch(console.error);
+
+                            // Refresh sidebar lists (lightweight)
+                            fetchData();
+                        }
+                    } catch (e) {
+                        console.error("SSE Error:", e);
+                    }
                 };
 
-                const interval = setInterval(fetchGraph, 5000);
-                return () => clearInterval(interval);
-            }, [selectedCase?.id]);
+                return () => {
+                    evtSource.close();
+                };
+            }, []);
 
             // Filter Logic
             useEffect(() => {
@@ -218,6 +463,8 @@
                     .then(data => {
                         setSelectedCase(data);
                         setLoading(false);
+                        // Allow DOM to update before rendering graph
+                        setTimeout(() => renderGraph(data), 50);
                     })
                     .catch(err => {
                         console.error("Failed to load graph:", err);
@@ -225,50 +472,14 @@
                     });
             };
 
-            const renderMap = (data) => {
-                if (!mapRef.current) return;
-                
-                // Filter entities with geo data
-                const geoEntities = data.entities.filter(e => e.metadata && e.metadata.lat && e.metadata.lon);
-                
-                if (leafletMap.current) {
-                    leafletMap.current.remove();
-                }
-
-                // Initialize map
-                leafletMap.current = L.map(mapRef.current).setView([20, 0], 2);
-                
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-                    subdomains: 'abcd',
-                    maxZoom: 20
-                }).addTo(leafletMap.current);
-
-                // Add markers
-                geoEntities.forEach(e => {
-                    const marker = L.circleMarker([e.metadata.lat, e.metadata.lon], {
-                        radius: 8,
-                        fillColor: "#6366f1",
-                        color: "#fff",
-                        weight: 1,
-                        opacity: 1,
-                        fillOpacity: 0.8
-                    }).addTo(leafletMap.current);
-                    
-                    marker.bindPopup(`
-                        <div class="text-slate-900 p-1">
-                            <strong class="font-bold">${e.value}</strong><br>
-                            <span class="text-xs text-slate-500">${e.metadata.city || ""}, ${e.metadata.country || ""}</span><br>
-                            <span class="text-xs text-slate-500">${e.metadata.isp || ""}</span>
-                        </div>
-                    `);
-                });
-
-                if (geoEntities.length > 0) {
-                    const group = new L.featureGroup(geoEntities.map(e => L.circleMarker([e.metadata.lat, e.metadata.lon])));
-                    leafletMap.current.fitBounds(group.getBounds().pad(0.1));
-                }
-            };
+            const escapeHtml = (unsafe) => {
+                return unsafe
+                     .replace(/&/g, "&amp;")
+                     .replace(/</g, "&lt;")
+                     .replace(/>/g, "&gt;")
+                     .replace(/"/g, "&quot;")
+                     .replace(/'/g, "&#039;");
+            }
 
             // Vis.js Graph Rendering
             const renderGraph = (data) => {
@@ -280,9 +491,9 @@
                     group: e.type,
                     title: `
                         <div class="p-2 text-xs font-sans">
-                            <strong>Type:</strong> ${e.type}<br>
-                            <strong>Value:</strong> ${e.value}<br>
-                            <strong>Source:</strong> ${e.source}
+                            <strong>Type:</strong> ${escapeHtml(e.type)}<br>
+                            <strong>Value:</strong> ${escapeHtml(e.value)}<br>
+                            <strong>Source:</strong> ${escapeHtml(e.source)}
                         </div>
                     `,
                     val: 1 // Base size, physics will adjust
@@ -344,29 +555,63 @@
                 if (visNetwork.current) visNetwork.current.destroy();
                 visNetwork.current = new vis.Network(networkRef.current, { nodes, edges }, options);
 
-                visNetwork.current.on("click", function (params) {
-                    if (params.nodes.length > 0) {
-                        const nodeId = params.nodes[0];
-                        const entity = data.entities.find(e => e.id === nodeId);
-                        if (entity) setSelectedEntity(entity);
-                    } else {
-                        setSelectedEntity(null);
+                // Add pulsing animation for newly created nodes
+                visNetwork.current.on('afterDrawing', (ctx) => {
+                    const now = Date.now();
+                    let hasActivePulses = false;
+
+                    Object.keys(activePulses.current).forEach(nodeId => {
+                        const elapsed = now - activePulses.current[nodeId];
+                        if (elapsed > 5000) {
+                            delete activePulses.current[nodeId];
+                            return;
+                        }
+
+                        hasActivePulses = true;
+                        
+                        try {
+                            const pos = visNetwork.current.getPositions([nodeId])[nodeId];
+                            if (pos) {
+                                const progress = elapsed / 5000;
+                                const maxRadius = 45;
+                                const radius = 12 + progress * maxRadius;
+                                const alpha = 1.0 - progress;
+
+                                ctx.save();
+                                ctx.strokeStyle = `rgba(99, 102, 241, ${alpha})`; // Indigo glow
+                                ctx.lineWidth = 3;
+                                ctx.beginPath();
+                                ctx.arc(pos.x, pos.y, radius, 0, 2 * Math.PI);
+                                ctx.stroke();
+
+                                const innerProgress = (progress + 0.5) % 1.0;
+                                const innerRadius = 12 + innerProgress * maxRadius;
+                                const innerAlpha = 1.0 - innerProgress;
+                                ctx.strokeStyle = `rgba(139, 92, 246, ${innerAlpha})`; // Violet glow
+                                ctx.lineWidth = 1.5;
+                                ctx.beginPath();
+                                ctx.arc(pos.x, pos.y, innerRadius, 0, 2 * Math.PI);
+                                ctx.stroke();
+
+                                ctx.restore();
+                            }
+                        } catch (err) {}
+                    });
+
+                    if (hasActivePulses) {
+                        requestAnimationFrame(() => {
+                            if (visNetwork.current) {
+                                visNetwork.current.redraw();
+                            }
+                        });
                     }
                 });
             };
 
-            // Effect to re-render visualization when view or selectedCase changes
-            useEffect(() => {
-                if (!selectedCase) return;
-                if (view === 'graph') {
-                    setTimeout(() => renderGraph(selectedCase), 50);
-                } else if (view === 'map') {
-                    setTimeout(() => renderMap(selectedCase), 50);
-                }
-            }, [view, selectedCase]);
-
-            // Helpers
-            const formatDate = (ts) => new Date().toLocaleDateString(); // Placeholder, backend needs to send timestamp
+            // Go to Dashboard Home
+            const goToDashboard = () => {
+                setSelectedCase(null);
+            };
 
             return (
                 <div className="flex h-screen bg-slate-950 text-slate-200 font-sans overflow-hidden">
@@ -392,6 +637,17 @@
                             </button>
                         </div>
 
+                        {/* Navigation Items (Dashboard Button) */}
+                        <div className="p-3 pb-0">
+                            <button 
+                                onClick={goToDashboard}
+                                className={`w-full flex items-center gap-3 p-2.5 rounded-lg transition-colors ${!selectedCase ? 'bg-indigo-600/10 text-indigo-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+                            >
+                                <i data-lucide="layout-dashboard" className="w-5 h-5"></i>
+                                {sidebarOpen && <span className="font-medium text-sm">Dashboard</span>}
+                            </button>
+                        </div>
+
                         {/* Search & List */}
                         {sidebarOpen && (
                             <div className="p-4 flex-1 overflow-hidden flex flex-col">
@@ -408,7 +664,31 @@
 
                                 <div className="flex items-center justify-between mb-2 px-1">
                                     <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Active Cases</h3>
-                                    <span className="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full">{filteredCases.length}</span>
+                                    <div className="flex items-center gap-2">
+                                        <button 
+                                            onClick={() => {
+                                                const name = prompt("Enter Case Name:");
+                                                const desc = prompt("Enter Case Description (optional):");
+                                                if (name) {
+                                                    fetch('/api/cases', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({ name, description: desc || '' })
+                                                    })
+                                                    .then(res => res.json())
+                                                    .then(c => {
+                                                        alert(`Case created: ${c.name}`);
+                                                        fetchData();
+                                                    })
+                                                    .catch(err => alert("Failed to create case: " + err));
+                                                }
+                                            }}
+                                            className="text-xs text-indigo-400 hover:text-indigo-300 font-medium"
+                                        >
+                                            + New
+                                        </button>
+                                        <span className="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full">{filteredCases.length}</span>
+                                    </div>
                                 </div>
 
                                 <div className="flex-1 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
@@ -444,6 +724,17 @@
                                 </div>
                             </div>
                         )}
+
+                        {/* Footer / Settings */}
+                        <div className="p-4 border-t border-slate-800 bg-slate-900">
+                             <button 
+                                onClick={() => setSettingsOpen(true)}
+                                className={`w-full flex items-center gap-3 p-2.5 rounded-lg transition-colors text-slate-400 hover:bg-slate-800 hover:text-white group`}
+                            >
+                                <i data-lucide="settings" className="w-5 h-5 group-hover:rotate-45 transition-transform duration-500"></i>
+                                {sidebarOpen && <span className="font-medium text-sm">Settings</span>}
+                            </button>
+                        </div>
                     </aside>
 
                     {/* Main Content */}
@@ -493,170 +784,123 @@
                                             </div>
                                         </div>
                                         <div className="flex gap-2">
-                                            <button className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-md text-sm font-medium transition-colors border border-slate-700 flex items-center gap-2">
+                                            <button 
+                                                onClick={() => {
+                                                    const fmt = prompt("Enter report format (html, pdf, json, csv, markdown):", "html");
+                                                    if (fmt) {
+                                                        fetch(`/api/reports?case_id=${selectedCase.id}&format=${fmt}`)
+                                                            .then(res => res.json())
+                                                            .then(data => alert(`Report generated: ${data.report_path}`))
+                                                            .catch(err => alert("Report generation failed: " + err));
+                                                    }
+                                                }} 
+                                                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-md text-sm font-medium transition-colors border border-slate-700 flex items-center gap-2"
+                                            >
                                                 <i data-lucide="download" className="w-4 h-4"></i> Export
                                             </button>
-                                            <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-md text-sm font-medium transition-colors shadow-lg shadow-indigo-600/20 flex items-center gap-2">
-                                                <i data-lucide="plus" className="w-4 h-4"></i> Add Evidence
+                                            <button 
+                                                onClick={() => {
+                                                    const target = prompt("Enter target domain or IP to collect:");
+                                                    const col = prompt("Enter collector name (dns, whois, geo, ports, screenshot):", "dns");
+                                                    if (target && col) {
+                                                        fetch('/api/collect', {
+                                                            method: 'POST',
+                                                            headers: { 'Content-Type': 'application/json' },
+                                                            body: JSON.stringify({ collector: col, case_id: selectedCase.id, target: target })
+                                                        })
+                                                        .then(res => res.json())
+                                                        .then(data => {
+                                                            alert(`Collection started! Found ${data.evidence_count} items.`);
+                                                            loadGraph(selectedCase.id);
+                                                        })
+                                                        .catch(err => alert("Collection failed: " + err));
+                                                    }
+                                                }}
+                                                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-md text-sm font-medium transition-colors shadow-lg shadow-indigo-600/20 flex items-center gap-2"
+                                            >
+                                                <i data-lucide="plus" className="w-4 h-4"></i> Run Collector
                                             </button>
                                         </div>
                                     </div>
 
-                                    {/* Intelligence Visualization */}
-                                    <div className="space-y-4">
-                                        <div className="flex items-center gap-2 p-1 bg-slate-900 rounded-lg w-fit border border-slate-800">
-                                            <button 
-                                                onClick={() => setView('graph')}
-                                                className={`px-4 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-2 ${view === 'graph' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:text-white'}`}
-                                            >
-                                                <i data-lucide="share-2" className="w-3.5 h-3.5"></i> Graph View
-                                            </button>
-                                            <button 
-                                                onClick={() => setView('map')}
-                                                className={`px-4 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-2 ${view === 'map' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:text-white'}`}
-                                            >
-                                                <i data-lucide="map" className="w-3.5 h-3.5"></i> Map View
-                                            </button>
-                                        </div>
-
-                                        <div className="glass-panel p-1 rounded-xl shadow-2xl relative group">
-                                            <div className="absolute top-4 left-4 z-10 flex gap-2 pointer-events-none">
-                                                <div className="px-3 py-1 bg-slate-900/80 backdrop-blur rounded text-xs font-mono text-slate-400 border border-slate-800">
-                                                    {view === 'graph' ? 'Force Atlas 2' : 'Geospatial Intelligence'}
-                                                </div>
+                                    {/* Intelligence Graph */}
+                                    <div className="glass-panel p-1 rounded-xl shadow-2xl relative group">
+                                        <div className="absolute top-4 left-4 z-10 flex gap-2">
+                                            <div className="px-3 py-1 bg-slate-900/80 backdrop-blur rounded text-xs font-mono text-slate-400 border border-slate-800">
+                                                Force Atlas 2
                                             </div>
-                                            {view === 'graph' ? (
-                                                <div id="network" ref={networkRef}></div>
-                                            ) : (
-                                                <div id="map" ref={mapRef} style={{ height: '600px' }}></div>
-                                            )}
                                         </div>
+                                        <div id="network" ref={networkRef}></div>
                                     </div>
                                     
                                     {/* Bottom Grid */}
-                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                        {/* Entity Details / Evidence Viewer */}
-                                        <div className="glass-panel p-6 rounded-xl border border-slate-800/60 lg:col-span-2">
-                                            <div className="flex items-center justify-between mb-6">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="p-2 bg-indigo-500/10 rounded-lg">
-                                                        <i data-lucide="eye" className="w-5 h-5 text-indigo-500"></i>
-                                                    </div>
-                                                    <h3 className="text-lg font-semibold text-white">
-                                                        {selectedEntity ? 'Entity Intelligence' : 'Visual Evidence'}
-                                                    </h3>
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                        {/* Key Findings */}
+                                        <div className="glass-panel p-6 rounded-xl border border-slate-800/60">
+                                            <div className="flex items-center gap-3 mb-6">
+                                                <div className="p-2 bg-amber-500/10 rounded-lg">
+                                                    <i data-lucide="zap" className="w-5 h-5 text-amber-500"></i>
                                                 </div>
-                                                {selectedEntity && (
-                                                    <button onClick={() => setSelectedEntity(null)} className="text-xs text-slate-500 hover:text-white">Clear Selection</button>
-                                                )}
+                                                <h3 className="text-lg font-semibold text-white">Automated Insights</h3>
                                             </div>
-
-                                            {selectedEntity ? (
-                                                <div className="space-y-6">
-                                                    <div className="flex items-start justify-between">
-                                                        <div>
-                                                            <div className="text-xs uppercase tracking-widest text-indigo-500 font-bold mb-1">{selectedEntity.type}</div>
-                                                            <div className="text-2xl font-mono text-white break-all">{selectedEntity.value}</div>
-                                                        </div>
-                                                        <div className="text-right">
-                                                            <div className="text-xs text-slate-500 mb-1">Source</div>
-                                                            <div className="px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-slate-300 inline-block">{selectedEntity.source}</div>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Associated Evidence */}
-                                                    <div className="space-y-4">
-                                                        <h4 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Associated Evidence</h4>
-                                                        <div className="grid grid-cols-1 gap-4">
-                                                            {selectedCase.evidence
-                                                                .filter(ev => ev.metadata.target === selectedEntity.value || (selectedEntity.type === 'ip' && ev.metadata.target === selectedEntity.value))
-                                                                .map((ev, idx) => (
-                                                                    <div key={idx} className="bg-slate-900/50 border border-slate-800 rounded-lg overflow-hidden">
-                                                                        <div className="p-3 border-b border-slate-800 flex items-center justify-between bg-slate-900/80">
-                                                                            <span className="text-xs font-mono text-slate-400">{ev.collector.toUpperCase()} Evidence</span>
-                                                                            <a href={`/evidence/${ev.case_id}/${ev.file_path.split(/[\\/]/).pop()}`} target="_blank" className="text-[10px] text-indigo-400 hover:text-indigo-300 underline">Open Raw</a>
-                                                                        </div>
-                                                                        {ev.collector === 'screenshot' ? (
-                                                                            <div className="p-2 bg-black/40">
-                                                                                <img 
-                                                                                    src={`/evidence/${ev.case_id}/${ev.file_path.split(/[\\/]/).pop()}`} 
-                                                                                    alt="Screenshot" 
-                                                                                    className="w-full rounded border border-slate-700 hover:scale-[1.02] transition-transform cursor-zoom-in"
-                                                                                    onClick={() => window.open(`/evidence/${ev.case_id}/${ev.file_path.split(/[\\/]/).pop()}`, '_blank')}
-                                                                                />
-                                                                            </div>
-                                                                        ) : (
-                                                                            <div className="p-4 text-xs font-mono text-slate-500">
-                                                                                File: {ev.file_path.split(/[\\/]/).pop()}
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                ))
-                                                            }
-                                                            {selectedCase.evidence.filter(ev => ev.metadata.target === selectedEntity.value).length === 0 && (
-                                                                <div className="text-center py-8 border-2 border-dashed border-slate-800 rounded-lg">
-                                                                    <span className="text-sm text-slate-600">No direct evidence files for this entity.</span>
-                                                                </div>
-                                                            )}
-                                                        </div>
+                                            <div className="space-y-4">
+                                                <div className="p-4 rounded-lg bg-slate-900/50 border border-slate-800/50 flex items-start gap-3">
+                                                    <i data-lucide="info" className="w-5 h-5 text-blue-400 mt-0.5"></i>
+                                                    <div>
+                                                        <h4 className="text-sm font-medium text-slate-200">Analysis Pending</h4>
+                                                        <p className="text-xs text-slate-500 mt-1">
+                                                            Run the active collector to generate automated insights for this case.
+                                                        </p>
                                                     </div>
                                                 </div>
-                                            ) : (
-                                                <div className="h-64 flex flex-col items-center justify-center text-slate-600 border-2 border-dashed border-slate-800 rounded-xl">
-                                                    <i data-lucide="mouse-pointer-2" className="w-8 h-8 mb-2 opacity-20"></i>
-                                                    <p className="text-sm">Click a node in the graph to view intelligence details and evidence.</p>
+                                                <div className="h-24 flex items-center justify-center border-2 border-dashed border-slate-800 rounded-lg">
+                                                    <span className="text-sm text-slate-600">No critical anomalies detected yet.</span>
                                                 </div>
-                                            )}
+                                            </div>
                                         </div>
 
-                                        {/* Key Findings (Narrowed) */}
-                                        <div className="space-y-6">
-                                            <div className="glass-panel p-6 rounded-xl border border-slate-800/60">
-                                                <div className="flex items-center gap-3 mb-6">
-                                                    <div className="p-2 bg-amber-500/10 rounded-lg">
-                                                        <i data-lucide="zap" className="w-5 h-5 text-amber-500"></i>
-                                                    </div>
-                                                    <h3 className="text-lg font-semibold text-white">Insights</h3>
+                                        {/* Lead Feed */}
+                                        <div className="glass-panel p-6 rounded-xl border border-slate-800/60">
+                                            <div className="flex items-center gap-3 mb-6">
+                                                <div className="p-2 bg-indigo-500/10 rounded-lg">
+                                                    <i data-lucide="award" className="w-5 h-5 text-indigo-400"></i>
                                                 </div>
-                                                <div className="space-y-4">
-                                                    <div className="p-4 rounded-lg bg-slate-900/50 border border-slate-800/50 flex items-start gap-3">
-                                                        <i data-lucide="info" className="w-5 h-5 text-blue-400 mt-0.5"></i>
-                                                        <div>
-                                                            <h4 className="text-sm font-medium text-slate-200">Analysis Pending</h4>
-                                                            <p className="text-xs text-slate-500 mt-1">
-                                                                Run the active collector to generate automated insights.
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                                <h3 className="text-lg font-semibold text-white">Lead Feed</h3>
                                             </div>
-
-                                            {/* Evidence Feed */}
-                                            <div className="glass-panel p-6 rounded-xl border border-slate-800/60">
-                                                <div className="flex items-center gap-3 mb-6">
-                                                    <div className="p-2 bg-purple-500/10 rounded-lg">
-                                                        <i data-lucide="activity" className="w-5 h-5 text-purple-500"></i>
-                                                    </div>
-                                                    <h3 className="text-lg font-semibold text-white">Live Feed</h3>
-                                                </div>
-                                                <div className="space-y-3 max-h-80 overflow-y-auto custom-scrollbar pr-2">
-                                                    {selectedCase.entities.slice(0, 10).map((e, idx) => (
-                                                        <div key={idx} onClick={() => setSelectedEntity(e)} className="flex items-center justify-between p-3 rounded-lg bg-slate-900/50 border border-slate-800/50 hover:border-indigo-500/50 transition-colors group cursor-pointer">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className={`w-2 h-2 rounded-full ${
-                                                                    e.type === 'domain' ? 'bg-blue-500' :
-                                                                    e.type === 'ip' ? 'bg-amber-500' :
-                                                                    e.type === 'email' ? 'bg-emerald-500' : 'bg-slate-500'
-                                                                }`}></div>
-                                                                <div className="flex flex-col">
-                                                                    <span className="text-sm font-mono text-slate-300 group-hover:text-indigo-400 transition-colors">{e.value}</span>
-                                                                    <span className="text-[10px] uppercase tracking-wider text-slate-600">{e.type}</span>
-                                                                </div>
-                                                            </div>
-                                                            <i data-lucide="chevron-right" className="w-3 h-3 text-slate-700 group-hover:text-indigo-500 transition-colors"></i>
+                                            <div className="space-y-3 max-h-80 overflow-y-auto custom-scrollbar pr-2">
+                                                {((selectedCase.leads || []).slice(0, 5)).map((l, idx) => (
+                                                    <div key={idx} className="flex flex-col gap-2 p-3 rounded-lg bg-slate-900/50 border border-slate-800/50 hover:border-slate-700 transition-colors group">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded ${
+                                                                l.status === 'verified' ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' :
+                                                                l.status === 'refuted' ? 'bg-red-500/15 text-red-400 border border-red-500/30' :
+                                                                'bg-blue-500/15 text-blue-400 border border-blue-500/30'
+                                                            }`}>
+                                                                {l.status}
+                                                            </span>
+                                                            <span className="text-xs font-semibold text-slate-400">
+                                                                {(l.confidence * 100).toFixed(0)}% Conf
+                                                            </span>
                                                         </div>
-                                                    ))}
-                                                </div>
+                                                        <p className="text-xs text-slate-300 leading-relaxed font-sans">
+                                                            {l.hypothesis}
+                                                        </p>
+                                                        {l.evidence_ids && l.evidence_ids.length > 0 && (
+                                                            <div className="flex flex-wrap gap-1 mt-1">
+                                                                {l.evidence_ids.map((evId, evIdx) => (
+                                                                    <span key={evIdx} className="text-[9px] font-mono bg-slate-950/80 px-1.5 py-0.5 rounded text-slate-500 border border-slate-800/40">
+                                                                        Ref: {evId.length > 12 ? evId.substring(evId.length - 12) : evId}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                                {(!selectedCase.leads || selectedCase.leads.length === 0) && (
+                                                    <div className="text-center py-6 text-xs text-slate-500 italic">
+                                                        No intelligence leads or hypotheses recorded yet.
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -689,6 +933,8 @@
                             )}
                         </div>
                     </main>
+                    <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+                    <ChatWidget caseId={selectedCase?.id} />
                 </div>
             );
         }

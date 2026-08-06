@@ -1,8 +1,0 @@
-{
-  "id": "v2_ghost_edge",
-  "title": "V2 Ghost Edge (Operational Security)",
-  "description": "Implement built-in Tor/SOCKS5 proxy orchestration for all outbound collection and integrate local multimodal AI analysis to ensure absolute privacy.",
-  "status": "completed",
-  "priority": "high",
-  "owner": "gemini-cli"
-}
