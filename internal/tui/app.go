@@ -488,7 +488,9 @@ func (m model) renderNav() string {
 			content = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFFFFF")).Bold(true).Render(line)
 		}
 
-		s.WriteString(prefix + content + "\n")
+		s.WriteString(prefix)
+		s.WriteString(content)
+		s.WriteString("\n")
 	}
 
 	style := StyleNav.Height(m.height - 4).Width(20)

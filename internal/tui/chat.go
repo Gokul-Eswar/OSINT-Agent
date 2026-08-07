@@ -123,13 +123,19 @@ func (m *chatModel) appendMessage(role, content string) {
 		switch msg.Role {
 		case "user":
 			roleStyle = roleStyle.Foreground(lipgloss.Color("6"))
-			sb.WriteString(roleStyle.Render("You: ") + msg.Content + "\n\n")
+						sb.WriteString(roleStyle.Render("You: "))
+						sb.WriteString(msg.Content)
+						sb.WriteString("\n\n")
 		case "assistant":
 			roleStyle = roleStyle.Foreground(lipgloss.Color("5"))
-			sb.WriteString(roleStyle.Render("Agent: ") + msg.Content + "\n\n")
+			sb.WriteString(roleStyle.Render("Agent: "))
+			sb.WriteString(msg.Content)
+			sb.WriteString("\n\n")
 		case "system":
 			roleStyle = roleStyle.Foreground(lipgloss.Color("8"))
-			sb.WriteString(roleStyle.Render("System: ") + msg.Content + "\n\n")
+			sb.WriteString(roleStyle.Render("System: "))
+			sb.WriteString(msg.Content)
+			sb.WriteString("\n\n")
 		}
 	}
 	m.viewport.SetContent(sb.String())
@@ -158,3 +164,6 @@ func (m *chatModel) setSize(w, h int) {
 	m.viewport.Height = h - 6
 	m.textinput.Width = w - 2
 }
+
+
+

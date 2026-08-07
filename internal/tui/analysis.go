@@ -47,30 +47,39 @@ func FormatAnalysis(res *core.Analysis) string {
 	}
 
 	var s strings.Builder
-	s.WriteString(StyleHeader.Render("PRELIMINARY FINDINGS") + "\n")
+	s.WriteString(StyleHeader.Render("PRELIMINARY FINDINGS"))
+	s.WriteString("\n")
 	for _, f := range res.Findings {
 		s.WriteString(fmt.Sprintf(" • %s\n", f))
 	}
 
-	s.WriteString("\n" + StyleHeader.Render("IDENTIFIED RISKS") + "\n")
+	s.WriteString("\n")
+	s.WriteString(StyleHeader.Render("IDENTIFIED RISKS"))
+	s.WriteString("\n")
 	for _, r := range res.Risks {
 		s.WriteString(fmt.Sprintf(" ⚠ %s\n", r))
 	}
 
-	s.WriteString("\n" + StyleHeader.Render("RECOMMENDED NEXT STEPS") + "\n")
+	s.WriteString("\n")
+	s.WriteString(StyleHeader.Render("RECOMMENDED NEXT STEPS"))
+	s.WriteString("\n")
 	for _, n := range res.NextSteps {
 		s.WriteString(fmt.Sprintf(" → %s\n", n))
 	}
 
 	if len(res.MissingData) > 0 {
-		s.WriteString("\n" + StyleHeader.Render("MISSING DATA") + "\n")
+		s.WriteString("\n")
+		s.WriteString(StyleHeader.Render("MISSING DATA"))
+		s.WriteString("\n")
 		for _, m := range res.MissingData {
 			s.WriteString(fmt.Sprintf(" ? %s\n", m))
 		}
 	}
 
 	if len(res.SuggestedCollectors) > 0 {
-		s.WriteString("\n" + StyleHeader.Render("SUGGESTED COLLECTORS") + "\n")
+		s.WriteString("\n")
+		s.WriteString(StyleHeader.Render("SUGGESTED COLLECTORS"))
+		s.WriteString("\n")
 		for _, sc := range res.SuggestedCollectors {
 			s.WriteString(fmt.Sprintf(" + %s\n", sc))
 		}
