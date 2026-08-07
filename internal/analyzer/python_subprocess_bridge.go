@@ -179,13 +179,17 @@ func RunPythonTask(req Request) (string, error) {
 	defer cancel()
 
 	// 4. Resolve the correct Python interpreter executable path dynamically.
-	pythonPath := resolvePythonExecutable()
+	// 4. Resolve analyzer command & base arguments dynamically.
+	// If a frozen analyzer executable (e.g. spectre-analyzer.exe) is found,
+	// it will be returned as execBin with empty baseArgs.
+	// Otherwise, it returns the Python interpreter binary and baseArgs (e.g., ["-m", "analyzer"]).
+	execBin, baseArgs := resolveAnalyzerCommand()
 
-	// 5. Build the argument slice: <PythonCommand...> --task <task> --input <json_data>
-	args := append(PythonCommand, "--task", req.Task, "--input", string(inputJSON))
+	// 5. Build the argument slice: <baseArgs...> --task <task> --input <json_data>
+	args := append(baseArgs, "--task", req.Task, "--input", string(inputJSON))
 
-	// Create the OS command command with our timeout context.
-	cmd := exec.CommandContext(ctx, pythonPath, args...)
+	// Create the OS command with our timeout context.
+	cmd := exec.CommandContext(ctx, execBin, args...)
 
 	// Define buffers to capture output streams separately.
 	var stdout, stderr bytes.Buffer
@@ -235,6 +239,61 @@ func RunPythonTask(req Request) (string, error) {
 
 	log.Debug().Str("task", req.Task).Msg("python_task_completed")
 	return output, nil
+}
+
+func resolveAnalyzerCommand() (string, []string) {
+	// 0. If PythonCommand has been explicitly overridden from standard default (e.g. in unit tests),
+	// use system python + overridden PythonCommand.
+	isDefaultPythonCmd := len(PythonCommand) == 2 && PythonCommand[0] == "-m" && PythonCommand[1] == "analyzer"
+
+	if !isDefaultPythonCmd {
+		pyPath := resolvePythonExecutable()
+		return pyPath, PythonCommand
+	}
+
+	// 1. Check SPECTRE_ANALYZER_BIN environment variable override
+	if val := os.Getenv("SPECTRE_ANALYZER_BIN"); val != "" {
+		if _, err := os.Stat(val); err == nil {
+			return val, nil
+		}
+	}
+
+	// 2. Check for frozen analyzer executable next to spectre.exe
+	execPath, err := os.Executable()
+	if err == nil {
+		dir := filepath.Dir(execPath)
+
+		// Check for directory bundle (dist/spectre-analyzer/spectre-analyzer.exe or spectre-analyzer/spectre-analyzer.exe)
+		winDirExe := filepath.Join(dir, "spectre-analyzer", "spectre-analyzer.exe")
+		if _, err := os.Stat(winDirExe); err == nil {
+			return winDirExe, nil
+		}
+		unixDirExe := filepath.Join(dir, "spectre-analyzer", "spectre-analyzer")
+		if _, err := os.Stat(unixDirExe); err == nil {
+			return unixDirExe, nil
+		}
+
+		// Check for single file executable (spectre-analyzer.exe or spectre-analyzer)
+		winExe := filepath.Join(dir, "spectre-analyzer.exe")
+		if _, err := os.Stat(winExe); err == nil {
+			return winExe, nil
+		}
+		unixExe := filepath.Join(dir, "spectre-analyzer")
+		if _, err := os.Stat(unixExe); err == nil {
+			return unixExe, nil
+		}
+	}
+
+	// 3. Check PATH for standalone spectre-analyzer binary
+	for _, binName := range []string{"spectre-analyzer.exe", "spectre-analyzer"} {
+		if path, err := exec.LookPath(binName); err == nil {
+			return path, nil
+		}
+	}
+
+	// 4. Fallback to system Python + PythonCommand
+	pyPath := resolvePythonExecutable()
+	return pyPath, PythonCommand
 }
 
 func resolvePythonExecutable() string {

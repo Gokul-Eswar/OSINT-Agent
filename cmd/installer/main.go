@@ -57,43 +57,56 @@ func main() {
 	}
 	fmt.Println("[+] Application files unpacked successfully.")
 
-	// 3. Setup Python virtual environment if python is available
-	pythonExe := findPython()
-	if pythonExe != "" {
-		fmt.Printf("[*] Found Python: %s\n", pythonExe)
-		venvDir := filepath.Join(installDir, ".venv")
-		venvPython := filepath.Join(venvDir, "Scripts", "python.exe")
+	// 3. Check for standalone bundled analyzer or fallback to setting up system Python virtual environment
+	bundledAnalyzerWin := filepath.Join(installDir, "spectre-analyzer", "spectre-analyzer.exe")
+	bundledAnalyzerUnix := filepath.Join(installDir, "spectre-analyzer", "spectre-analyzer")
+	bundledSingleWin := filepath.Join(installDir, "spectre-analyzer.exe")
 
-		if _, err := os.Stat(venvPython); os.IsNotExist(err) {
-			fmt.Println("[*] Creating Python virtual environment...")
-			cmd := exec.Command(pythonExe, "-m", "venv", venvDir)
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
-			if err := cmd.Run(); err != nil {
-				// Retry with --without-pip if ensurepip failed
-				cmdFallback := exec.Command(pythonExe, "-m", "venv", "--without-pip", venvDir)
-				if errFb := cmdFallback.Run(); errFb != nil {
-					fmt.Printf("[!] Warning: Failed to create virtualenv: %v\n", errFb)
-				}
-			}
-		}
+	if _, err := os.Stat(bundledAnalyzerWin); err == nil {
+		fmt.Println("[+] Bundled Python Analyzer found (Zero-dependency mode active).")
+	} else if _, err := os.Stat(bundledAnalyzerUnix); err == nil {
+		fmt.Println("[+] Bundled Python Analyzer found (Zero-dependency mode active).")
+	} else if _, err := os.Stat(bundledSingleWin); err == nil {
+		fmt.Println("[+] Bundled Python Analyzer found (Zero-dependency mode active).")
+	} else {
+		// Fallback: Setup Python virtual environment if system python is available
+		pythonExe := findPython()
+		if pythonExe != "" {
+			fmt.Printf("[*] Found System Python: %s\n", pythonExe)
+			venvDir := filepath.Join(installDir, ".venv")
+			venvPython := filepath.Join(venvDir, "Scripts", "python.exe")
 
-		reqFile := filepath.Join(installDir, "analyzer", "requirements.txt")
-		if _, err := os.Stat(venvPython); err == nil {
-			if _, err := os.Stat(reqFile); err == nil {
-				fmt.Println("[*] Installing Python dependencies...")
-				cmd := exec.Command(venvPython, "-m", "pip", "install", "-r", reqFile)
+			if _, err := os.Stat(venvPython); os.IsNotExist(err) {
+				fmt.Println("[*] Creating Python virtual environment...")
+				cmd := exec.Command(pythonExe, "-m", "venv", venvDir)
 				cmd.Stdout = os.Stdout
 				cmd.Stderr = os.Stderr
 				if err := cmd.Run(); err != nil {
-					fmt.Printf("[!] Warning: Dependency installation failed: %v\n", err)
-				} else {
-					fmt.Println("[+] Python dependencies installed.")
+					// Retry with --without-pip if ensurepip failed
+					cmdFallback := exec.Command(pythonExe, "-m", "venv", "--without-pip", venvDir)
+					if errFb := cmdFallback.Run(); errFb != nil {
+						fmt.Printf("[!] Warning: Failed to create virtualenv: %v\n", errFb)
+					}
 				}
 			}
+
+			reqFile := filepath.Join(installDir, "analyzer", "requirements.txt")
+			if _, err := os.Stat(venvPython); err == nil {
+				if _, err := os.Stat(reqFile); err == nil {
+					fmt.Println("[*] Installing Python dependencies...")
+					cmd := exec.Command(venvPython, "-m", "pip", "install", "-r", reqFile)
+					cmd.Stdout = os.Stdout
+					cmd.Stderr = os.Stderr
+					if err := cmd.Run(); err != nil {
+						fmt.Printf("[!] Warning: Dependency installation failed: %v\n", err)
+					} else {
+						fmt.Println("[+] Python dependencies installed.")
+					}
+				}
+			}
+		} else {
+			fmt.Println("[!] System Python not found. Install Python 3.10+ or use standalone release package for AI features.")
 		}
-	} else {
-		fmt.Println("[!] Python not found in system PATH. Install Python 3.10+ to enable AI features.")
 	}
 
 	// 4. Add installDir to User PATH environment variable
