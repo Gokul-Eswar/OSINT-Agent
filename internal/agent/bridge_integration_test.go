@@ -57,7 +57,7 @@ func TestFullAgentLoop(t *testing.T) {
 		// 1. Create a dummy WHOIS evidence file with a secret flag
 		evidenceDir := filepath.Join("evidence_storage", caseID)
 		os.MkdirAll(evidenceDir, 0755)
-		defer os.RemoveAll(evidenceDir)
+		t.Cleanup(func() { os.RemoveAll(evidenceDir) })
 
 		secretFile := filepath.Join(evidenceDir, "whois_flag.txt")
 		content := "Registrant: John Doe\nFlag: SPECTRE_FLAG_998877\n"

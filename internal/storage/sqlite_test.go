@@ -10,24 +10,21 @@ import (
 )
 
 func TestInitDB_Integration(t *testing.T) {
-	// Setup temporary config
 	viper.Set("database.type", "sqlite")
 	viper.Set("database.path", "test_spectre.db")
-	defer os.Remove("test_spectre.db")
 
-	// Ensure we close and reset
-	defer CloseDB()
+	t.Cleanup(func() {
+		CloseDB()
+		os.Remove("test_spectre.db")
+	})
 
-	// Execute
 	err := InitDB()
 	require.NoError(t, err)
 	require.NotNil(t, DB)
 
-	// Verify we can ping
 	err = DB.Ping()
 	assert.NoError(t, err)
 
-	// Verify tables were created (Migrate was called)
 	var name string
 	err = DB.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name='cases'").Scan(&name)
 	assert.NoError(t, err)
@@ -38,6 +35,10 @@ func TestCloseDB(t *testing.T) {
 	viper.Set("database.type", "sqlite")
 	viper.Set("database.path", ":memory:")
 	InitDB()
+
+	t.Cleanup(func() {
+		CloseDB()
+	})
 
 	err := CloseDB()
 	assert.NoError(t, err)

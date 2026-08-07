@@ -7,8 +7,13 @@ import json
 # We instantiate SentenceTransformerEmbeddingFunction which runs a local transformer model.
 # By default, we use 'all-MiniLM-L6-v2', a fast, high-performance, and lightweight model (under 120MB)
 # that converts sentences/paragraphs into 384-dimensional dense vectors.
-# This runs completely offline on the user's CPU/GPU and does not require any external internet requests.
-default_ef = embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
+_default_ef = None
+
+def get_embedding_function():
+    global _default_ef
+    if _default_ef is None:
+        _default_ef = embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
+    return _default_ef
 
 def get_client(case_id):
     """
@@ -45,7 +50,7 @@ def index_evidence(case_id, evidence_files):
     # when documents are added or queried.
     collection = client.get_or_create_collection(
         name="evidence", 
-        embedding_function=default_ef
+        embedding_function=get_embedding_function()
     )
 
     ids = []
@@ -105,7 +110,7 @@ def search_evidence(case_id, query, n_results=3):
     client = get_client(case_id)
     
     try:
-        collection = client.get_collection(name="evidence", embedding_function=default_ef)
+        collection = client.get_collection(name="evidence", embedding_function=get_embedding_function())
     except Exception:
         # Collection does not exist yet (no evidence indexed)
         return {"status": "success", "results": []}

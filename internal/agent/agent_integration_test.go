@@ -11,11 +11,16 @@ import (
 )
 
 func setupTestDB(t *testing.T) {
-	db, err := sql.Open("sqlite3", ":memory:")
+	db, err := sql.Open("sqlite3", "file::memory:?mode=memory&cache=shared")
 	if err != nil {
 		t.Fatal(err)
 	}
+	oldDB := storage.DB
 	storage.DB = db
+	t.Cleanup(func() {
+		db.Close()
+		storage.DB = oldDB
+	})
 	if err := storage.Migrate(); err != nil {
 		t.Fatal(err)
 	}
