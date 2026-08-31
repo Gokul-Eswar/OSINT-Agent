@@ -98,116 +98,129 @@ pip install -r analyzer/requirements.txt
 
 ---
 
-## 🕹️ 3 Ways to Use SPECTRE
+## 🕹️ Three Ways to Use SPECTRE
 
-### Option A: The "One-Shot" Auto Investigation (Fastest)
-Auto-creates a case, executes DNS, WHOIS, GeoIP, and Port collectors, runs AI synthesis, and displays an executive summary in one command:
+### 1️⃣ Quick Scan (One Command)
+Want to quickly investigate a target? Get results instantly:
 ```bash
 spectre investigate scanme.nmap.org
 ```
+SPECTRE will:
+- Create a case automatically
+- Gather DNS, WHOIS, GeoIP info
+- Scan ports
+- Analyze everything with AI
+- Show you a summary
+
+Perfect for: Quick checks, when you don't need a detailed investigation.
 
 ---
 
-### Option B: The Interactive Terminal (TUI)
-Launch the keyboard-driven terminal dashboard:
+### 2️⃣ Terminal Dashboard (TUI)
+Prefer working in your terminal? Launch the interactive dashboard:
 ```bash
-spectre console
-# or simply
 spectre
 ```
 
-```
-┌─ SPECTRE INTELLIGENCE CONSOLE ──────────────────────────────────────────┐
-│  [1] Cases  [2] Analysis  [3] Evidence  [4] Graph  [5] Timeline  [6] Web │
-├──────────────────────────┬──────────────────────────────────────────────┤
-│ ACTIVE INVESTIGATION     │ CASE SUMMARY: Case-Alpha                     │
-│ Target: scanme.nmap.org  │ Entities Discovered: 14                      │
-│ Status: Active           │ Relationships Linked: 18                     │
-│ Mode: Ghost Mode (Tor)   │ Latest AI Finding: 2 Open Web Services Found │
-└──────────────────────────┴──────────────────────────────────────────────┘
-```
+You'll get:
+- A menu to manage cases
+- View all collected data
+- Search through findings
+- See interactive graphs
+- Run commands with keyboard shortcuts
 
-**TUI Keybindings:**
-- `Tab`: Switch focus between panels.
-- `1` - `7`: Switch views (Cases, Analysis, Evidence, Graph, Timeline, Reports, Settings).
-- `n`: Create a new investigation case.
-- `s` / `o`: Start API server and launch the Web Dashboard in your default browser.
-- `q`: Quit.
+Perfect for: Advanced investigators who live in the terminal.
 
 ---
 
-### Option C: The Web Command Center
-Start the local API server and open the browser dashboard:
+### 3️⃣ Web Dashboard
+Want a modern browser interface? Start the web server:
 ```bash
-spectre server --port 8080
+spectre server
 ```
-Then open `http://localhost:8080` to interact with the real-time node graph, inspect entity details, chat with the AI agent, and export reports.
+Then open `http://localhost:8080` in your browser.
+
+You'll get:
+- Interactive graphs you can drag around
+- Search and filter data
+- Chat with AI analysis
+- Export reports
+- Real-time updates
+
+Perfect for: Visual exploration and presenting findings.
 
 ---
 
-## 💻 CLI Command Reference
+## 💻 Common Commands
 
-SPECTRE provides a powerful, scriptable command-line interface:
+Here are the commands you'll use most often. Don't worry about memorizing them all — just reference this when you need it.
 
-### Case Management
+### Creating & Managing Cases
 ```bash
-# Create a new investigation case
-spectre case create "Operation Citadel" --desc "Investigating phishing infrastructure"
+# Create a new investigation
+spectre case new "Operation Name"
 
-# List all existing cases
+# List all your investigations
 spectre case list
 
-# Set default active investigation context (no need to repeatedly pass --case)
+# See details of one case
+spectre case show <CASE_ID>
+
+# Delete a case
+spectre case delete <CASE_ID>
+
+# Set a case as your default (won't need to type --case)
 spectre context set <CASE_ID>
-spectre context show
 ```
 
-### Data Collection
+### Collecting Information
 ```bash
-# Run passive collectors (DNS, WHOIS, GeoIP)
-spectre collect --case <CASE_ID> --target example.com --scanners dns,whois,geo
+# Quick passive scan (DNS, WHOIS, IP info)
+spectre collect all example.com --case <CASE_ID>
 
-# Run active reconnaissance (Port scan, Screenshot, Social handles)
-spectre collect --case <CASE_ID> --target example.com --scanners ports,screenshot --active
+# Scan for open ports (requires --active permission)
+spectre collect ports example.com --case <CASE_ID> --active
 
-# Check username presence across 50+ platforms
-spectre collect --case <CASE_ID> --target johndoe --scanners social --active
+# Check if username exists on social media
+spectre collect accounts username123 --case <CASE_ID>
 ```
 
-### Search & Discovery
+### Searching & Asking Questions
 ```bash
-# Fast keyword search across all raw evidence files in active case
+# Search through collected evidence
 spectre search "admin@example.com"
 
-# Semantic vector search using local AI embeddings
-spectre search --semantic "exposed database credentials and keys"
-```
-
-### AI Synthesis & Question Answering
-```bash
-# Synthesize case data into structured findings, risks, and next steps
-spectre analyze --case <CASE_ID> --model llama3
-
-# Ask specific questions about collected case evidence
-spectre llm query --case <CASE_ID> "What mail servers were discovered?"
-
-# Perform visual OCR and image analysis on captured screenshots
-spectre llm vision evidence_storage/<CASE_ID>/screenshot_example_com.png "What login forms or logos are visible?"
-
-# Start an autonomous conversational agent session
+# Ask the AI a question
 spectre chat --case <CASE_ID>
+# Then type your questions interactively
 ```
 
-### Exporting Reports
+### Exporting Results
 ```bash
-# Generate executive PDF report
-spectre report --case <CASE_ID> --format pdf
+# Export as PDF (professional looking)
+spectre report pdf --case <CASE_ID>
 
-# Generate Markdown report
-spectre report --case <CASE_ID> --format markdown
+# Export as Markdown (easy to edit)
+spectre report markdown --case <CASE_ID>
 
-# Generate standalone interactive HTML graph report
-spectre report --case <CASE_ID> --format html
+# Export as interactive HTML graph
+spectre report html --case <CASE_ID>
+```
+
+### Other Useful Commands
+```bash
+# View SPECTRE version
+spectre version
+
+# Get help on any command
+spectre help
+spectre <command> help
+
+# Start the web dashboard
+spectre server
+
+# Visualize the graph
+spectre visualize --case <CASE_ID>
 ```
 
 ---

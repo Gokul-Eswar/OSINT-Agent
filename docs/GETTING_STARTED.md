@@ -1,109 +1,173 @@
-# 🚀 Getting Started Walkthrough
+# 🚀 Getting Started: Your First Investigation
 
-This guide provides a step-by-step walkthrough of a typical SPECTRE intelligence cycle. Follow along to set up an investigation, scan targets, query our local AI agent, and generate reporting assets.
-
----
-
-## The OSINT Lifecycle in SPECTRE
-
-```mermaid
-graph TD
-    A["1. Create Case"] --> B["2. Collect (DNS, Whois, Ports)"]
-    B --> C["3. Index (Vector DB Ingestion)"]
-    C --> D["4. Analyze (Local LLM Synthesis)"]
-    D --> E["5. Visualize & Report (Web GUI & PDF)"]
-```
+Welcome! This guide walks you through a real investigation in SPECTRE — from creating a case to generating reports. It should take about 10 minutes.
 
 ---
 
-## Step 1: Create an Investigation Case
+## The Investigation Process (Simple Version)
 
-Every action in SPECTRE requires a **Case ID** to compartmentalize your investigation evidence and relations.
+Think of an investigation as a journey with 5 steps:
 
-Create a new case using the CLI:
+1. **Create a Case** — Give your investigation a name
+2. **Collect Evidence** — SPECTRE gathers data about your target
+3. **Explore the Graph** — See how all the pieces connect
+4. **Chat with the AI** — Ask questions about what you found
+5. **Generate a Report** — Export your findings
+
+---
+
+## Step 1: Create a New Case
+
+A **Case** is like a folder for your investigation. Everything you collect gets organized inside it.
+
+**Create a case:**
 ```bash
 spectre case new "suspect-infra-01"
 ```
-*Expected Output:*
-```text
-Successfully created case: suspect-infra-01 (ID: a8f7c9e0-1234-abcd-9876-1a2b3c4d5e6f)
+
+**You'll see:**
 ```
-Keep this Case ID handy. If you forget it, run:
+✓ Successfully created case: suspect-infra-01
+  ID: a8f7c9e0-1234-abcd-9876-1a2b3c4d5e6f
+```
+
+💡 **Copy and save that ID** — You'll use it for every command going forward.
+
+**Forgot the ID?** List all your cases:
 ```bash
 spectre case list
 ```
 
 ---
 
-## Step 2: Run Passive Reconnaissance Collectors
+## Step 2: Gather Basic Information (Passive Collection)
 
-Now, gather initial passive intelligence (DNS, Whois, GeoIP) for a domain target.
+Let's say you want to investigate `target.com`. SPECTRE can automatically gather basic information without ever directly contacting the website (this is called "passive" collection).
 
-Run all passive collectors:
+**Collect passive data:**
 ```bash
 spectre collect all target.com --case a8f7c9e0-1234-abcd-9876-1a2b3c4d5e6f
 ```
-The console will display Lipgloss progress bars as collectors execute. Standard output is saved to the local database, and raw JSON outputs are written to the case evidence folder:
-`evidence_storage/a8f7c9e0-1234-abcd-9876-1a2b3c4d5e6f/`
+
+**What SPECTRE will find:**
+- DNS records (where the domain points)
+- WHOIS information (who owns it)
+- IP geolocation (where it's hosted)
+- Any public GitHub repositories
+
+**Where it's stored:**
+- Database: `spectre.db` (the knowledge graph)
+- Raw files: `evidence_storage/a8f7c9e0-1234-abcd-9876-1a2b3c4d5e6f/` (proof of what was found)
 
 ---
 
-## Step 3: Run Active Reconnaissance (Port Scanning)
+## Step 3: Scan the Website (Active Collection) — *Optional*
 
-Active scans make direct TCP probes and require the global `--active` permission flag to prevent accidental probing.
+Want to find open ports or take screenshots? This requires an extra permission flag (to prevent accidents):
 
-Run port scans and screenshots against the target:
+**Scan for open ports:**
 ```bash
 spectre collect ports target.com --case a8f7c9e0-1234-abcd-9876-1a2b3c4d5e6f --active
 ```
-*Note: Active port scans prioritize the Top-100 standard system ports unless custom scopes are configured inside configs/default.yaml.*
+
+⚠️ **What this does:** Tries to connect to common ports (like 80, 443, 22, etc.) on the target. Only common ports are scanned unless you configure custom ones.
 
 ---
 
-## Step 4: Interact with the Autonomous AI Agent
+## Step 4: Explore Using the AI Chat
 
-Start an interactive shell session with SPECTRE's AI engine to ask natural language questions about your case:
+Now you have evidence. Ask the AI questions about it.
+
+**Start a chat session:**
 ```bash
 spectre chat --case a8f7c9e0-1234-abcd-9876-1a2b3c4d5e6f
 ```
 
-Inside the interactive chat loop:
-1.  **View Help Guide**: Type `/help` to see capabilities and commands.
-2.  **Inspect Session**: Type `/case` to view details of the case you are querying.
-3.  **Run Collectors conversations**: Ask `"Run whois on target.com"`. The agent will autonomously parse this, execute the `whois` tool, save results, and summarize the output.
-4.  **Semantic Evidence Search**: Ask `"Find any reference to admin emails in the evidence file"`. The agent will invoke vector search across all files in `evidence_storage`.
-5.  **Exit**: Type `exit` or `quit`.
+**Inside the chat, you can:**
+
+- **Search evidence:** `"Find all email addresses in the data"`
+- **Run collectors:** `"Run DNS lookup on example.com"`
+- **Get analysis:** `"What risks do you see?"`
+- **Get help:** Type `/help`
+- **Exit:** Type `exit` or `quit`
+
+**Example conversation:**
+```
+You: Find all email addresses
+AI: I found 3 emails: admin@target.com, support@target.com, ...
+
+You: Run whois on those domains
+AI: [runs whois] Here's what I found...
+```
 
 ---
 
-## Step 5: Visualize the Relationship Graph
+## Step 5: See How Everything Connects (Graph Visualization)
 
-Ingested domains, hosting IPs, emails, and names are linked as vertices and edges in your database.
+SPECTRE finds relationships between all the pieces (domains, IPs, emails, etc.) and shows them as a visual graph.
 
-1.  **Launch the Web Dashboard API server**:
-    ```bash
-    spectre server
-    ```
-    This launches a backend server on `http://localhost:8080`.
-2.  **Generate and Open Graph Visualization**:
-    ```bash
-    spectre visualize --case a8f7c9e0-1234-abcd-9876-1a2b3c4d5e6f
-    ```
-    This reads case details, compiles a D3.js interactive link diagram, and opens it in your default web browser.
+**Start the visualization server:**
+```bash
+spectre server
+```
+
+**In another terminal, generate the graph:**
+```bash
+spectre visualize --case a8f7c9e0-1234-abcd-9876-1a2b3c4d5e6f
+```
+
+**What happens:**
+- A web browser opens automatically
+- You see all entities (domains, IPs, emails) as nodes
+- Lines show how they connect
+- You can drag, zoom, and click to explore
 
 ---
 
-## Step 6: Generate Executive Reports
+## Step 6: Export Your Findings
 
-Once collection and analysis are complete, compile your findings into a professional report.
+Ready to share your investigation? Export it in multiple formats.
 
-### Generate a Markdown Summary:
+**Generate a text summary:**
 ```bash
 spectre report markdown --case a8f7c9e0-1234-abcd-9876-1a2b3c4d5e6f
 ```
+Outputs: `case_report.md`
 
-### Generate a Branded PDF Report:
+**Generate a professional PDF:**
 ```bash
 spectre report pdf --case a8f7c9e0-1234-abcd-9876-1a2b3c4d5e6f
 ```
-The compiled PDF is written to your project root. It includes an executive summary cover sheet, a chronological timeline of actions, a list of discovered entities, and automated risk scoring generated by the intelligence layer.
+Outputs: `case_report.pdf` (includes timeline, entities, risk scores)
+
+---
+
+## 🎯 Common Tasks Quick Reference
+
+**List your cases:**
+```bash
+spectre case list
+```
+
+**Look inside a case:**
+```bash
+spectre case show a8f7c9e0-1234-abcd-9876-1a2b3c4d5e6f
+```
+
+**Delete a case:**
+```bash
+spectre case delete a8f7c9e0-1234-abcd-9876-1a2b3c4d5e6f
+```
+
+**Investigate a username across multiple platforms:**
+```bash
+spectre collect accounts username123 --case <YOUR_CASE_ID>
+```
+
+---
+
+## ✅ Next Steps
+
+- **Troubleshooting?** See [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+- **Want to secure your investigation?** See the "Operational Security" section in [INSTALLATION.md](INSTALLATION.md)
+- **Building custom collectors?** See [PLUGIN_DEVELOPMENT.md](PLUGIN_DEVELOPMENT.md)

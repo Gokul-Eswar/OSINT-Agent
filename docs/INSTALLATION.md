@@ -1,78 +1,77 @@
-# 💾 OS Installation Guide
+# 💾 How to Install SPECTRE
 
-This document provides complete, OS-specific installation instructions for deploying **SPECTRE**.
-
----
-
-## 📋 System Prerequisites
-
-Before installation, verify your environment meets the minimum version requirements:
-
-| Dependency | Minimum Version | Required For | Verification Command |
-| :--- | :--- | :--- | :--- |
-| **Go** | `1.22+` | Compiling the Go core binary | `go version` |
-| **Python** | `3.10+` | Intelligence analyzer and plugins | `python --version` |
-| **Git** | `2.x+` | Plugin updates & codebase setup | `git --version` |
+This guide walks you through installing SPECTRE step-by-step on Windows, Linux, or macOS.
 
 ---
 
-## 🪟 Windows Setup (Automated)
+## What You'll Need
 
-SPECTRE includes PowerShell automation wrappers for fast setup.
+Before starting, make sure you have these installed:
 
-### 1. Configure Execution Policy
-PowerShell defaults to restrictive execution limits. Open a PowerShell console as a regular user and enable script execution for the current user scope:
+| What | Minimum Version | Check with |
+|------|---|---|
+| **Go** | 1.22+ | `go version` |
+| **Python** | 3.10+ | `python --version` |
+| **Git** | 2.x+ | `git --version` |
+
+**Optional (for AI features):**
+- **Ollama** — Download from [ollama.ai](https://ollama.ai). Run `ollama pull llama3` after installing.
+
+---
+
+## Windows Users (Easiest Way)
+
+**Step 1:** Open PowerShell as a regular user and allow scripts to run:
 ```powershell
 Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
-### 2. Run the Installer
-Run the installer script from the root of the project directory. This compiles the Go binary, initializes a Python virtual environment (`.venv`), and installs all core ML and database libraries:
+**Step 2:** Go to the SPECTRE folder and run:
 ```powershell
 .\install.ps1
 ```
 
-### 3. (Optional) Set up Global Terminal access
-To run `spectre` from any console prompt (adding its directory to your User PATH):
+This will:
+- ✓ Build the SPECTRE program
+- ✓ Create a Python environment (`.venv` folder)
+- ✓ Install all required libraries
+
+**Step 3 (Optional):** Want to run `spectre` from any terminal? Run:
 ```powershell
 .\setup_global.ps1
 ```
-*Note: Restart your terminal window after running this script for changes to apply.*
+(Restart your terminal after this)
 
 ---
 
-## 🐧 Linux / 🍎 macOS Setup (Manual)
+## Linux & macOS (Manual Setup)
 
-Follow these steps to compile and set up the platform on Unix-based systems.
+**Step 1:** Clone and enter the folder:
+```bash
+git clone https://github.com/Gokul-Eswar/Spectre.git
+cd Spectre
+```
 
-### 1. Build the Go Binary
-Compile the main entry point to generate the executable binary:
+**Step 2:** Build the program:
 ```bash
 go build -o spectre cmd/spectre/main.go
 chmod +x spectre
 ```
 
-### 2. Setup Python Virtual Environment
-Initialize a local virtual environment in the `.venv` directory to isolate dependencies:
+**Step 3:** Set up Python:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-```
-
-### 3. Install Python Dependencies
-Upgrade pip and install the NLP/vector databases:
-```bash
 pip install --upgrade pip
 pip install -r analyzer/requirements.txt
 ```
 
 ---
 
-## 🧪 Post-Installation Verification
+## Check If Everything Works
 
-To confirm compilation and environment setup are fully functional, run the built-in checks:
+Run this to verify your installation:
 
-### 1. Verify Core CLI Output
 ```bash
 # Windows
 .\spectre.exe version
@@ -80,41 +79,82 @@ To confirm compilation and environment setup are fully functional, run the built
 # Linux/macOS
 ./spectre version
 ```
-Expected output: `SPECTRE v1.0.0`
 
-### 2. Run Test Suites
-Validate Go and Python test suites:
+You should see: `SPECTRE v1.0.0` ✓
+
+---
+
+## Run the Tests
+
+Want to make sure everything is working correctly?
+
 ```bash
-# Go unit tests
+# Test the Go part
 go test ./...
 
-# Python unit tests
-# (Make sure to run this using the virtual environment interpreter)
-.venv/bin/python -m pytest analyzer/     # Linux/macOS
-.venv/Scripts/python -m pytest analyzer/  # Windows
+# Test the Python part (Linux/macOS)
+.venv/bin/python -m pytest analyzer/
+
+# Test the Python part (Windows)
+.venv\Scripts\python -m pytest analyzer/
 ```
 
 ---
 
-## 🛡️ Operational Security & Proxy Setup
+## Optional: Private & Secure Mode (Ghost Mode)
 
-SPECTRE incorporates a hardened **Ghost Mode** to ensure your OSINT queries are routed securely.
+If you want to hide your investigations through a proxy (Tor, VPN, etc.), follow these steps:
 
 ### 1. Install Tor
-*   **Windows**: Download and run [Tor Browser](https://www.torproject.org/) (runs proxy on `127.0.0.1:9150`) or run a standalone Tor service.
-*   **Debian/Ubuntu**: `sudo apt install tor` (runs daemon on `127.0.0.1:9050`).
-*   **macOS**: `brew install tor && brew services start tor` (runs daemon on `127.0.0.1:9050`).
 
-### 2. Configure HTTP Proxy Settings
-Edit `configs/default.yaml` to specify your proxy configurations:
-```yaml
-http:
-  proxy: "socks5://127.0.0.1:9050"   # Standard Tor Port
-  insecure_skip_verify: false       # Set true only for debugging local SSL proxies
+**Windows:**
+- Download [Tor Browser](https://www.torproject.org/)
+- It creates a proxy at `127.0.0.1:9150`
+
+**Linux (Ubuntu/Debian):**
+```bash
+sudo apt install tor
+# Runs at 127.0.0.1:9050
 ```
 
-### 3. Harden Execution (Strict Proxy Mode)
-Run commands with the `--strict` flag. This enforces **fail-closed** behavior: if the proxy goes offline or is unreachable, all network requests are blocked:
+**macOS:**
+```bash
+brew install tor
+brew services start tor
+# Runs at 127.0.0.1:9050
+```
+
+### 2. Configure SPECTRE to Use the Proxy
+
+Edit `configs/default.yaml`:
+```yaml
+http:
+  proxy: "socks5://127.0.0.1:9050"
+  insecure_skip_verify: false
+```
+
+### 3. Run with Security Mode On
+
 ```bash
 spectre collect all target.com --strict
 ```
+
+The `--strict` flag means: if the proxy goes down, stop immediately instead of continuing without it. This protects you from accidentally leaking data.
+
+---
+
+## Troubleshooting Installation
+
+**"Python not found"**
+- Make sure Python 3.10+ is installed: `python --version`
+- On some systems, use `python3` instead of `python`
+
+**"Go build failed"**
+- Check your Go version: `go version` (need 1.22+)
+- Make sure you're in the SPECTRE folder
+
+**"Port 8080 is already in use"**
+- Something else is using that port
+- Change it in `configs/default.yaml` under the `server:` section
+
+**Still stuck?** See [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
