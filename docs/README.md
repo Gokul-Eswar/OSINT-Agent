@@ -1,29 +1,63 @@
-# 🕵️ SPECTRE Documentation Index
+# 📚 SPECTRE Documentation
 
-Welcome to the documentation suite for **SPECTRE**, the local-first Open Source Intelligence (OSINT) platform. Use this index to navigate guides, API schemas, tutorials, and operational references.
-
----
-
-## 📚 Guides and Walkthroughs
-
-*   **[Installation Guide](INSTALLATION.md)**: Detailed platform-specific installation instructions (Windows, Linux, macOS) covering prerequisites, execution policies, and environment setup.
-*   **[Getting Started Tutorial](GETTING_STARTED.md)**: A step-by-step walkthrough detailing how to create your first case, execute collectors, interact with the conversational AI agent, and generate reports.
-*   **[Troubleshooting & FAQ](TROUBLESHOOTING.md)**: A collection of troubleshooting steps for common issues, platform-specific bugs, database locks, and general questions.
+Welcome! This page helps you find the right guide for what you want to do.
 
 ---
 
-## 🛠️ Architecture and Extensibility
+## 🚀 Getting Started
 
-*   **[System Architecture](ARCHITECTURE.md)**: Conceptual overview of Go/Python split of labor, core internal domains, ethics guardian, and databases.
-*   **[Bridge API & Architecture Schema](API_DOCUMENTATION.md)**: Details the design of the Go-to-Python subprocess bridge, including request/response JSON contracts and internal Go package layers.
-*   **[Plugin Development Guide](PLUGIN_DEVELOPMENT.md)**: The developer's guide to building custom intelligence collectors using Python, Bash, or compiled binaries.
-*   **[External Plugins Model](plugins.md)**: Context on how external collectors are discovered, registered, and run safely.
-*   **[LLM Integration](llm.md)**: Design notes on the local intelligence/caching system, providers (Ollama), and offline fallbacks.
+**New to SPECTRE?** Start here:
+
+- **[Getting Started Guide](GETTING_STARTED.md)** ← Begin here! A walk-through of your first investigation in 10 minutes.
+- **[Installation Guide](INSTALLATION.md)** ← How to set up SPECTRE on your computer.
 
 ---
 
-## 🚀 Operational guides
+## 🤔 Understanding SPECTRE
 
-*   **[Deployment Guide](DEPLOYMENT.md)**: Operational guidance for running SPECTRE on shared servers or enterprise settings, setting up headless screenshot drivers, daemonizing backend servers, and multi-user configurations.
-*   **[Performance Baselines](performance.md)**: System performance benchmarks, parallel scanning, and database optimization indices.
-*   **[Feature Catalog](features.md)**: Complete list of native collectors, active scanners, and system-wide capabilities.
+Want to understand how it works?
+
+- **[How SPECTRE Works (Architecture)](ARCHITECTURE.md)** ← Explained simply, what each part does and how data flows.
+- **[Feature List](features.md)** ← Complete list of what SPECTRE can do.
+
+---
+
+## 🛠️ Building & Extending
+
+Want to add your own tools or integrate SPECTRE with other systems?
+
+- **[Creating Custom Collectors (Plugins)](PLUGIN_DEVELOPMENT.md)** ← Build your own data collectors in Python, Bash, or Go.
+- **[How Plugins Work](plugins.md)** ← How SPECTRE discovers and runs custom collectors safely.
+- **[API Documentation](API_DOCUMENTATION.md)** ← Technical details of how Go and Python talk to each other.
+
+---
+
+## 🔒 Advanced Topics
+
+For experienced users and enterprise deployments:
+
+- **[Deployment Guide](DEPLOYMENT.md)** ← Running SPECTRE on servers, multi-user setups, and headless systems.
+- **[LLM Integration](llm.md)** ← Setting up local AI (Ollama) for analysis.
+- **[Performance Tuning](performance.md)** ← Making SPECTRE faster and more efficient.
+
+---
+
+## ❓ Stuck?
+
+- **[Troubleshooting](TROUBLESHOOTING.md)** ← Common problems and how to fix them.
+
+---
+
+## 📋 Quick Reference
+
+| I want to... | See this guide |
+|---|---|
+| Set up SPECTRE | [Installation Guide](INSTALLATION.md) |
+| Run my first investigation | [Getting Started](GETTING_STARTED.md) |
+| Understand how it works | [Architecture](ARCHITECTURE.md) |
+| See what it can do | [Features](features.md) |
+| Build a custom collector | [Plugin Development](PLUGIN_DEVELOPMENT.md) |
+| Fix a problem | [Troubleshooting](TROUBLESHOOTING.md) |
+| Deploy to a server | [Deployment Guide](DEPLOYMENT.md) |
+| Use AI analysis | [LLM Integration](llm.md) |
+| Speed things up | [Performance](performance.md)

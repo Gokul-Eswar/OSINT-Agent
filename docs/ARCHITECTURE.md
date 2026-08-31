@@ -1,101 +1,165 @@
-# 🏗️ Architecture
+# 🏗️ How SPECTRE Works (Architecture Explained Simply)
 
-Spectre utilizes a hybrid architecture to leverage the best of both worlds:
-*   **Go (System Core):** Handles orchestration, CLI framework (`cobra`), concurrent collection, and SQLite storage.
-*   **Python (Intelligence Layer):** Manages AI analysis, graph visualization (`pyvis`), and report generation.
+## The Big Picture
 
-## Component Overview
+SPECTRE is built like a kitchen with a chef and assistants:
+
+- **Chef (Go):** Fast, organized, makes decisions. Handles the oven, scheduling, and storage.
+- **Assistants (Python):** Specialists. One makes fancy presentations (graphs), one thinks deeply (AI analysis).
+
+Both work together through a simple request system.
+
+---
+
+## What Each Part Does
+
+### Go (The Coordinator & Storage)
+
+**Location:** `internal/` folder
+
+**Main Jobs:**
+- **CLI & Commands:** Understands what you type
+- **Collectors:** Gathers information (DNS, WHOIS, ports, etc.)
+- **Database:** Stores everything in SQLite
+- **Ethics Guardian:** Makes sure you don't accidentally scan `.gov` or break rules
+- **Rate Limiter:** Prevents hammering servers
+
+**Why Go?** It's fast, handles many tasks at once, and doesn't use much memory.
+
+---
+
+### Python (The Specialists)
+
+**Location:** `analyzer/` folder
+
+**Two Main Specialists:**
+
+1. **Graph Visualizer** (`graph_viz.py`)
+   - Takes entity data (domains, IPs, emails)
+   - Creates beautiful interactive web graphs
+   - Shows connections between items
+
+2. **LLM Analyzer** (`llm.py`)
+   - Reads all your evidence
+   - Asks questions to the AI (via Ollama)
+   - Finds patterns and risks
+   - Writes reports
+
+---
+
+## How Data Flows
+
+### When You Collect Information
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      SPECTRE CLI (Go)                       │
-│  ┌──────────┬──────────┬──────────┬──────────┬──────────┐   │
-│  │   Cases  │Collectors│   Graph  │ Timeline │ Analysis │   │
-│  └──────────┴──────────┴──────────┴──────────┴──────────┘   │
-└─────────────────────────────────────────────────────────────┘
-          │              │              │              │
-          ▼              ▼              ▼              ▼
-┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
-│    Storage   │ │  Collectors  │ │     Graph    │ │   Analyzer   │
-│              │ │              │ │              │ │   (Python)   │
-│ • SQLite     │ │ • DNS        │ │ • SQLite     │ │ • LLM API    │
-│ • Files      │ │ • WHOIS      │ │   Edges      │ │ • Timeline   │
-│ • Evidence   │ │ • GitHub     │ │ • GraphML    │ │ • Synthesis  │
-│ • Logs       │ │ • Certs      │ │ • pyvis Viz  │ │ • Reports    │
-└──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘
+User runs: spectre collect dns example.com
+     ↓
+Go checks: Is example.com safe to scan?
+     ↓
+Go runs: DNS lookup on example.com
+     ↓
+Go saves: Raw results to evidence_storage/
+     ↓
+Go parses: Extracts entities (IPs, nameservers, etc.)
+     ↓
+Go stores: Everything in SQLite database
+     ✓ Done
 ```
 
-## 1. System Core (Go)
+### When You Visualize
 
-The `internal` directory contains the core logic of the application.
+```
+User runs: spectre visualize --case <ID>
+     ↓
+Go reads: All entities from database
+     ↓
+Go sends: Everything as JSON to Python
+     ↓
+Python creates: Interactive graph file (HTML)
+     ↓
+Go opens: Graph in your web browser
+     ✓ Done
+```
 
-### **CLI (`internal/cli`)**
-*   Built using `cobra`.
-*   Handles command parsing, flags, and user interaction.
-*   **Key Commands:** `case`, `collect`, `visualize`, `analyze`.
+### When You Chat with AI
 
-### **Core Domain (`internal/core`)**
-*   Defines the primary data structures: `Case`, `Entity`, `Evidence`, `Relationship`.
-*   **Collector Interface:** Defines the contract for all data collectors.
+```
+User asks: "Find admin emails"
+     ↓
+Go sends: Question + all evidence to Python
+     ↓
+Python searches: Vector database for matches
+     ↓
+Python sends: Back to Go in JSON format
+     ↓
+Go displays: Results in chat
+     ✓ Done
+```
 
-### **Collectors (`internal/collector`)**
-*   **Registry:** Manages available collectors.
-*   **Implementations:**
-    *   `dns`: Uses `net` package for resolution.
-    *   `whois`: Uses `github.com/likexian/whois` for parsing.
-    *   `github`: Uses `net/http` to query GitHub API.
+---
 
-### **Ethics Guardian (`internal/ethics`)**
-*   **Rate Limiter:** Token Bucket algorithm (`golang.org/x/time/rate`) ensures collectors respect API limits.
-*   **Scope Control:** Validates targets against blacklists/whitelists before execution.
+## Storage: Where Everything Lives
 
-### **Storage Layer (`internal/storage`)**
-*   **SQLite:** Stores structured metadata (cases, entities, relationships).
-    *   **Migrations:** Managed via embedded SQL files in `internal/storage/migrations`. Versioning is tracked in the `schema_migrations` table.
-    *   **Concurrency:** Uses WAL (Write-Ahead Logging) mode and a busy timeout to handle multiple concurrent collector writes.
-*   **File System:** Stores raw evidence files (JSON, text) in `evidence_storage/`.
-    *   **Structure:** Organized by Case ID: `evidence_storage/<case_id>/<collector>_<target>_<timestamp>.<ext>`.
-    *   **Auditability:** Every record in the database links to a specific evidence file via `evidence_id`, providing a verifiable trail from raw data to the intelligence graph.
+### Database (`spectre.db`)
+A SQLite database that stores:
+- **Cases:** Your investigations
+- **Entities:** People, emails, domains, IPs
+- **Relationships:** How things connect
+- **Evidence:** Links to raw files
 
-## 2. Intelligence Layer (Python)
+Think of it like an organized notebook.
 
-The `analyzer` directory contains the Python module responsible for high-level synthesis.
+### Evidence Files (`evidence_storage/`)
+Raw data stored as files, organized like this:
+```
+evidence_storage/
+└── case-id-123/
+    ├── dns_example.com_2024-01-15.json
+    ├── whois_example.com_2024-01-15.json
+    └── ports_192.168.1.1_2024-01-15.json
+```
 
-### **Bridge (`internal/analyzer`)**
-*   Go code that marshals case data into JSON and executes the Python module via `exec.Command`.
-*   Handles data transfer via `stdin/stdout`.
+**Why store raw files?** You can prove what you found. Every result in the database links to its original evidence file.
 
-### **Visualizer (`analyzer/graph_viz.py`)**
-*   **Input:** JSON graph data (nodes, edges).
-*   **Processing:** Uses `networkx` to build the graph structure.
-*   **Output:** Generates an interactive HTML file using `pyvis` with physics-based layout.
+---
 
-### **LLM Synthesis (`analyzer/llm.py`)**
-*   **Input:** Textual context of the case (entities, relationships).
-*   **Processing:** Sends prompts to an LLM (currently supports local Ollama).
-*   **Output:** Structured JSON report (findings, risks, connections).
+## Safety Features
 
-## 3. Data Flow
+### Rate Limiter
+- Prevents spamming servers
+- Uses a "token bucket" system (like a water bucket that refills)
+- Configurable per collector
 
-### **Collection Flow**
-1.  User runs `spectre collect <collector> <target>`.
-2.  **Ethics Check:** Target is checked against blacklist.
-3.  **Rate Limit:** Collector waits for available token.
-4.  **Execution:** Collector fetches data.
-5.  **Storage:** Raw data saved to `evidence_storage/`.
-6.  **Ingestion:** Entities and relationships extracted and saved to SQLite.
+### Ethics Guardian
+- Refuses to scan government (`.gov`) or military (`.mil`) sites
+- Checks against blacklists before running
+- Can whitelist/blacklist custom targets
 
-### **Visualization Flow**
-1.  User runs `spectre visualize`.
-2.  **Export:** Go exports all case entities/relationships to JSON.
-3.  **Bridge:** Go calls `python -m analyzer --task visualize`.
-4.  **Generation:** Python builds the `pyvis` graph and saves `report.html`.
-5.  **Display:** Go opens the HTML file in the default browser.
+### Ghost Mode (Tor/Proxy Support)
+- Routes all requests through Tor or your VPN
+- `--strict` mode: if proxy goes down, stop immediately
+- Prevents accidental data leaks
 
-## 4. Configuration
+---
 
-Managed via `configs/default.yaml` and loaded by `internal/config`.
+## Configuration
 
-*   **Database Path:** Location of `spectre.db`.
-*   **Collector Settings:** Rate limits and enabled status.
+Edit `configs/default.yaml` to change:
+- Database location
+- Collector enabled/disabled
+- Rate limits
+- Proxy settings
+- Tor port
+
+---
+
+## Summary: The Simple Version
+
+1. **You give SPECTRE a target**
+2. **Go collects data** (following safety rules)
+3. **Go stores data** (organized database)
+4. **You explore** (via chat, graphs, or reports)
+5. **Python helps visualize and analyze**
+
+Everything stays on your computer. No cloud. No leaks.
 *   **Ethics:** Global blacklists/whitelists.
