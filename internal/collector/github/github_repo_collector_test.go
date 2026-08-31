@@ -2,6 +2,8 @@ package github
 
 import (
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 
@@ -11,14 +13,26 @@ import (
 )
 
 func TestGitHubCollector_Collect(t *testing.T) {
-	// Skip if no internet
-	if os.Getenv("CI") != "" {
-		t.Skip("Skipping GitHub test in CI")
+	mockResponse := map[string]interface{}{
+		"total_count": 1,
+		"items": []map[string]interface{}{
+			{
+				"full_name": "spectre/test-target",
+				"html_url":  "https://github.com/spectre/test-target",
+				"owner": map[string]interface{}{
+					"login": "spectre",
+				},
+			},
+		},
 	}
 
-	c := &GitHubCollector{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(mockResponse)
+	}))
+	defer server.Close()
+
+	c := &GitHubCollector{BaseURL: server.URL}
 	caseID := "test_case_github"
-	// Use a very specific target that is likely to exist but small, or just a keyword
 	target := "spectre-cli-test-target"
 
 	// Reset config

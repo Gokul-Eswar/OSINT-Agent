@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/Gokul-Eswar/Spectre/internal/analysis"
 	"github.com/Gokul-Eswar/Spectre/internal/storage"
@@ -26,7 +27,7 @@ var queryCmd = &cobra.Command{
 			return err
 		}
 
-		question := args[0]
+		question := strings.Join(args, " ")
 		fmt.Printf("Querying case %s about: %s...\n", caseID, question)
 
 		answer, err := analysis.QueryCase(caseID, modelName, question)
@@ -47,7 +48,7 @@ var visionCmd = &cobra.Command{
 		imagePath := args[0]
 		prompt := "Describe this image in detail. Focus on text, logos, or identifying features."
 		if len(args) > 1 {
-			prompt = args[1]
+			prompt = strings.Join(args[1:], " ")
 		}
 
 		fmt.Printf("Analyzing image %s with prompt: %s\n", imagePath, prompt)

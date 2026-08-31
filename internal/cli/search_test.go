@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/Gokul-Eswar/Spectre/internal/analyzer"
 	"github.com/Gokul-Eswar/Spectre/internal/core"
 	"github.com/Gokul-Eswar/Spectre/internal/storage"
 	"github.com/stretchr/testify/assert"
@@ -78,4 +79,67 @@ func TestSearchCommand(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Contains(t, output, "Found in:")
 	assert.Contains(t, output, "api.example.com")
+}
+
+type mockSearchTaskRunner struct {
+	response string
+	err      error
+}
+
+func (m *mockSearchTaskRunner) Run(req analyzer.Request) (string, error) {
+	return m.response, m.err
+}
+
+func TestSearchCommand_Semantic(t *testing.T) {
+	caseID = ""
+	semanticSearch = false
+
+	tempDir, err := os.MkdirTemp("", "spectre-search-sem-test")
+	require.NoError(t, err)
+	defer os.RemoveAll(tempDir)
+
+	dbPath := filepath.Join(tempDir, "spectre.db")
+	os.Setenv("SPECTRE_DB_PATH", dbPath)
+	defer os.Unsetenv("SPECTRE_DB_PATH")
+
+	err = storage.InitDB()
+	require.NoError(t, err)
+	defer storage.CloseDB()
+
+	testCaseID := "sem-search-case"
+	err = storage.CreateCase(&core.Case{
+		ID:   testCaseID,
+		Name: "Semantic Search Case",
+	})
+	require.NoError(t, err)
+
+	err = SaveContext(testCaseID)
+	require.NoError(t, err)
+
+	// Mock GlobalTaskRunner
+	oldRunner := analyzer.GlobalTaskRunner
+	defer func() { analyzer.GlobalTaskRunner = oldRunner }()
+
+	analyzer.GlobalTaskRunner = &mockSearchTaskRunner{
+		response: `{"status": "success", "results": [{"id": "ports.json#chunk_0", "content": "Port 80 is open running Apache", "distance": 0.12}]}`,
+	}
+
+	rootCmd.SetArgs([]string{"search", "--semantic", "open web port"})
+
+	old := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	err = rootCmd.Execute()
+
+	w.Close()
+	os.Stdout = old
+
+	var buf bytes.Buffer
+	io.Copy(&buf, r)
+	output := buf.String()
+
+	assert.NoError(t, err)
+	assert.Contains(t, output, "Performing semantic vector search")
+	assert.Contains(t, output, "Port 80 is open running Apache")
 }

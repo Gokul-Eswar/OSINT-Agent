@@ -1,7 +1,7 @@
 import sys
 import os
 import requests
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Add project root to path to find spectre_sdk
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
@@ -53,7 +53,7 @@ class LeakChecker(BaseCollector):
 
         return {
             "target": target,
-            "scan_time": datetime.utcnow().isoformat() + "Z",
+            "scan_time": datetime.now(timezone.utc).isoformat(),
             "potential_leaks": potential_leaks,
             "ghost_mode_active": self.ghost_mode,
             "proxy_used": self.proxy

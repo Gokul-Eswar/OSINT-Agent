@@ -184,6 +184,11 @@ func GeneratePDFReport(caseID string, outputPath string) error {
 
 	// --- Relationships ---
 	if len(rels) > 0 {
+		entityMap := make(map[string]string)
+		for _, e := range entities {
+			entityMap[e.ID] = e.Value
+		}
+
 		pdf.AddPage()
 		pdf.SetFont("Arial", "B", 16)
 		pdf.Cell(0, 10, "Entity Relationships")
@@ -197,8 +202,14 @@ func GeneratePDFReport(caseID string, outputPath string) error {
 
 		pdf.SetFont("Arial", "", 9)
 		for _, r := range rels {
-			fromStr := r.FromEntityID
-			toStr := r.ToEntityID
+			fromStr := entityMap[r.FromEntityID]
+			if fromStr == "" {
+				fromStr = r.FromEntityID
+			}
+			toStr := entityMap[r.ToEntityID]
+			if toStr == "" {
+				toStr = r.ToEntityID
+			}
 			if len(fromStr) > 30 {
 				fromStr = fromStr[:27] + "..."
 			}

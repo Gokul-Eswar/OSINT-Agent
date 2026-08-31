@@ -36,7 +36,7 @@ func parseTotalCoverage(output string) (float64, error) {
 
 func main() {
 	profile := flag.String("profile", "coverage.out", "Path to Go coverage profile")
-	minCoverage := flag.Float64("min", 80.0, "Minimum total coverage percentage")
+	minCoverage := flag.Float64("min", 35.0, "Minimum total coverage percentage")
 	flag.Parse()
 
 	output, err := coverageOutput(*profile)

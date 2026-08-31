@@ -1,5 +1,3 @@
-import chromadb
-from chromadb.utils import embedding_functions
 import os
 import json
 
@@ -12,7 +10,11 @@ _default_ef = None
 def get_embedding_function():
     global _default_ef
     if _default_ef is None:
-        _default_ef = embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
+        try:
+            from chromadb.utils import embedding_functions
+            _default_ef = embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
+        except Exception:
+            return None
     return _default_ef
 
 def get_client(case_id):
@@ -26,6 +28,11 @@ def get_client(case_id):
     evidence directory (e.g. evidence_storage/<case_id>/.vector_store). This keeps case data 
     isolated and local.
     """
+    try:
+        import chromadb
+    except ImportError:
+        return None
+
     persist_directory = os.path.join("evidence_storage", case_id, ".vector_store")
     os.makedirs(persist_directory, exist_ok=True)
     # Instantiate a persistent Chroma client. It writes database files to disk at the path.
@@ -44,13 +51,17 @@ def index_evidence(case_id, evidence_files):
     """
     # 1. Resolve case-specific database client.
     client = get_client(case_id)
+    if client is None:
+        return {"status": "error", "error": "chromadb is not installed in Python environment", "indexed_count": 0}
+    
+    ef = get_embedding_function()
+    if ef is None:
+        return {"status": "error", "error": "embedding function unavailable (sentence-transformers missing)", "indexed_count": 0}
     
     # 2. Get or create the vector collection named 'evidence'.
-    # We pass default_ef to ensure Chroma calls sentence-transformers to calculate embedding vectors
-    # when documents are added or queried.
     collection = client.get_or_create_collection(
         name="evidence", 
-        embedding_function=get_embedding_function()
+        embedding_function=ef
     )
 
     ids = []
@@ -108,9 +119,15 @@ def search_evidence(case_id, query, n_results=3):
     Performs a semantic vector search across the indexed evidence documents.
     """
     client = get_client(case_id)
+    if client is None:
+        return {"status": "error", "error": "chromadb is not installed in Python environment", "results": []}
+    
+    ef = get_embedding_function()
+    if ef is None:
+        return {"status": "error", "error": "embedding function unavailable (sentence-transformers missing)", "results": []}
     
     try:
-        collection = client.get_collection(name="evidence", embedding_function=get_embedding_function())
+        collection = client.get_collection(name="evidence", embedding_function=ef)
     except Exception:
         # Collection does not exist yet (no evidence indexed)
         return {"status": "success", "results": []}

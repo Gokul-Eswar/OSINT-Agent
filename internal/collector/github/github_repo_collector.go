@@ -18,7 +18,8 @@ import (
 )
 
 type GitHubCollector struct {
-	Client *http.Client
+	BaseURL string
+	Client  *http.Client
 }
 
 func Register() {
@@ -51,8 +52,13 @@ func (g *GitHubCollector) Collect(caseID string, target string, options map[stri
 		return nil, fmt.Errorf("failed to create http client: %w", err)
 	}
 
+	baseURL := g.BaseURL
+	if baseURL == "" {
+		baseURL = "https://api.github.com"
+	}
+
 	// Search repositories
-	url := fmt.Sprintf("https://api.github.com/search/repositories?q=%s", target)
+	url := fmt.Sprintf("%s/search/repositories?q=%s", baseURL, target)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Error().Err(err).Str("url", url).Msg("failed to create github request")

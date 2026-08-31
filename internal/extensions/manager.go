@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -299,7 +300,7 @@ func (m *Manager) InstallDependencies(extName string) {
 		// Try to use the project's venv if it exists, otherwise use system pip
 		pipCmd := "pip"
 		if _, err := os.Stat(".venv"); err == nil {
-			if strings.Contains(os.Getenv("OS"), "Windows") {
+			if runtime.GOOS == "windows" {
 				pipCmd = filepath.Join(".venv", "Scripts", "pip.exe")
 			} else {
 				pipCmd = filepath.Join(".venv", "bin", "pip")

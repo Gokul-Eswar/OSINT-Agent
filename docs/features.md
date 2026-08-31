@@ -68,7 +68,7 @@ The Web Dashboard offers an advanced, interactive view of your investigation.
 ### Markdown Report
 - **Best for:** Technical archiving, sharing with other analysts, or importing into wikis.
 - **Content:** Raw structured data, lists of assets, and full analysis text.
-- **Location:** Saved as `report_<case_id>.md` in the project root.
+- **Location:** Saved by default as `evidence_storage/<case_id>/investigation_report.md` (or custom path via `-o`).
 
 ### PDF Report
 - **Best for:** Executive summaries, client deliverables, and formal documentation.
@@ -77,4 +77,4 @@ The Web Dashboard offers an advanced, interactive view of your investigation.
   - **Executive Summary:** AI-synthesized Findings and Risks.
   - **Entity Table:** Cleanly formatted list of discovered assets.
   - **Timeline:** Chronological log of investigation events.
-- **Location:** Saved as `report_<case_id>.pdf` in the project root.
+- **Location:** Saved by default as `evidence_storage/<case_id>/investigation_report.pdf` (or custom path via `-o`).

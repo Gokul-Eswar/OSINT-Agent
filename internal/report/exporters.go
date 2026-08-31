@@ -110,10 +110,23 @@ func GenerateHTMLReport(caseID string, outputPath string) error {
 	}
 	sb.WriteString("</table>")
 
+	entityMap := make(map[string]string)
+	for _, e := range entities {
+		entityMap[e.ID] = e.Value
+	}
+
 	if len(rels) > 0 {
 		sb.WriteString("<h2>Relationships</h2><table><tr><th>From</th><th>Type</th><th>To</th></tr>")
 		for _, r := range rels {
-			sb.WriteString(fmt.Sprintf("<tr><td>%s</td><td>%s</td><td>%s</td></tr>", html.EscapeString(r.FromEntityID), html.EscapeString(r.Type), html.EscapeString(r.ToEntityID)))
+			fromVal := entityMap[r.FromEntityID]
+			if fromVal == "" {
+				fromVal = r.FromEntityID
+			}
+			toVal := entityMap[r.ToEntityID]
+			if toVal == "" {
+				toVal = r.ToEntityID
+			}
+			sb.WriteString(fmt.Sprintf("<tr><td>%s</td><td>%s</td><td>%s</td></tr>", html.EscapeString(fromVal), html.EscapeString(r.Type), html.EscapeString(toVal)))
 		}
 		sb.WriteString("</table>")
 	}
