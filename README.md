@@ -1,20 +1,19 @@
 # 🕵️ SPECTRE — Local-First OSINT Intelligence Platform
 
-[![CI Status](https://github.com/Gokul-Eswar/Spectre/actions/workflows/ci.yml/badge.svg)](https://github.com/Gokul-Eswar/Spectre/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Go Version](https://img.shields.io/badge/Go-1.21%2B-00ADD8?logo=go)](go.mod)
-[![Python Version](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python)](analyzer/requirements.txt)
-[![Local-First](https://img.shields.io/badge/Privacy-100%25%20Local--First-success)](#-core-principles)
-
 > **Turn raw internet noise into structured, verifiable intelligence — fast, repeatable, and 100% local.**
 
----
+"SPECTRE is like having a smart detective assistant that gathers all online clues about a target in one place, figures out connections automatically, and keeps everything private and locked down—all without needing the internet or cloud services."
 
-## 📖 What is SPECTRE? (Explain It In Plain English)
 
-Imagine you are investigating a suspicious website, a malicious domain, a leaked email, or an online persona. 
+## 🎯 The Problem SPECTRE Solves
 
-Normally, an investigator has to manually juggle a dozen disconnected tools: running `whois`, querying DNS records, checking IP geolocations, running port scanners, capturing website screenshots, searching GitHub for leaked API keys, and searching username availability across 50+ social platforms. Then, they have to manually piece together messy notes to figure out how everything is connected.
+Imagine you're investigating a suspicious website or tracking down who's behind an online account. Right now, you'd have to use 10+ different tools—check who owns the domain, look up the server location, scan for open ports, take screenshots, search social media manually. Then you'd copy-paste everything into a spreadsheet and try to connect the dots yourself. It's slow, messy, and your data gets scattered across cloud services you don't fully trust.
+
+SPECTRE brings everything together in one place. Tell it a website or username, and it automatically gathers all the information you need—who owns it, where the servers are, what services are running, and what else it's connected to. Then it uses AI to connect the dots for you and show you what matters. Everything stays on your computer (no cloud), and every finding is locked down so it can be used as evidence in court or investigations. What used to take hours now takes minutes.
+
+
+
+
 
 **SPECTRE solves this by providing a unified, local-first intelligence workbench:**
 
@@ -27,40 +26,7 @@ Normally, an investigator has to manually juggle a dozen disconnected tools: run
    Username)      Screenshots)     graph in SQLite)    connections)     Markdown Reports)
 ```
 
-1. **Target In:** You give SPECTRE a seed target (a domain like `example.com`, an IP, or a username).
-2. **Automated Collection:** SPECTRE runs passive and active collectors simultaneously, capturing raw evidence files.
-3. **Graph Ingestion:** It parses the evidence, extracts entities (People, Emails, Domains, IPs, Ports, Repos, Accounts), and links them into an interconnected knowledge graph.
-4. **AI-Powered Synthesis:** A local AI model (via Ollama or LLaVA) reads the gathered evidence, uncovers hidden relationships, identifies risks, and suggests next investigation leads.
-5. **Multi-Interface Delivery:** You can explore findings through an interactive terminal interface (TUI), a live web dashboard with real-time physics-based graphs, or export forensic-grade PDF/HTML/Markdown reports.
-
----
-
-## 🎯 Why SPECTRE? (Core Principles)
-
-- 🔒 **100% Local-First & Private:** All investigation data, SQLite databases, and evidence files live exclusively on your machine (`./evidence_storage/` & `spectre.db`). No telemetry, no mandatory cloud subscriptions, and no leaks to third-party servers.
-- ⚖️ **Forensic Auditability:** Every piece of evidence is hashed using SHA-256 and immutably timestamped so investigations can be audited or presented as evidence.
-- 👻 **Ghost Mode (Operational Security):** Built-in routing through Tor, SOCKS5, or HTTP proxies with automatic rate limiting and scope safety rules (refuses to accidentally scan `.gov` or `.mil` targets).
-- ⚡ **Hybrid Architecture:** High-speed orchestration, database storage, and CLI/TUI written in **Go**; AI synthesis, vector search, and graph visualization written in **Python**.
-
----
-
-## 🌟 Key Features
-
-| Capability | Description |
-| :--- | :--- |
-| **Passive Reconnaissance** | Query DNS records (A, MX, NS, TXT), WHOIS registrations, IP Geolocation (City, Country, ISP), and public GitHub repositories without touching target servers. |
-| **Active Reconnaissance** | Multi-threaded TCP port scanning (common top-100 or custom ports), automated headless browser full-page screenshot capture, and username availability checking across 50+ platforms. |
-| **Autonomous AI Agent** | Interactive chat REPL where an AI investigator autonomously decides which tools to run, searches evidence, analyzes screenshots, and records hypotheses. |
-| **Semantic Vector Search** | Search through unstructured case evidence using vector embeddings (via ChromaDB & Sentence Transformers) or literal substring matching. |
-| **Persona Correlation** | Cluster related usernames, social media accounts, and email handles into unified persona profiles. |
-| **Interactive Web Command Center** | Real-time web application featuring a physics-based force-directed graph (Vis.js), Server-Sent Events (SSE) live updates, and an embedded agent chat drawer. |
-| **Terminal User Interface (TUI)** | Keyboard-driven terminal console with ASCII graph visualizers, entity data tables, and live logs. |
-| **Multi-Format Export** | Export investigations into executive-ready PDF documents, standalone HTML graphs, CSV data sheets, JSON bundles, or Markdown notes. |
-| **Plugin Ecosystem & Store** | Create custom collectors in Python, Bash, or Go in under 20 lines of code using the built-in `spectre_sdk` and manage extensions via the marketplace. |
-
----
-
-## 🚀 Quick Start
+## 🚀 Setup
 
 ### 1. Prerequisites
 - **Go:** `1.21+` ([Download Go](https://go.dev/dl/))
@@ -225,64 +191,6 @@ spectre visualize --case <CASE_ID>
 
 ---
 
-## 🏛️ System Architecture
-
-SPECTRE utilizes a clean hybrid decoupled architecture:
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              USER INTERFACES                                │
-│       CLI (Cobra)       │    TUI (BubbleTea)    │    Web GUI (React/Vis.js) │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                       │
-                                       ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                            CORE ENGINE (Go)                                 │
-│  ┌───────────────────────┬───────────────────────┬───────────────────────┐  │
-│  │ Collector Orchestrator│  Storage & Repository │  Ethics & Rate Guard  │  │
-│  │ (Active & Passive)    │  (SQLite WAL Mode)    │  (Ghost Mode / Tor)   │  │
-│  └───────────────────────┴───────────────────────┴───────────────────────┘  │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                       │ (JSON Subprocess Bridge)
-                                       ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                       INTELLIGENCE LAYER (Python)                           │
-│  ┌───────────────────────┬───────────────────────┬───────────────────────┐  │
-│  │ LLM Engine (Ollama)   │ ChromaDB Vector Store │ Graph Viz (PyVis)     │  │
-│  │ (Llama3, LLaVA, Dorks)│ (Dense Embeddings)    │ (NetworkX HTML)       │  │
-│  └───────────────────────┴───────────────────────┴───────────────────────┘  │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-### Directory Structure
-```
-├── cmd/
-│   ├── spectre/          # Main application entry point & embedded web assets
-│   └── installer/        # Single-binary self-extracting installer
-├── internal/
-│   ├── agent/            # Autonomous ReAct agent loop and tool registry
-│   ├── analysis/         # Context compilation and AI synthesis coordinator
-│   ├── analyzer/         # Go-to-Python subprocess bridge contract
-│   ├── cli/              # Cobra CLI command definitions
-│   ├── collector/        # Active & passive collectors (DNS, WHOIS, Ports, etc.)
-│   ├── config/           # Viper configuration hierarchy
-│   ├── core/             # Domain entities, models, relationships, and evidence
-│   ├── ethics/           # Rate limiting, proxying, and blacklist scope guards
-│   ├── extensions/       # Plugin installer and marketplace manager
-│   ├── report/           # PDF, HTML, Markdown, CSV, and JSON report generators
-│   ├── server/           # REST API & Server-Sent Events (SSE) server
-│   ├── storage/          # SQLite database migrations and repositories
-│   └── tui/              # BubbleTea terminal dashboard
-├── analyzer/             # Python analysis engine (LLM, Vision, Vector Store)
-├── configs/              # Default configuration (default.yaml)
-├── docs/                 # Architectural specifications and feature guides
-├── lib/                  # Frontend assets & Python SDK (spectre_sdk.py)
-├── plugins/              # Built-in and third-party extension collectors
-└── scripts/              # Build, packaging, and validation scripts
-```
-
----
-
 ## ⚙️ Configuration
 
 Configuration is managed via [`configs/default.yaml`](configs/default.yaml) or overridden using environment variables and CLI flags.
@@ -359,27 +267,7 @@ SPECTRE will automatically discover and register your plugin on the next run!
 
 ---
 
-## 🧪 Development & Quality Gates
 
-Run all quality checks locally before submitting contributions:
-
-```bash
-# Run all Go unit tests
-go test ./...
-
-# Run Python unit tests
-pytest
-
-# Validate plugin manifests and YAML configs
-python scripts/validate_plugins.py
-python scripts/validate_configs.py
-
-# Check test coverage threshold
-go test -coverprofile=coverage.out ./...
-go run ./scripts/check_coverage.go -profile coverage.out -min 35
-```
-
----
 
 ## 📄 License
 
